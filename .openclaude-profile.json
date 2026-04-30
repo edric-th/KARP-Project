@@ -1,0 +1,10 @@
+{
+  "profile": "openai",
+  "env": {
+    "OPENAI_BASE_URL": "https://openrouter.ai/api/v1",
+    "OPENAI_MODEL": "gpt-5.1-codex-max",
+    "OPENAI_API_FORMAT": "chat_completions",
+    "OPENAI_API_KEY": "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"
+  },
+  "createdAt": "2026-04-29T07:28:57.367Z"
+}
