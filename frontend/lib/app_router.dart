@@ -1,0 +1,142 @@
+import 'package:flutter/material.dart';
+import 'package:frontend/models/models.dart';
+import 'package:frontend/screens/login_screen.dart';
+import 'package:frontend/screens/signup_screen.dart';
+import 'package:frontend/screens/main_nav_screen.dart';
+import 'package:frontend/screens/home_screen.dart';
+import 'package:frontend/screens/hospitals_screen.dart';
+import 'package:frontend/screens/hospital_detail_screen.dart';
+import 'package:frontend/screens/doctors_screen.dart';
+import 'package:frontend/screens/doctor_detail_screen.dart';
+import 'package:frontend/screens/book_appointment_screen.dart';
+import 'package:frontend/screens/booking_success_screen.dart';
+import 'package:frontend/screens/queue_screen.dart';
+import 'package:frontend/screens/queue_detail_screen.dart';
+import 'package:frontend/screens/queue_token_screen.dart';
+import 'package:frontend/screens/appointments_screen.dart';
+import 'package:frontend/screens/notifications_screen.dart';
+import 'package:frontend/screens/profile_screen.dart';
+import 'package:frontend/screens/settings_screen.dart';
+import 'package:frontend/screens/splash_screen.dart';
+
+class AppRouter {
+  static const String splash = '/';
+  static const String login = '/login';
+  static const String signup = '/signup';
+  static const String register = '/register';
+  static const String main = '/main';
+  static const String home = '/home';
+  static const String hospitals = '/hospitals';
+  static const String hospitalDetail = '/hospital-detail';
+  static const String doctors = '/doctors';
+  static const String doctorDetail = '/doctor-detail';
+  static const String bookAppointment = '/book-appointment';
+  static const String bookingSuccess = '/booking-success';
+  static const String queue = '/queue';
+  static const String queueDetail = '/queue-detail';
+  static const String queueToken = '/queue-token';
+  static const String appointments = '/appointments';
+  static const String notifications = '/notifications';
+  static const String profile = '/profile';
+  static const String settings = '/settings';
+
+  static Route<dynamic> generateRoute(RouteSettings routeSettings) {
+    switch (routeSettings.name) {
+      case splash:
+        return _buildRoute(const SplashScreen(), routeSettings);
+
+      case login:
+        return _buildRoute(const LoginScreen(), routeSettings);
+
+      case signup:
+      case register:
+        return _buildRoute(const SignupScreen(), routeSettings);
+
+      case main:
+        return _buildRoute(const MainNavScreen(), routeSettings);
+
+      case home:
+        return _buildRoute(const HomeScreen(), routeSettings);
+
+      case hospitals:
+        return _buildRoute(const HospitalsScreen(), routeSettings);
+
+      case hospitalDetail:
+        final hospital = routeSettings.arguments as HospitalModel;
+        return _buildRoute(
+          HospitalDetailScreen(hospital: hospital),
+          routeSettings,
+        );
+
+      case doctors:
+        return _buildRoute(const DoctorsScreen(), routeSettings);
+
+      case doctorDetail:
+        final doctor = routeSettings.arguments as DoctorModel;
+        return _buildRoute(
+          DoctorDetailScreen(doctor: doctor),
+          routeSettings,
+        );
+
+      case bookAppointment:
+        final doctor = routeSettings.arguments as DoctorModel?;
+        return _buildRoute(
+          BookAppointmentScreen(preselectedDoctor: doctor),
+          routeSettings,
+        );
+
+      case bookingSuccess:
+        final args = routeSettings.arguments as Map<String, dynamic>?;
+        return _buildRoute(
+          BookingSuccessScreen(
+            doctor: args?['doctor'] as DoctorModel?,
+            date: args?['date'] as String?,
+            time: args?['time'] as String?,
+          ),
+          routeSettings,
+        );
+
+      case queue:
+        return _buildRoute(const QueueScreen(), routeSettings);
+
+      case queueDetail:
+        final queueModel = routeSettings.arguments as QueueModel;
+        return _buildRoute(
+          QueueDetailScreen(queue: queueModel),
+          routeSettings,
+        );
+
+      case queueToken:
+        final queueModel = routeSettings.arguments as QueueModel;
+        return _buildRoute(
+          QueueTokenScreen(queue: queueModel),
+          routeSettings,
+        );
+
+      case appointments:
+        return _buildRoute(const AppointmentsScreen(), routeSettings);
+
+      case notifications:
+        return _buildRoute(const NotificationsScreen(), routeSettings);
+
+      case profile:
+        return _buildRoute(const ProfileScreen(), routeSettings);
+
+      case settings:
+        return _buildRoute(const SettingsScreen(), routeSettings);
+
+      default:
+        return _buildRoute(const LoginScreen(), routeSettings);
+    }
+  }
+
+  static MaterialPageRoute _buildRoute(
+    Widget page,
+    RouteSettings routeSettings,
+  ) {
+    return MaterialPageRoute(
+      builder: (_) => page,
+      settings: routeSettings,
+    );
+  }
+}

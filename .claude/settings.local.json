@@ -2,7 +2,18 @@
   "permissions": {
     "allow": [
       "Bash(flutter pub *)",
-      "Bash(flutter analyze *)"
+      "Bash(flutter analyze *)",
+      "Bash(rm -v lib/home_screen.dart lib/doctor_detail_screen.dart lib/signup_screen.dart lib/dummy_data.dart lib/models.dart lib/app_strings.dart lib/app_spacing.dart)",
+      "Bash(awk '{print $NF}')",
+      "Bash(grep \"\\\\.dart$\")",
+      "Bash(curl -sIL \"https://github.com/google/fonts/raw/main/ofl/inter/static/Inter_18pt-Regular.ttf\")",
+      "Bash(curl -sIL \"https://github.com/google/fonts/raw/main/ofl/inter/Inter%5Bopsz%2Cwght%5D.ttf\")",
+      "Bash(curl -sIL \"https://github.com/google/fonts/raw/refs/heads/main/ofl/inter/Inter%5Bopsz%2Cwght%5D.ttf\")",
+      "Bash(mkdir -p assets/fonts)",
+      "Bash(curl -sL \"https://github.com/google/fonts/raw/main/ofl/inter/Inter%5Bopsz%2Cwght%5D.ttf\" -o \"Inter-Variable.ttf\")"
+    ],
+    "additionalDirectories": [
+      "/Users/rohanbasnet/Documents/karp-project/frontend/lib"
     ]
   }
 }
