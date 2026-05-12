@@ -1,138 +1,141 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/constants/app_colors.dart';
 import 'package:frontend/models/models.dart';
+import 'package:frontend/models/dummy_data.dart';
 import 'package:frontend/widgets/common/custom_button.dart';
 
 class BookingSuccessScreen extends StatelessWidget {
   final DoctorModel? doctor;
   final String? date;
   final String? time;
+  final AppointmentType? appointmentType;
+  final String? speciality;
+  final int? tokenNumber;
+  final bool notifyMe;
+  final String? patientName;
 
   const BookingSuccessScreen({
     super.key,
     this.doctor,
     this.date,
     this.time,
+    this.appointmentType,
+    this.speciality,
+    this.tokenNumber,
+    this.notifyMe = true,
+    this.patientName,
   });
+
+  String get _token =>
+      (tokenNumber ?? 47).toString().padLeft(3, '0');
+
+  String get _waitTime {
+    final id = doctor?.id ?? 'd001';
+    final mins = 25 + (id.hashCode % 50).abs();
+    if (mins < 60) return '~$mins mins';
+    final hours = (mins / 60).round();
+    return '~$hours hours';
+  }
 
   @override
   Widget build(BuildContext context) {
+    final displayName = (patientName == null || patientName!.trim().isEmpty)
+        ? DummyData.currentUser.name
+        : patientName!;
+    final spec = speciality ?? doctor?.specialty ?? 'General Medicine';
+    final docName = doctor?.name ?? 'Dr. Assigned';
+
     return Scaffold(
       backgroundColor: AppColors.backgroundLight,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 28),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
           child: Column(
             children: [
-              const Spacer(flex: 2),
-              // Success animation circle
+              const SizedBox(height: 18),
               TweenAnimationBuilder<double>(
                 tween: Tween(begin: 0.0, end: 1.0),
-                duration: const Duration(milliseconds: 800),
+                duration: const Duration(milliseconds: 700),
                 curve: Curves.elasticOut,
                 builder: (ctx, value, child) => Transform.scale(
                   scale: value,
                   child: child,
                 ),
                 child: Container(
-                  width: 120,
-                  height: 120,
+                  width: 110,
+                  height: 110,
                   decoration: BoxDecoration(
-                    gradient: AppColors.primaryGradient,
+                    color: AppColors.surface,
                     shape: BoxShape.circle,
-                    boxShadow: AppColors.primaryShadow,
+                    border: Border.all(
+                      color: AppColors.cardGreenBorder,
+                      width: 6,
+                    ),
                   ),
-                  child: const Icon(
-                    Icons.check_rounded,
-                    color: Colors.white,
-                    size: 64,
+                  padding: const EdgeInsets.all(4),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: AppColors.primaryGradient,
+                      shape: BoxShape.circle,
+                      boxShadow: AppColors.primaryShadow,
+                    ),
+                    child: const Icon(
+                      Icons.check_rounded,
+                      color: Colors.white,
+                      size: 54,
+                    ),
                   ),
                 ),
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 22),
               Text(
-                'Appointment Booked!',
-                style: TextStyle(fontFamily: 'Inter', 
-                  fontSize: 26,
+                'Booking Successful!',
+                style: TextStyle(
+                  fontFamily: 'Inter',
+                  fontSize: 24,
                   fontWeight: FontWeight.w800,
                   color: AppColors.textPrimary,
                   letterSpacing: -0.5,
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
               Text(
-                doctor != null
-                    ? 'Your appointment with ${doctor!.name} on ${date ?? 'the selected date'} at ${time ?? 'the selected time'} has been confirmed.'
-                    : 'Your appointment has been successfully booked. You will receive a confirmation notification shortly.',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontFamily: 'Inter', 
-                  fontSize: 15,
+                'Your appointment has been secured.',
+                style: TextStyle(
+                  fontFamily: 'Inter',
+                  fontSize: 14,
                   color: AppColors.textSecondary,
-                  height: 1.6,
                 ),
               ),
-              const SizedBox(height: 36),
-              // Appointment details card
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(18),
-                  border: Border.all(color: AppColors.cardGreenBorder),
-                  boxShadow: AppColors.cardShadow,
-                ),
-                child: Column(
-                  children: [
-                    _DetailRow(
-                      icon: Icons.person_rounded,
-                      label: 'Doctor',
-                      value: doctor?.name ?? 'Dr. Assigned',
-                    ),
-                    const Divider(height: 24),
-                    _DetailRow(
-                      icon: Icons.calendar_today_rounded,
-                      label: 'Date',
-                      value: date ?? 'Confirmed',
-                    ),
-                    const Divider(height: 24),
-                    _DetailRow(
-                      icon: Icons.access_time_rounded,
-                      label: 'Time',
-                      value: time ?? 'Confirmed',
-                    ),
-                    const Divider(height: 24),
-                    _DetailRow(
-                      icon: Icons.local_hospital_rounded,
-                      label: 'Hospital',
-                      value: doctor?.hospital ?? 'Assigned',
-                    ),
-                  ],
-                ),
+              const SizedBox(height: 26),
+              _TokenCard(
+                patientName: displayName,
+                token: _token,
+                doctorName: docName,
+                speciality: spec.toUpperCase(),
+                waitTime: _waitTime,
               ),
-              const Spacer(flex: 2),
+              const SizedBox(height: 18),
+              if (notifyMe) _NotificationBanner(),
+              const SizedBox(height: 26),
               PrimaryButton(
-                label: 'View Appointments',
-                onTap: () {
-                  Navigator.pushNamedAndRemoveUntil(
-                    context,
-                    '/main',
-                    (route) => false,
-                  );
-                },
+                label: 'Go to Home',
+                onTap: () => Navigator.pushNamedAndRemoveUntil(
+                  context,
+                  '/main',
+                  (route) => false,
+                ),
               ),
               const SizedBox(height: 12),
               SecondaryButton(
-                label: 'Back to Home',
-                onTap: () {
-                  Navigator.pushNamedAndRemoveUntil(
-                    context,
-                    '/main',
-                    (route) => false,
-                  );
-                },
+                label: 'View Queue',
+                onTap: () => Navigator.pushNamedAndRemoveUntil(
+                  context,
+                  '/main',
+                  (route) => false,
+                  arguments: 1,
+                ),
               ),
-              const SizedBox(height: 32),
             ],
           ),
         ),
@@ -141,52 +144,175 @@ class BookingSuccessScreen extends StatelessWidget {
   }
 }
 
-class _DetailRow extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String value;
-  const _DetailRow({
-    required this.icon,
-    required this.label,
-    required this.value,
+// ─── TOKEN CARD ─────────────────────────────────────────────────────────────
+
+class _TokenCard extends StatelessWidget {
+  final String patientName;
+  final String token;
+  final String doctorName;
+  final String speciality;
+  final String waitTime;
+
+  const _TokenCard({
+    required this.patientName,
+    required this.token,
+    required this.doctorName,
+    required this.speciality,
+    required this.waitTime,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            color: AppColors.cardGreenLight,
-            borderRadius: BorderRadius.circular(10),
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(20, 22, 20, 22),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.cardGreenBorder),
+        boxShadow: AppColors.cardShadow,
+      ),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+            decoration: BoxDecoration(
+              color: const Color(0xFFE9E4F5),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              'TOKEN NUMBER',
+              style: TextStyle(
+                fontFamily: 'Inter',
+                fontSize: 11,
+                fontWeight: FontWeight.w800,
+                color: const Color(0xFF584C8E),
+                letterSpacing: 0.8,
+              ),
+            ),
           ),
-          child: Icon(icon, color: AppColors.primary, size: 20),
-        ),
-        const SizedBox(width: 14),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              label,
-              style: TextStyle(fontFamily: 'Inter', 
-                fontSize: 12,
-                color: AppColors.textMuted,
+          const SizedBox(height: 16),
+          Text(
+            patientName,
+            style: TextStyle(
+              fontFamily: 'Inter',
+              fontSize: 16,
+              fontWeight: FontWeight.w800,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Your token number:',
+            style: TextStyle(
+              fontFamily: 'Inter',
+              fontSize: 13,
+              color: AppColors.textSecondary,
+            ),
+          ),
+          const SizedBox(height: 6),
+          ShaderMask(
+            shaderCallback: (rect) =>
+                AppColors.primaryGradient.createShader(rect),
+            child: Text(
+              token,
+              style: TextStyle(
+                fontFamily: 'Inter',
+                fontSize: 72,
+                fontWeight: FontWeight.w900,
+                color: Colors.white,
+                letterSpacing: 2,
+                height: 1,
               ),
             ),
-            const SizedBox(height: 2),
-            Text(
-              value,
-              style: TextStyle(fontFamily: 'Inter', 
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
+          ),
+          const SizedBox(height: 18),
+          const Divider(height: 1, color: AppColors.divider),
+          const SizedBox(height: 16),
+          Text(
+            doctorName,
+            style: TextStyle(
+              fontFamily: 'Inter',
+              fontSize: 15,
+              fontWeight: FontWeight.w800,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            speciality,
+            style: TextStyle(
+              fontFamily: 'Inter',
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textMuted,
+              letterSpacing: 1,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Estimated wait: $waitTime',
+            style: TextStyle(
+              fontFamily: 'Inter',
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: AppColors.primary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── NOTIFICATION BANNER ─────────────────────────────────────────────────────
+
+class _NotificationBanner extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border(
+          left: BorderSide(color: AppColors.primary, width: 4),
+          top: BorderSide(color: AppColors.border),
+          right: BorderSide(color: AppColors.border),
+          bottom: BorderSide(color: AppColors.border),
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: AppColors.cardGreenLight,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(
+              Icons.notifications_active_rounded,
+              size: 18,
+              color: AppColors.primary,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              'You will receive a push notification 2 tokens before your turn. Please arrive at the clinic on time.',
+              style: TextStyle(
+                fontFamily: 'Inter',
+                fontSize: 12.5,
+                color: AppColors.textSecondary,
+                height: 1.5,
               ),
             ),
-          ],
-        ),
-      ],
+          ),
+        ],
+      ),
     );
   }
 }
