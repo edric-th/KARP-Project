@@ -60,9 +60,8 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Padding(
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
               child: SearchField(
-                hint: AppStrings.searchHint,
+                hint: 'Search doctors, hospitals...',
                 controller: _searchController,
-                onFilter: () {},
               ),
             ),
           ),
@@ -183,9 +182,9 @@ class _HomeScreenState extends State<HomeScreen> {
       padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
       child: Column(
         children: [
-          _SectionHeader(title: AppStrings.myAppointments, onSeeAll: () => Navigator.pushNamed(context, '/appointments')),
+          _SectionHeader(title: 'My Appointments', onSeeAll: () => Navigator.pushNamed(context, '/appointments')),
           const SizedBox(height: 12),
-          AppointmentCard(appointment: appointment, onTap: () {}, onCancel: () {}, isCompact: true),
+          AppointmentCard(appointment: appointment, onTap: () {}, onCancel: () {}),
         ],
       ),
     );
@@ -196,7 +195,7 @@ class _HomeScreenState extends State<HomeScreen> {
       padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
       child: Column(
         children: [
-          _SectionHeader(title: AppStrings.nearbyHospitals, onSeeAll: () => Navigator.pushNamed(context, '/hospitals')),
+          _SectionHeader(title: 'Nearby Hospitals', onSeeAll: () => Navigator.pushNamed(context, '/hospitals')),
           const SizedBox(height: 12),
           ...DummyData.hospitals.take(2).map((h) => HospitalCard(hospital: h, onTap: () => Navigator.pushNamed(context, '/hospital-detail', arguments: h))),
         ],
@@ -209,14 +208,14 @@ class _HomeScreenState extends State<HomeScreen> {
       padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
       child: Column(
         children: [
-          _SectionHeader(title: AppStrings.topDoctors, onSeeAll: () => Navigator.pushNamed(context, '/doctors')),
+          _SectionHeader(title: 'Top Doctors', onSeeAll: () => Navigator.pushNamed(context, '/doctors')),
           const SizedBox(height: 12),
           SizedBox(
             height: 200,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               itemCount: DummyData.doctors.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 12),
+              separatorBuilder: (context, index) => const SizedBox(width: 12),
               itemBuilder: (ctx, i) => DoctorCard(doctor: DummyData.doctors[i], onTap: () => Navigator.pushNamed(context, '/doctor-detail', arguments: DummyData.doctors[i])),
             ),
           ),
@@ -237,7 +236,7 @@ class _SectionHeader extends StatelessWidget {
       children: [
         Text(title, style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
         if (onSeeAll != null)
-          GestureDetector(onTap: onSeeAll, child: Text(AppStrings.seeAll, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.primary))),
+          GestureDetector(onTap: onSeeAll, child: Text(AppStrings.viewAll, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.primary))),
       ],
     );
   }

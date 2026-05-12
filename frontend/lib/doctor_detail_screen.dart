@@ -62,7 +62,7 @@ class DoctorDetailScreen extends StatelessWidget {
                             style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14), side: const BorderSide(color: AppColors.primary), foregroundColor: AppColors.primary, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
                           )),
                           const SizedBox(width: 12),
-                          Expanded(child: PrimaryButton(label: 'Book Appointment', height: 50, onTap: () => Navigator.pushNamed(context, '/book-appointment', arguments: doctor))),
+                          Expanded(child: PrimaryButton(label: 'Book Appointment', onTap: () => Navigator.pushNamed(context, '/book-appointment', arguments: doctor))),
                         ]),
                       ]),
                     ),
@@ -83,7 +83,7 @@ class DoctorDetailScreen extends StatelessWidget {
       child: Column(children: [
         _InfoRow(icon: Icons.local_hospital_outlined, label: 'Hospital', value: doctor.hospital),
         const Divider(height: 20),
-        _InfoRow(icon: Icons.payments_outlined, label: 'Consultation Fee', value: doctor.consultFee),
+        _InfoRow(icon: Icons.payments_outlined, label: 'Consultation Fee', value: doctor.fee),
         const Divider(height: 20),
         _InfoRow(icon: Icons.circle, label: 'Availability', value: doctor.isAvailable ? 'Available Today' : 'Not Available', valueColor: doctor.isAvailable ? AppColors.success : AppColors.error, iconColor: doctor.isAvailable ? AppColors.success : AppColors.error),
       ]),
