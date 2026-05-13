@@ -17,6 +17,7 @@ import 'package:frontend/screens/queue_token_screen.dart';
 import 'package:frontend/screens/appointments_screen.dart';
 import 'package:frontend/screens/notifications_screen.dart';
 import 'package:frontend/screens/profile_screen.dart';
+import 'package:frontend/screens/edit_profile_screen.dart';
 import 'package:frontend/screens/settings_screen.dart';
 import 'package:frontend/screens/splash_screen.dart';
 import 'package:frontend/screens/medical_history_screen.dart';
@@ -43,6 +44,7 @@ class AppRouter {
   static const String appointments = '/appointments';
   static const String notifications = '/notifications';
   static const String profile = '/profile';
+  static const String editProfile = '/edit-profile';
   static const String settings = '/settings';
   static const String medicalHistory = '/medical-history';
   static const String aboutUs = '/about-us';
@@ -154,6 +156,9 @@ class AppRouter {
 
       case profile:
         return _buildRoute(const ProfileScreen(), routeSettings);
+
+      case editProfile:
+        return _buildRoute(const EditProfileScreen(), routeSettings);
 
       case settings:
         return _buildRoute(const SettingsScreen(), routeSettings);

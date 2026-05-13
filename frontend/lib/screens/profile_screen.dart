@@ -1,281 +1,325 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/constants/app_colors.dart';
-import 'package:frontend/constants/app_strings.dart';
 import 'package:frontend/models/dummy_data.dart';
-import 'package:frontend/widgets/common/custom_app_bar.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  bool _showIdentity = false;
+
+  String _initials(String name) {
+    final parts = name.trim().split(RegExp(r'\s+'));
+    if (parts.isEmpty) return '?';
+    if (parts.length == 1) return parts.first.substring(0, 1).toUpperCase();
+    return (parts.first.substring(0, 1) + parts.last.substring(0, 1))
+        .toUpperCase();
+  }
 
   @override
   Widget build(BuildContext context) {
     final user = DummyData.currentUser;
+    final initials = _initials(user.name);
 
     return Scaffold(
       backgroundColor: AppColors.backgroundLight,
-      appBar: CustomAppBar(
-        title: 'Profile',
-        showBack: false,
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: GestureDetector(
-              onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Edit profile'), backgroundColor: AppColors.primary),
-              ),
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  border: Border.all(color: AppColors.border),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Text(
-                  AppStrings.editProfile,
-                  style: TextStyle(fontFamily: 'Inter', 
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.primary,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
       body: SingleChildScrollView(
         child: Column(
           children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
-              child: Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  gradient: AppColors.primaryGradient,
-                  borderRadius: BorderRadius.circular(24),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.primary.withValues(alpha: 0.3),
-                      blurRadius: 20,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
+            _GreenHeader(
+              title: 'Profile',
+              showLeading: false,
+              trailing: GestureDetector(
+                onTap: () => Navigator.pushNamed(context, '/edit-profile'),
+                child: Text(
+                  'Edit',
+                  style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
                 ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 72,
-                      height: 72,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.2),
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 2.5),
+              ),
+            ),
+            const SizedBox(height: 26),
+            _AvatarBlock(
+              initials: initials,
+              onEdit: () => Navigator.pushNamed(context, '/edit-profile'),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              user.name,
+              style: TextStyle(
+                fontFamily: 'Inter',
+                fontSize: 22,
+                fontWeight: FontWeight.w800,
+                color: AppColors.textPrimary,
+                letterSpacing: -0.4,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Token 047 · City Chameli Hospital',
+              style: TextStyle(
+                fontFamily: 'Inter',
+                fontSize: 13,
+                color: AppColors.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                gradient: AppColors.primaryGradient,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: AppColors.primaryShadow,
+              ),
+              child: Text(
+                'ACTIVE PATIENT',
+                style: TextStyle(
+                  fontFamily: 'Inter',
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                  letterSpacing: 1,
+                ),
+              ),
+            ),
+            const SizedBox(height: 26),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 30),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _SectionTitle('VISIT SUMMARY'),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: const [
+                      _VisitStatCard(value: '12', label: 'TOTAL VISITS'),
+                      SizedBox(width: 10),
+                      _VisitStatCard(value: '18m', label: 'AVG WAIT'),
+                      SizedBox(width: 10),
+                      _VisitStatCard(value: '11', label: 'COMPLETED'),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  _SectionTitle('PERSONAL INFORMATION'),
+                  const SizedBox(height: 10),
+                  _InfoCard(
+                    children: [
+                      _InfoRow(
+                        icon: Icons.person_outline_rounded,
+                        label: 'FULL NAME',
+                        value: user.name,
                       ),
-                      child: const Icon(
-                        Icons.person_rounded,
-                        color: Colors.white,
-                        size: 40,
+                      const _RowDivider(),
+                      _InfoRow(
+                        icon: Icons.phone_outlined,
+                        label: 'PHONE NUMBER',
+                        value: user.phone,
                       ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            user.name,
-                            style: TextStyle(fontFamily: 'Inter', 
-                              fontSize: 20,
-                              fontWeight: FontWeight.w800,
-                              color: Colors.white,
-                              letterSpacing: -0.3,
-                            ),
+                      const _RowDivider(),
+                      _InfoRow(
+                        icon: Icons.calendar_today_outlined,
+                        label: 'AGE & DOB',
+                        value: '${user.age} Years · 14 Oct 2006',
+                      ),
+                      const _RowDivider(),
+                      _InfoRowChip(
+                        icon: Icons.transgender_rounded,
+                        label: 'GENDER',
+                        chipText: user.gender,
+                        chipColor: const Color(0xFFDFE7FB),
+                        chipTextColor: const Color(0xFF1F4E8C),
+                      ),
+                      const _RowDivider(),
+                      _InfoRowChip(
+                        icon: Icons.water_drop_outlined,
+                        label: 'BLOOD GROUP',
+                        chipText: user.bloodGroup,
+                        chipColor: const Color(0xFFFDE0E0),
+                        chipTextColor: const Color(0xFFB42323),
+                      ),
+                      const _RowDivider(),
+                      _InfoRow(
+                        icon: Icons.badge_outlined,
+                        label: 'IDENTITY NUMBER',
+                        value: _showIdentity
+                            ? '1234 5678 5678'
+                            : '•••• •••• 5678',
+                        trailing: GestureDetector(
+                          onTap: () => setState(
+                              () => _showIdentity = !_showIdentity),
+                          child: Icon(
+                            _showIdentity
+                                ? Icons.visibility_off_outlined
+                                : Icons.visibility_outlined,
+                            color: AppColors.primary,
+                            size: 20,
                           ),
-                          const SizedBox(height: 4),
-                          Text(
-                            user.email,
-                            style: TextStyle(fontFamily: 'Inter', 
-                              fontSize: 13,
-                              color: Colors.white.withValues(alpha: 0.8),
-                            ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  _SectionTitle('MEDICAL INFORMATION'),
+                  const SizedBox(height: 10),
+                  _InfoCard(
+                    children: [
+                      _MedicalRow(
+                        icon: Icons.medical_information_outlined,
+                        label: 'KNOWN ALLERGIES',
+                        onAdd: () => _addStub('Add allergy'),
+                        children: const [
+                          _MedicalChip(
+                            text: 'short memory loss',
+                            color: Color(0xFFFDE0C4),
+                            textColor: Color(0xFF8A4B14),
                           ),
-                          const SizedBox(height: 10),
-                          Row(
-                            children: [
-                              _ProfileTag(
-                                label: 'Blood: ${user.bloodGroup}',
-                                icon: Icons.water_drop_outlined,
-                              ),
-                              const SizedBox(width: 8),
-                              _ProfileTag(
-                                label: 'Age: ${user.age}',
-                                icon: Icons.cake_outlined,
-                              ),
-                            ],
+                          _MedicalChip(
+                            text: 'Dust',
+                            color: Color(0xFFFDE0C4),
+                            textColor: Color(0xFF8A4B14),
                           ),
                         ],
                       ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-              child: Row(
-                children: [
-                  _StatCard(
-                    label: 'Appointments',
-                    value: '${DummyData.appointments.length}',
-                    icon: Icons.calendar_today_rounded,
-                    color: AppColors.primary,
-                  ),
-                  const SizedBox(width: 12),
-                  _StatCard(
-                    label: 'Queue Joined',
-                    value: '${DummyData.queues.length}',
-                    icon: Icons.queue_rounded,
-                    color: const Color(0xFF3B82F6),
-                  ),
-                  const SizedBox(width: 12),
-                  _StatCard(
-                    label: 'Doctors Seen',
-                    value: '4',
-                    icon: Icons.person_rounded,
-                    color: const Color(0xFF8B5CF6),
-                  ),
-                ],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
-              child: Column(
-                children: [
-                  _MenuSection(
-                    title: 'Health',
-                    items: [
-                      _MenuItem(
-                        icon: Icons.history_rounded,
-                        label: 'Medical History',
-                        color: AppColors.primary,
-                        onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Medical History'), backgroundColor: AppColors.primary),
-                        ),
+                      const _RowDivider(),
+                      _MedicalRow(
+                        icon: Icons.monitor_heart_outlined,
+                        label: 'CHRONIC CONDITIONS',
+                        onAdd: () => _addStub('Add condition'),
+                        children: const [
+                          _MedicalChip(
+                            text: 'Hypertension',
+                            color: Color(0xFFFDE0E0),
+                            textColor: Color(0xFFB42323),
+                          ),
+                        ],
                       ),
-                      _MenuItem(
-                        icon: Icons.document_scanner_outlined,
-                        label: 'Health Records',
-                        color: const Color(0xFF3B82F6),
-                        onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Health Records'), backgroundColor: AppColors.primary),
-                        ),
-                      ),
-                      _MenuItem(
+                      const _RowDivider(),
+                      _MedicalRow(
                         icon: Icons.medication_outlined,
-                        label: 'Prescriptions',
-                        color: const Color(0xFF8B5CF6),
-                        onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Prescriptions'), backgroundColor: AppColors.primary),
-                        ),
+                        label: 'CURRENT MEDICATIONS',
+                        onAdd: () => _addStub('Add medication'),
+                        valueText: 'Amlodipine 5mg (Daily)',
+                      ),
+                      const _RowDivider(),
+                      _MedicalRow(
+                        icon: Icons.contact_emergency_outlined,
+                        label: 'EMERGENCY CONTACT',
+                        onAdd: () => _addStub('Add contact'),
+                        valueText: '(Mother)\n+977 9867574843',
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16),
-                  _MenuSection(
-                    title: 'Account',
-                    items: [
-                      _MenuItem(
-                        icon: Icons.notifications_outlined,
-                        label: 'Notifications',
-                        color: const Color(0xFFF59E0B),
-                        onTap: () =>
-                            Navigator.pushNamed(context, '/notifications'),
-                      ),
-                      _MenuItem(
-                        icon: Icons.language_outlined,
-                        label: 'Language',
-                        color: const Color(0xFF10B981),
-                        onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Language settings'), backgroundColor: AppColors.primary),
-                        ),
-                      ),
-                      _MenuItem(
-                        icon: Icons.security_outlined,
-                        label: 'Security',
-                        color: const Color(0xFFEC4899),
-                        onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Security settings'), backgroundColor: AppColors.primary),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  _MenuSection(
-                    title: 'Support',
-                    items: [
-                      _MenuItem(
-                        icon: Icons.help_outline_rounded,
-                        label: 'Help & Support',
-                        color: const Color(0xFF3B82F6),
-                        onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Help & Support'), backgroundColor: AppColors.primary),
-                        ),
-                      ),
-                      _MenuItem(
-                        icon: Icons.privacy_tip_outlined,
-                        label: 'Privacy Policy',
-                        color: AppColors.textMuted,
-                        onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Privacy Policy'), backgroundColor: AppColors.primary),
-                        ),
-                      ),
-                      _MenuItem(
-                        icon: Icons.info_outline_rounded,
-                        label: 'About App',
-                        color: AppColors.textMuted,
-                        onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('About Mero Palo v1.0.0'), backgroundColor: AppColors.primary),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 40),
-              child: GestureDetector(
-                onTap: () => _showLogoutDialog(context),
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFFEEEE),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: AppColors.error.withValues(alpha: 0.2)),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                  const SizedBox(height: 24),
+                  _SectionTitle('ACCOUNT'),
+                  const SizedBox(height: 10),
+                  _InfoCard(
                     children: [
-                      const Icon(
-                        Icons.logout_rounded,
-                        color: AppColors.error,
-                        size: 20,
+                      _InfoRow(
+                        icon: Icons.mail_outline_rounded,
+                        label: 'EMAIL ADDRESS',
+                        value: user.email,
+                        valueExtra: Container(
+                          margin: const EdgeInsets.only(left: 8),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 3,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFDE0E0),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            'Unverified',
+                            style: TextStyle(
+                              fontFamily: 'Inter',
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              color: const Color(0xFFB42323),
+                            ),
+                          ),
+                        ),
+                        trailing: GestureDetector(
+                          onTap: () => _addStub('Verify email'),
+                          child: Text(
+                            'Verify',
+                            style: TextStyle(
+                              fontFamily: 'Inter',
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                        ),
                       ),
-                      const SizedBox(width: 8),
-                      Text(
-                        AppStrings.logout,
-                        style: TextStyle(fontFamily: 'Inter', 
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.error,
+                      const _RowDivider(),
+                      _InfoRow(
+                        icon: Icons.lock_outline_rounded,
+                        label: 'PASSWORD',
+                        value: '•••••••••••••',
+                        trailing: GestureDetector(
+                          onTap: () => _addStub('Change password'),
+                          child: Text(
+                            'Change',
+                            style: TextStyle(
+                              fontFamily: 'Inter',
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.primary,
+                            ),
+                          ),
                         ),
                       ),
                     ],
                   ),
-                ),
+                  const SizedBox(height: 28),
+                  GestureDetector(
+                    onTap: () => _showDeleteDialog(context),
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      decoration: BoxDecoration(
+                        color: AppColors.surface,
+                        borderRadius: BorderRadius.circular(28),
+                        border: Border.all(
+                          color: AppColors.error,
+                          width: 1.5,
+                        ),
+                      ),
+                      child: Center(
+                        child: Text(
+                          'Delete Account',
+                          style: TextStyle(
+                            fontFamily: 'Inter',
+                            fontSize: 15,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.error,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Center(
+                    child: Text(
+                      'This will permanently remove all your data from MeroPalo servers.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 11.5,
+                        color: AppColors.textMuted,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 60),
+                ],
               ),
             ),
           ],
@@ -284,7 +328,13 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  void _showLogoutDialog(BuildContext context) {
+  void _addStub(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(msg), backgroundColor: AppColors.primary),
+    );
+  }
+
+  void _showDeleteDialog(BuildContext context) {
     showModalBottomSheet(
       context: context,
       backgroundColor: AppColors.surface,
@@ -292,51 +342,54 @@ class ProfileScreen extends StatelessWidget {
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (ctx) => Padding(
-        padding: const EdgeInsets.fromLTRB(24, 24, 24, 48),
+        padding: const EdgeInsets.fromLTRB(24, 24, 24, 36),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
               width: 40,
               height: 4,
-              margin: const EdgeInsets.only(bottom: 24),
+              margin: const EdgeInsets.only(bottom: 20),
               decoration: BoxDecoration(
                 color: AppColors.border,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
             Container(
-              width: 72,
-              height: 72,
+              width: 64,
+              height: 64,
               decoration: BoxDecoration(
                 color: const Color(0xFFFFEEEE),
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(18),
               ),
               child: const Icon(
-                Icons.logout_rounded,
+                Icons.warning_amber_rounded,
                 color: AppColors.error,
-                size: 36,
+                size: 30,
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 14),
             Text(
-              'Log Out?',
-              style: TextStyle(fontFamily: 'Inter', 
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
+              'Delete Account?',
+              style: TextStyle(
+                fontFamily: 'Inter',
+                fontSize: 19,
+                fontWeight: FontWeight.w800,
                 color: AppColors.textPrimary,
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             Text(
-              'Are you sure you want to log out of Mero Palo?',
+              'This action is permanent. All your appointments, queues and medical info will be deleted.',
               textAlign: TextAlign.center,
-              style: TextStyle(fontFamily: 'Inter', 
-                fontSize: 14,
+              style: TextStyle(
+                fontFamily: 'Inter',
+                fontSize: 13,
                 color: AppColors.textSecondary,
+                height: 1.5,
               ),
             ),
-            const SizedBox(height: 28),
+            const SizedBox(height: 22),
             Row(
               children: [
                 Expanded(
@@ -351,9 +404,10 @@ class ProfileScreen extends StatelessWidget {
                     ),
                     child: Text(
                       'Cancel',
-                      style: TextStyle(fontFamily: 'Inter', 
+                      style: TextStyle(
+                        fontFamily: 'Inter',
                         fontSize: 14,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w700,
                         color: AppColors.textPrimary,
                       ),
                     ),
@@ -375,10 +429,11 @@ class ProfileScreen extends StatelessWidget {
                       ),
                     ),
                     child: Text(
-                      'Log Out',
-                      style: TextStyle(fontFamily: 'Inter', 
+                      'Delete',
+                      style: TextStyle(
+                        fontFamily: 'Inter',
                         fontSize: 14,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w700,
                         color: Colors.white,
                       ),
                     ),
@@ -393,29 +448,115 @@ class ProfileScreen extends StatelessWidget {
   }
 }
 
-class _ProfileTag extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  const _ProfileTag({required this.label, required this.icon});
+// ─── GREEN HEADER ──────────────────────────────────────────────────────────
+
+class _GreenHeader extends StatelessWidget {
+  final String title;
+  final bool showLeading;
+  final Widget? trailing;
+  const _GreenHeader({
+    required this.title,
+    this.showLeading = true,
+    this.trailing,
+  });
+
   @override
   Widget build(BuildContext context) {
+    final topInset = MediaQuery.of(context).padding.top;
+    final trailingWidget = trailing;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(8),
+      width: double.infinity,
+      padding: EdgeInsets.fromLTRB(20, topInset + 14, 20, 22),
+      decoration: const BoxDecoration(
+        gradient: AppColors.primaryGradient,
+        borderRadius: BorderRadius.vertical(bottom: Radius.circular(24)),
       ),
       child: Row(
-        mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: Colors.white, size: 12),
-          const SizedBox(width: 4),
-          Text(
-            label,
-            style: TextStyle(fontFamily: 'Inter', 
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              color: Colors.white,
+          if (showLeading)
+            GestureDetector(
+              onTap: () => Navigator.pop(context),
+              child: const Icon(
+                Icons.arrow_back_rounded,
+                color: Colors.white,
+                size: 22,
+              ),
+            )
+          else
+            const SizedBox(width: 22),
+          Expanded(
+            child: Center(
+              child: Text(
+                title,
+                style: TextStyle(
+                  fontFamily: 'Inter',
+                  fontSize: 17,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
+          if (trailingWidget != null) trailingWidget else const SizedBox(width: 22),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── AVATAR BLOCK ──────────────────────────────────────────────────────────
+
+class _AvatarBlock extends StatelessWidget {
+  final String initials;
+  final VoidCallback onEdit;
+  const _AvatarBlock({required this.initials, required this.onEdit});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 96,
+      height: 96,
+      child: Stack(
+        children: [
+          Container(
+            width: 96,
+            height: 96,
+            decoration: BoxDecoration(
+              color: AppColors.cardGreenMedium,
+              shape: BoxShape.circle,
+              border: Border.all(color: AppColors.cardGreenBorder, width: 2),
+            ),
+            alignment: Alignment.center,
+            child: Text(
+              initials,
+              style: TextStyle(
+                fontFamily: 'Inter',
+                fontSize: 28,
+                fontWeight: FontWeight.w800,
+                color: AppColors.primaryDark,
+                letterSpacing: 0.5,
+              ),
+            ),
+          ),
+          Positioned(
+            right: 0,
+            bottom: 4,
+            child: GestureDetector(
+              onTap: onEdit,
+              child: Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: AppColors.primary,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: AppColors.surface, width: 2.5),
+                ),
+                child: const Icon(
+                  Icons.edit,
+                  color: Colors.white,
+                  size: 13,
+                ),
+              ),
             ),
           ),
         ],
@@ -424,47 +565,59 @@ class _ProfileTag extends StatelessWidget {
   }
 }
 
-class _StatCard extends StatelessWidget {
-  final String label;
+// ─── SHARED UI BITS ────────────────────────────────────────────────────────
+
+class _SectionTitle extends StatelessWidget {
+  final String text;
+  const _SectionTitle(this.text);
+  @override
+  Widget build(BuildContext context) => Text(
+        text,
+        style: TextStyle(
+          fontFamily: 'Inter',
+          fontSize: 12,
+          fontWeight: FontWeight.w800,
+          color: AppColors.textMuted,
+          letterSpacing: 1.1,
+        ),
+      );
+}
+
+class _VisitStatCard extends StatelessWidget {
   final String value;
-  final IconData icon;
-  final Color color;
-  const _StatCard({
-    required this.label,
-    required this.value,
-    required this.icon,
-    required this.color,
-  });
+  final String label;
+  const _VisitStatCard({required this.value, required this.label});
+
   @override
   Widget build(BuildContext context) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.symmetric(vertical: 14),
         decoration: BoxDecoration(
           color: AppColors.surface,
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(20),
           border: Border.all(color: AppColors.border),
         ),
         child: Column(
           children: [
-            Icon(icon, color: color, size: 20),
-            const SizedBox(height: 8),
             Text(
               value,
-              style: TextStyle(fontFamily: 'Inter', 
-                fontSize: 20,
+              style: TextStyle(
+                fontFamily: 'Inter',
+                fontSize: 22,
                 fontWeight: FontWeight.w800,
-                color: AppColors.textPrimary,
+                color: AppColors.primaryDark,
               ),
             ),
             const SizedBox(height: 2),
             Text(
               label,
-              textAlign: TextAlign.center,
-              style: TextStyle(fontFamily: 'Inter', 
+              style: TextStyle(
+                fontFamily: 'Inter',
                 fontSize: 10,
+                fontWeight: FontWeight.w700,
                 color: AppColors.textMuted,
-                fontWeight: FontWeight.w500,
+                letterSpacing: 0.7,
               ),
             ),
           ],
@@ -474,96 +627,276 @@ class _StatCard extends StatelessWidget {
   }
 }
 
-class _MenuSection extends StatelessWidget {
-  final String title;
-  final List<_MenuItem> items;
-  const _MenuSection({required this.title, required this.items});
+class _InfoCard extends StatelessWidget {
+  final List<Widget> children;
+  const _InfoCard({required this.children});
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 4, bottom: 10),
-          child: Text(
-            title,
-            style: TextStyle(fontFamily: 'Inter', 
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textMuted,
-              letterSpacing: 0.8,
-            ),
-          ),
-        ),
-        Container(
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.border),
-          ),
-          child: Column(
-            children: items.asMap().entries.map((e) {
-              final isLast = e.key == items.length - 1;
-              return Column(
-                children: [
-                  e.value,
-                  if (!isLast) const Divider(height: 1, indent: 62),
-                ],
-              );
-            }).toList(),
-          ),
-        ),
-      ],
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(children: children),
     );
   }
 }
 
-class _MenuItem extends StatelessWidget {
+class _RowDivider extends StatelessWidget {
+  const _RowDivider();
+  @override
+  Widget build(BuildContext context) =>
+      const Divider(height: 1, color: AppColors.divider, indent: 16, endIndent: 16);
+}
+
+class _InfoRow extends StatelessWidget {
   final IconData icon;
   final String label;
-  final Color color;
-  final VoidCallback? onTap;
-  const _MenuItem({
+  final String value;
+  final Widget? valueExtra;
+  final Widget? trailing;
+  const _InfoRow({
     required this.icon,
     required this.label,
-    required this.color,
-    this.onTap,
+    required this.value,
+    this.valueExtra,
+    this.trailing,
   });
+
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        child: Row(
-          children: [
-            Container(
-              width: 38,
-              height: 38,
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(icon, color: color, size: 20),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Text(
-                label,
-                style: TextStyle(fontFamily: 'Inter', 
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Icon(icon, color: AppColors.primary, size: 18),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textMuted,
+                    letterSpacing: 0.7,
+                  ),
                 ),
-              ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        value,
+                        style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 14,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                    ),
+                    ?valueExtra,
+                  ],
+                ),
+              ],
             ),
-            const Icon(
-              Icons.chevron_right_rounded,
-              color: AppColors.textMuted,
-              size: 20,
-            ),
+          ),
+          if (trailing != null) ...[
+            const SizedBox(width: 10),
+            trailing!,
           ],
+        ],
+      ),
+    );
+  }
+}
+
+class _InfoRowChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String chipText;
+  final Color chipColor;
+  final Color chipTextColor;
+  const _InfoRowChip({
+    required this.icon,
+    required this.label,
+    required this.chipText,
+    required this.chipColor,
+    required this.chipTextColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Icon(icon, color: AppColors.primary, size: 18),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textMuted,
+                    letterSpacing: 0.7,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: chipColor,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    chipText,
+                    style: TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
+                      color: chipTextColor,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MedicalRow extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onAdd;
+  final List<Widget>? children;
+  final String? valueText;
+
+  const _MedicalRow({
+    required this.icon,
+    required this.label,
+    required this.onAdd,
+    this.children,
+    this.valueText,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final localValue = valueText;
+    final localChildren = children;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(top: 2),
+            child: Icon(icon, color: AppColors.primary, size: 18),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        label,
+                        style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textMuted,
+                          letterSpacing: 0.7,
+                        ),
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: onAdd,
+                      child: Text(
+                        '+ Add',
+                        style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                if (localValue != null)
+                  Text(
+                    localValue,
+                    style: TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.textPrimary,
+                      height: 1.45,
+                    ),
+                  ),
+                if (localChildren != null)
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: localChildren,
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MedicalChip extends StatelessWidget {
+  final String text;
+  final Color color;
+  final Color textColor;
+  const _MedicalChip({
+    required this.text,
+    required this.color,
+    required this.textColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontFamily: 'Inter',
+          fontSize: 12.5,
+          fontWeight: FontWeight.w700,
+          color: textColor,
         ),
       ),
     );

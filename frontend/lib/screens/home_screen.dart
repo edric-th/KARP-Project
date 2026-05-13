@@ -119,8 +119,7 @@ class HomeScreen extends StatelessWidget {
       ),
       leading: IconButton(
         icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 26),
-        onPressed:
-            onMenuTap ?? () => Scaffold.of(context).openDrawer(),
+        onPressed: onMenuTap ?? () => Scaffold.of(context).openDrawer(),
       ),
       title: const Text(
         'MeroPalo Care',
@@ -141,8 +140,7 @@ class HomeScreen extends StatelessWidget {
                 color: Colors.white,
                 size: 24,
               ),
-              onPressed: () =>
-                  Navigator.pushNamed(context, '/notifications'),
+              onPressed: () => Navigator.pushNamed(context, '/notifications'),
             ),
             Positioned(
               top: 10,
@@ -320,35 +318,34 @@ class _NowServingCard extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 5,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.16),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: const [
-                      _PulseDot(),
-                      SizedBox(width: 6),
-                      Text(
-                        'NOW SERVING',
-                        style: TextStyle(
-                          fontFamily: 'Inter',
-                          fontSize: 10,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                          letterSpacing: 0.8,
-                        ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 5,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.16),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: const [
+                    _PulseDot(),
+                    SizedBox(width: 6),
+                    Text(
+                      'NOW SERVING',
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                        letterSpacing: 0.8,
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
+              const Spacer(),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
@@ -387,10 +384,7 @@ class _NowServingCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 14),
-          Container(
-            height: 1,
-            color: Colors.white.withValues(alpha: 0.15),
-          ),
+          Container(height: 1, color: Colors.white.withValues(alpha: 0.15)),
           const SizedBox(height: 14),
           Row(
             children: [
@@ -477,28 +471,34 @@ class _LiveQueueStatus extends StatelessWidget {
     final current = queue.currentNumber;
     final yours = queue.queueNumber;
 
-    entries.add(_TokenEntry(
-      number: current,
-      state: _TokenState.inConsult,
-      tag: _statusFor(current),
-      etaMinutes: 0,
-    ));
+    entries.add(
+      _TokenEntry(
+        number: current,
+        state: _TokenState.inConsult,
+        tag: _statusFor(current),
+        etaMinutes: 0,
+      ),
+    );
 
     for (var t = current + 1; t < yours; t++) {
-      entries.add(_TokenEntry(
-        number: t,
-        state: _TokenState.waiting,
-        tag: _statusFor(t),
-        etaMinutes: 5 + (t * 3 % 12),
-      ));
+      entries.add(
+        _TokenEntry(
+          number: t,
+          state: _TokenState.waiting,
+          tag: _statusFor(t),
+          etaMinutes: 5 + (t * 3 % 12),
+        ),
+      );
     }
 
-    entries.add(_TokenEntry(
-      number: yours,
-      state: _TokenState.you,
-      tag: 'NEW PATIENT',
-      etaMinutes: queue.estimatedMinutes,
-    ));
+    entries.add(
+      _TokenEntry(
+        number: yours,
+        state: _TokenState.you,
+        tag: 'NEW PATIENT',
+        etaMinutes: queue.estimatedMinutes,
+      ),
+    );
 
     return entries;
   }
@@ -534,10 +534,7 @@ class _LiveQueueStatus extends StatelessWidget {
             ),
             const Spacer(),
             Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 10,
-                vertical: 5,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
               decoration: BoxDecoration(
                 color: AppColors.cardGreenLight,
                 borderRadius: BorderRadius.circular(20),
@@ -555,10 +552,12 @@ class _LiveQueueStatus extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 14),
-        ...tokens.map((t) => Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: _QueueRow(entry: t),
-            )),
+        ...tokens.map(
+          (t) => Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: _QueueRow(entry: t),
+          ),
+        ),
       ],
     );
   }
@@ -751,11 +750,7 @@ class _YouRow extends StatelessWidget {
               ),
             ),
           ),
-          Container(
-            width: 1,
-            height: 36,
-            color: AppColors.divider,
-          ),
+          Container(width: 1, height: 36, color: AppColors.divider),
           const SizedBox(width: 12),
           Expanded(
             child: Column(

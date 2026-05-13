@@ -31,7 +31,8 @@ class QueueTokenScreen extends StatelessWidget {
                 children: [
                   Text(
                     'TOKEN NUMBER',
-                    style: TextStyle(fontFamily: 'Inter', 
+                    style: TextStyle(
+                      fontFamily: 'Inter',
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
                       color: Colors.white.withValues(alpha: 0.7),
@@ -53,7 +54,8 @@ class QueueTokenScreen extends StatelessWidget {
                     child: Center(
                       child: Text(
                         '${queue.queueNumber}',
-                        style: TextStyle(fontFamily: 'Inter', 
+                        style: TextStyle(
+                          fontFamily: 'Inter',
                           fontSize: 48,
                           fontWeight: FontWeight.w900,
                           color: Colors.white,
@@ -75,9 +77,10 @@ class QueueTokenScreen extends StatelessWidget {
                       queue.status == QueueStatus.active
                           ? '🟢 Active'
                           : queue.status == QueueStatus.waiting
-                              ? '🟡 Waiting'
-                              : '✅ Completed',
-                      style: TextStyle(fontFamily: 'Inter', 
+                          ? '🟡 Waiting'
+                          : '✅ Completed',
+                      style: TextStyle(
+                        fontFamily: 'Inter',
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
                         color: Colors.white,
@@ -155,7 +158,8 @@ class QueueTokenScreen extends StatelessWidget {
                     children: [
                       Text(
                         'Queue Progress',
-                        style: TextStyle(fontFamily: 'Inter', 
+                        style: TextStyle(
+                          fontFamily: 'Inter',
                           fontSize: 14,
                           fontWeight: FontWeight.w700,
                           color: AppColors.textPrimary,
@@ -163,7 +167,8 @@ class QueueTokenScreen extends StatelessWidget {
                       ),
                       Text(
                         '${((queue.currentNumber / queue.queueNumber) * 100).clamp(0, 100).toInt()}%',
-                        style: TextStyle(fontFamily: 'Inter', 
+                        style: TextStyle(
+                          fontFamily: 'Inter',
                           fontSize: 14,
                           fontWeight: FontWeight.w800,
                           color: AppColors.primary,
@@ -175,7 +180,10 @@ class QueueTokenScreen extends StatelessWidget {
                   ClipRRect(
                     borderRadius: BorderRadius.circular(6),
                     child: LinearProgressIndicator(
-                      value: (queue.currentNumber / queue.queueNumber).clamp(0, 1),
+                      value: (queue.currentNumber / queue.queueNumber).clamp(
+                        0,
+                        1,
+                      ),
                       minHeight: 10,
                       backgroundColor: AppColors.cardGreenMedium,
                       valueColor: const AlwaysStoppedAnimation<Color>(
@@ -239,7 +247,8 @@ class _InfoRow extends StatelessWidget {
         Expanded(
           child: Text(
             label,
-            style: TextStyle(fontFamily: 'Inter', 
+            style: TextStyle(
+              fontFamily: 'Inter',
               fontSize: 13,
               color: AppColors.textMuted,
             ),
@@ -247,7 +256,8 @@ class _InfoRow extends StatelessWidget {
         ),
         Text(
           value,
-          style: TextStyle(fontFamily: 'Inter', 
+          style: TextStyle(
+            fontFamily: 'Inter',
             fontSize: 14,
             fontWeight: FontWeight.w700,
             color: AppColors.textPrimary,

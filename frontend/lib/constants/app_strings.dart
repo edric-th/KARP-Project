@@ -69,7 +69,8 @@ class AppStrings {
   // Errors
   static const String requiredField = 'This field is required';
   static const String invalidEmail = 'Enter a valid email address';
-  static const String passwordTooShort = 'Password must be at least 6 characters';
+  static const String passwordTooShort =
+      'Password must be at least 6 characters';
   static const String passwordMismatch = 'Passwords do not match';
 
   // Success
