@@ -4,6 +4,7 @@ import 'package:frontend/constants/app_strings.dart';
 import 'package:frontend/models/models.dart';
 import 'package:frontend/models/dummy_data.dart';
 import 'package:frontend/widgets/common/custom_app_bar.dart';
+import 'package:frontend/widgets/common/segmented_tabs.dart';
 import 'package:frontend/widgets/appointment/appointment_card.dart';
 
 class AppointmentsScreen extends StatefulWidget {
@@ -21,6 +22,9 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    _tabController.addListener(() {
+      if (mounted) setState(() {});
+    });
     _appointments = List.from(DummyData.appointments);
   }
 
@@ -77,33 +81,13 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
-            child: Container(
-              height: 44,
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                color: AppColors.surface,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: AppColors.border),
-              ),
-              child: TabBar(
-                controller: _tabController,
-                onTap: (_) => setState(() {}),
-                indicator: BoxDecoration(
-                  color: AppColors.primary,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                dividerColor: Colors.transparent,
-                labelStyle: TextStyle(fontFamily: 'Inter', fontSize: 13, fontWeight: FontWeight.w700),
-                unselectedLabelStyle:
-                    TextStyle(fontFamily: 'Inter', fontSize: 13, fontWeight: FontWeight.w500),
-                labelColor: Colors.white,
-                unselectedLabelColor: AppColors.textSecondary,
-                tabs: const [
-                  Tab(text: 'Upcoming'),
-                  Tab(text: 'Completed'),
-                  Tab(text: 'Cancelled'),
-                ],
-              ),
+            child: SegmentedTabs(
+              labels: const ['Upcoming', 'Completed', 'Cancelled'],
+              currentIndex: _tabController.index,
+              onChanged: (i) {
+                _tabController.animateTo(i);
+                setState(() {});
+              },
             ),
           ),
           const SizedBox(height: 8),

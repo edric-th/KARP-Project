@@ -50,11 +50,14 @@ class AppBottomNavBar extends StatelessWidget {
             _NavItem(
               icon: Icons.queue_outlined,
               activeIcon: Icons.queue_rounded,
-              label: 'Queue',
+              label: 'Live Queue',
               isActive: currentIndex == 1,
               onTap: () => onTap(1),
             ),
-            _CenterButton(onTap: onCenterTap ?? () => onTap(2)),
+            Transform.translate(
+              offset: const Offset(0, -22),
+              child: _CenterButton(onTap: onCenterTap ?? () => onTap(2)),
+            ),
             _NavItem(
               icon: Icons.calendar_today_outlined,
               activeIcon: Icons.calendar_today_rounded,
@@ -137,23 +140,24 @@ class _CenterButton extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 52,
-        height: 52,
+        width: 68,
+        height: 68,
         decoration: BoxDecoration(
           gradient: AppColors.primaryGradient,
           shape: BoxShape.circle,
+          border: Border.all(color: Colors.white, width: 4),
           boxShadow: [
             BoxShadow(
               color: AppColors.primary.withValues(alpha: 0.45),
-              blurRadius: 14,
-              offset: const Offset(0, 6),
+              blurRadius: 18,
+              offset: const Offset(0, 8),
             ),
           ],
         ),
         child: const Icon(
-          Icons.add_rounded,
+          Icons.auto_awesome,
           color: Colors.white,
-          size: 28,
+          size: 30,
         ),
       ),
     );

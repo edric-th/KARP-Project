@@ -10,14 +10,20 @@ import 'package:frontend/screens/doctors_screen.dart';
 import 'package:frontend/screens/doctor_detail_screen.dart';
 import 'package:frontend/screens/book_appointment_screen.dart';
 import 'package:frontend/screens/booking_success_screen.dart';
+import 'package:frontend/screens/payment_screen.dart';
 import 'package:frontend/screens/queue_screen.dart';
 import 'package:frontend/screens/queue_detail_screen.dart';
 import 'package:frontend/screens/queue_token_screen.dart';
 import 'package:frontend/screens/appointments_screen.dart';
 import 'package:frontend/screens/notifications_screen.dart';
 import 'package:frontend/screens/profile_screen.dart';
+import 'package:frontend/screens/edit_profile_screen.dart';
+import 'package:frontend/screens/queue_ai_chat_screen.dart';
 import 'package:frontend/screens/settings_screen.dart';
 import 'package:frontend/screens/splash_screen.dart';
+import 'package:frontend/screens/medical_history_screen.dart';
+import 'package:frontend/screens/about_us_screen.dart';
+import 'package:frontend/screens/support_screen.dart';
 
 class AppRouter {
   static const String splash = '/';
@@ -31,6 +37,7 @@ class AppRouter {
   static const String doctors = '/doctors';
   static const String doctorDetail = '/doctor-detail';
   static const String bookAppointment = '/book-appointment';
+  static const String payment = '/payment';
   static const String bookingSuccess = '/booking-success';
   static const String queue = '/queue';
   static const String queueDetail = '/queue-detail';
@@ -38,7 +45,12 @@ class AppRouter {
   static const String appointments = '/appointments';
   static const String notifications = '/notifications';
   static const String profile = '/profile';
+  static const String editProfile = '/edit-profile';
+  static const String queueAiChat = '/queue-ai-chat';
   static const String settings = '/settings';
+  static const String medicalHistory = '/medical-history';
+  static const String aboutUs = '/about-us';
+  static const String support = '/support';
 
   static Route<dynamic> generateRoute(RouteSettings routeSettings) {
     switch (routeSettings.name) {
@@ -85,6 +97,26 @@ class AppRouter {
           routeSettings,
         );
 
+      case payment:
+        final args = routeSettings.arguments as Map<String, dynamic>;
+        return _buildRoute(
+          PaymentScreen(
+            doctor: args['doctor'] as DoctorModel,
+            hospital: args['hospital'] as HospitalModel?,
+            appointmentType: args['appointmentType'] as AppointmentType,
+            speciality: args['speciality'] as String,
+            problem: args['problem'] as String? ?? '',
+            notes: args['notes'] as String? ?? '',
+            patientName: args['patientName'] as String,
+            patientPhone: args['patientPhone'] as String? ?? '',
+            patientAge: args['patientAge'] as int,
+            patientGender: args['patientGender'] as String? ?? 'Male',
+            tokenNumber: args['tokenNumber'] as int,
+            notifyMe: (args['notifyMe'] as bool?) ?? true,
+          ),
+          routeSettings,
+        );
+
       case bookingSuccess:
         final args = routeSettings.arguments as Map<String, dynamic>?;
         return _buildRoute(
@@ -92,6 +124,11 @@ class AppRouter {
             doctor: args?['doctor'] as DoctorModel?,
             date: args?['date'] as String?,
             time: args?['time'] as String?,
+            appointmentType: args?['appointmentType'] as AppointmentType?,
+            speciality: args?['speciality'] as String?,
+            tokenNumber: args?['tokenNumber'] as int?,
+            notifyMe: (args?['notifyMe'] as bool?) ?? true,
+            patientName: args?['patientName'] as String?,
           ),
           routeSettings,
         );
@@ -122,8 +159,23 @@ class AppRouter {
       case profile:
         return _buildRoute(const ProfileScreen(), routeSettings);
 
+      case editProfile:
+        return _buildRoute(const EditProfileScreen(), routeSettings);
+
+      case queueAiChat:
+        return _buildRoute(const QueueAiChatScreen(), routeSettings);
+
       case settings:
         return _buildRoute(const SettingsScreen(), routeSettings);
+
+      case medicalHistory:
+        return _buildRoute(const MedicalHistoryScreen(), routeSettings);
+
+      case aboutUs:
+        return _buildRoute(const AboutUsScreen(), routeSettings);
+
+      case support:
+        return _buildRoute(const SupportScreen(), routeSettings);
 
       default:
         return _buildRoute(const LoginScreen(), routeSettings);

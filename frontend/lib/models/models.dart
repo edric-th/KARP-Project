@@ -8,6 +8,43 @@ enum AppointmentStatus { upcoming, completed, cancelled }
 
 enum NotificationCategory { queue, appointment, reminder, general }
 
+enum AppointmentType { newPatient, reportShowing, followUp }
+
+extension AppointmentTypeX on AppointmentType {
+  String get label {
+    switch (this) {
+      case AppointmentType.newPatient:
+        return 'New Patient';
+      case AppointmentType.reportShowing:
+        return 'Report Showing';
+      case AppointmentType.followUp:
+        return 'Follow Up';
+    }
+  }
+
+  String get description {
+    switch (this) {
+      case AppointmentType.newPatient:
+        return 'Is this your first time visiting this hospital? Select here.';
+      case AppointmentType.reportShowing:
+        return 'Are you visiting to show lab results, X-rays, or other test reports?';
+      case AppointmentType.followUp:
+        return 'Are you coming back for a follow-up check after a previous visit?';
+    }
+  }
+
+  String get duration {
+    switch (this) {
+      case AppointmentType.newPatient:
+        return '~20 MIN';
+      case AppointmentType.reportShowing:
+        return '~10 MIN';
+      case AppointmentType.followUp:
+        return '~5 MIN';
+    }
+  }
+}
+
 // ─── USER MODEL ───────────────────────────────────────────────────────────────
 
 class UserModel {
