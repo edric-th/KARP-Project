@@ -35,7 +35,7 @@ class _MainNavScreenState extends State<MainNavScreen> {
   Widget build(BuildContext context) {
     final screens = <Widget>[
       HomeScreen(onMenuTap: _openDrawer),
-      const QueueScreen(),
+      QueueScreen(onMenuTap: _openDrawer),
       const AppointmentsScreen(),
       const ProfileScreen(),
     ];
@@ -51,7 +51,7 @@ class _MainNavScreenState extends State<MainNavScreen> {
       bottomNavigationBar: AppBottomNavBar(
         currentIndex: _currentIndex,
         onTap: _selectTab,
-        onCenterTap: () => Navigator.pushNamed(context, '/book-appointment'),
+        onCenterTap: () => Navigator.pushNamed(context, '/queue-ai-chat'),
       ),
     );
   }

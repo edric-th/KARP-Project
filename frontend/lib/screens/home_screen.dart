@@ -91,19 +91,6 @@ class HomeScreen extends StatelessWidget {
           ),
         ],
       ),
-      floatingActionButton: Padding(
-        padding: const EdgeInsets.only(bottom: 90),
-        child: _AskAiButton(
-          onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                'AI Assistant — coming soon',
-                style: TextStyle(fontFamily: 'Inter'),
-              ),
-            ),
-          ),
-        ),
-      ),
     );
   }
 
@@ -871,53 +858,6 @@ class _TagChip extends StatelessWidget {
           fontWeight: FontWeight.w800,
           color: _fg,
           letterSpacing: 0.4,
-        ),
-      ),
-    );
-  }
-}
-
-// ─── ASK AI FAB ──────────────────────────────────────────────────────────────
-
-class _AskAiButton extends StatelessWidget {
-  final VoidCallback onTap;
-  const _AskAiButton({required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-          decoration: BoxDecoration(
-            color: AppColors.primary,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: AppColors.primaryShadow,
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: const [
-              Icon(
-                Icons.chat_bubble_outline_rounded,
-                color: Colors.white,
-                size: 18,
-              ),
-              SizedBox(width: 8),
-              Text(
-                'ASK AI',
-                style: TextStyle(
-                  fontFamily: 'Inter',
-                  fontSize: 12,
-                  fontWeight: FontWeight.w800,
-                  color: Colors.white,
-                  letterSpacing: 0.6,
-                ),
-              ),
-            ],
-          ),
         ),
       ),
     );

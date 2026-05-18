@@ -34,6 +34,12 @@ class SettingsScreen extends StatelessWidget {
                         onTap: () =>
                             Navigator.pushNamed(context, '/notifications'),
                       ),
+                      _AccountTile(
+                        icon: Icons.auto_awesome,
+                        label: 'Queue AI Assistant',
+                        onTap: () =>
+                            Navigator.pushNamed(context, '/queue-ai-chat'),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 26),
