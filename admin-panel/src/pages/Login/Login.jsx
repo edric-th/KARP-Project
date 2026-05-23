@@ -1,6 +1,9 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { signInWithEmailAndPassword } from 'firebase/auth'
+import {
+  signInWithEmailAndPassword,
+  sendPasswordResetEmail,
+} from 'firebase/auth'
 import { auth } from '../../lib/firebase'
 import toast from 'react-hot-toast'
 
@@ -9,6 +12,7 @@ export default function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
+  const [showForgot, setShowForgot] = useState(false)
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -20,6 +24,30 @@ export default function Login() {
     } catch (err) {
       toast.error('Invalid credentials')
       console.error(err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleForgotPassword = async () => {
+    if (!email.trim()) {
+      toast.error('Please enter your email first')
+      return
+    }
+    setLoading(true)
+    try {
+      await sendPasswordResetEmail(auth, email.trim())
+      toast.success(`Reset email sent to ${email}`)
+      setShowForgot(false)
+    } catch (err) {
+      console.error(err)
+      if (err.code === 'auth/user-not-found') {
+        toast.error('No account found for this email')
+      } else if (err.code === 'auth/invalid-email') {
+        toast.error('Invalid email format')
+      } else {
+        toast.error('Failed to send reset email')
+      }
     } finally {
       setLoading(false)
     }
@@ -43,7 +71,16 @@ export default function Login() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Password</label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-sm font-medium">Password</label>
+              <button
+                type="button"
+                onClick={() => setShowForgot(!showForgot)}
+                className="text-xs text-primary-600 hover:underline"
+              >
+                Forgot password?
+              </button>
+            </div>
             <input
               type="password"
               required
@@ -52,6 +89,23 @@ export default function Login() {
               onChange={(e) => setPassword(e.target.value)}
             />
           </div>
+
+          {showForgot && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm">
+              <p className="text-blue-900 mb-2">
+                Enter your email above, then click below to receive a password reset link.
+              </p>
+              <button
+                type="button"
+                onClick={handleForgotPassword}
+                disabled={loading}
+                className="text-sm bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg font-medium"
+              >
+                {loading ? 'Sending...' : 'Send reset email'}
+              </button>
+            </div>
+          )}
+
           <button type="submit" disabled={loading} className="btn-primary w-full">
             {loading ? 'Signing in...' : 'Sign in'}
           </button>

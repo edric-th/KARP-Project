@@ -22,7 +22,14 @@ import toast from 'react-hot-toast'
 import { db } from '../../lib/firebase'
 import { subscribe, update, create } from '../../api/firestore'
 import { COLLECTIONS, BOOKING_STATUS, BOOKING_TYPES } from '../../constants'
-import { calculateAvgServiceTime, estimateWaitMinutes, formatWaitTime } from '../../lib/waitTime'
+import PhoneInput from '../../components/PhoneInput'
+import {
+  calculateAvgServiceTime,
+  estimateWaitMinutes,
+  formatWaitTime,
+  projectedCallTime,
+  formatExpectedTime,
+} from '../../lib/waitTime'
 
 const todayString = () => {
   const d = new Date()
@@ -346,6 +353,8 @@ export default function Queue() {
           doctor={selectedDoctor}
           hospital={selectedHospital}
           nextTokenNumber={nextTokenNumber}
+          pendingCount={pending.length}
+          avgServiceTime={avgServiceTime}
           onClose={() => setShowBookingModal(false)}
         />
       )}
@@ -355,7 +364,7 @@ export default function Queue() {
 
 // ---------- New Booking Modal ----------
 
-function NewBookingModal({ doctor, hospital, nextTokenNumber, onClose }) {
+function NewBookingModal({ doctor, hospital, nextTokenNumber, pendingCount, avgServiceTime, onClose }) {
   const [formData, setFormData] = useState({
     patientName: '',
     patientPhone: '',
@@ -375,6 +384,11 @@ function NewBookingModal({ doctor, hospital, nextTokenNumber, onClose }) {
     }
     setSaving(true)
     try {
+      // Calculate expected call time AT BOOKING MOMENT and lock it in
+      // Position = number of people ahead + 1 (yourself)
+      const positionInQueue = pendingCount + 1
+      const expectedCallAt = projectedCallTime(positionInQueue, avgServiceTime)
+
       await create(COLLECTIONS.BOOKINGS, {
         doctorId: doctor.id,
         doctorName: doctor.name,
@@ -386,8 +400,10 @@ function NewBookingModal({ doctor, hospital, nextTokenNumber, onClose }) {
         status: BOOKING_STATUS.PENDING,
         tokenNumber: nextTokenNumber,
         bookingDate: todayString(),
+        expectedCallAt: expectedCallAt.toISOString(),
+        estimatedWaitMinutes: positionInQueue * avgServiceTime,
       })
-      toast.success(`Token #${nextTokenNumber} created`)
+      toast.success(`Token #${nextTokenNumber} created · Expected around ${formatExpectedTime(expectedCallAt)}`)
       onClose()
     } catch (err) {
       toast.error('Failed to create booking')
@@ -436,12 +452,9 @@ function NewBookingModal({ doctor, hospital, nextTokenNumber, onClose }) {
 
           <div>
             <label className="block text-sm font-medium mb-1">Phone Number</label>
-            <input
-              type="tel"
-              className="input"
+            <PhoneInput
               value={formData.patientPhone}
-              onChange={handleChange('patientPhone')}
-              placeholder="+977 9841234567"
+              onChange={(val) => setFormData({ ...formData, patientPhone: val })}
             />
           </div>
 

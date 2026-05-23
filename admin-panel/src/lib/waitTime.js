@@ -54,3 +54,28 @@ export function formatWaitTime(minutes) {
   const mins = minutes % 60
   return mins === 0 ? `~${hours}h` : `~${hours}h ${mins}m`
 }
+
+/**
+ * Returns the expected clock time when a patient at this position will be called.
+ * @param {number} position - 1-based position in waiting queue
+ * @param {number} avgMinutes - average service time per patient
+ * @returns {Date} the projected call time
+ */
+export function projectedCallTime(position, avgMinutes) {
+  const minutesFromNow = position * avgMinutes
+  const date = new Date()
+  date.setMinutes(date.getMinutes() + minutesFromNow)
+  return date
+}
+
+/**
+ * Formats a Date as a friendly time like "around 3:25 PM"
+ */
+export function formatExpectedTime(date) {
+  if (!date) return ''
+  return date.toLocaleTimeString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  })
+}

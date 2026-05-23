@@ -1,9 +1,17 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, Users, Building2, Calendar, ListOrdered, LogOut } from 'lucide-react'
+import {
+  LayoutDashboard,
+  Users,
+  Building2,
+  Calendar,
+  ListOrdered,
+  LogOut,
+  Settings,
+} from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 
 const navItems = [
-  { to: '/', icon: LayoutDashboard, label: 'Dashboard', end: true },
+  { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', end: true },
   { to: '/queue', icon: ListOrdered, label: 'Live Queue' },
   { to: '/bookings', icon: Calendar, label: 'Bookings' },
   { to: '/doctors', icon: Users, label: 'Doctors' },
@@ -46,9 +54,20 @@ export default function Layout() {
         <div className="p-4 border-t border-gray-200">
           <p className="text-sm font-medium truncate">{user?.email}</p>
           <p className="text-xs text-gray-500 capitalize mb-3">{role}</p>
-          <button onClick={handleSignOut} className="flex items-center gap-2 text-sm text-gray-700 hover:text-red-600">
-            <LogOut size={16} /> Sign out
-          </button>
+          <div className="flex flex-col gap-2">
+            <NavLink
+              to="/account-settings"
+              className="flex items-center gap-2 text-sm text-gray-700 hover:text-primary-600"
+            >
+              <Settings size={16} /> Account settings
+            </NavLink>
+            <button
+              onClick={handleSignOut}
+              className="flex items-center gap-2 text-sm text-gray-700 hover:text-red-600"
+            >
+              <LogOut size={16} /> Sign out
+            </button>
+          </div>
         </div>
       </aside>
       <main className="flex-1 overflow-auto">

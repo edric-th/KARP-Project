@@ -1,8 +1,61 @@
 import { useState, useEffect } from 'react'
-import { Plus, Edit2, Trash2, Stethoscope, X, Clock, Building2 } from 'lucide-react'
+import {
+  Plus,
+  Edit2,
+  Trash2,
+  Stethoscope,
+  X,
+  Clock,
+  Building2,
+  Lock,
+  Mail,
+  Eye,
+  EyeOff,
+  Copy,
+  CheckCircle,
+  KeyRound,
+  Ban,
+  UserPlus,
+} from 'lucide-react'
+import {
+  createUserWithEmailAndPassword,
+  initializeAuth,
+  inMemoryPersistence,
+  sendPasswordResetEmail,
+} from 'firebase/auth'
+import { initializeApp, getApps } from 'firebase/app'
+import {
+  doc,
+  setDoc,
+  serverTimestamp,
+  query as fsQuery,
+  collection,
+  where,
+  getDocs,
+  deleteDoc,
+} from 'firebase/firestore'
 import toast from 'react-hot-toast'
 import { subscribe, create, update, remove } from '../../api/firestore'
+import { db, auth } from '../../lib/firebase'
 import { COLLECTIONS } from '../../constants'
+
+const firebaseConfig = {
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+}
+
+const getSecondaryAuth = () => {
+  const apps = getApps()
+  let secondaryApp = apps.find((a) => a.name === 'secondary')
+  if (!secondaryApp) {
+    secondaryApp = initializeApp(firebaseConfig, 'secondary')
+  }
+  return initializeAuth(secondaryApp, { persistence: inMemoryPersistence })
+}
 
 export default function Doctors() {
   const [doctors, setDoctors] = useState([])
@@ -11,16 +64,15 @@ export default function Doctors() {
   const [showModal, setShowModal] = useState(false)
   const [editingDoctor, setEditingDoctor] = useState(null)
   const [filterHospital, setFilterHospital] = useState('all')
+  const [showCredentials, setShowCredentials] = useState(null)
+  const [creatingLoginFor, setCreatingLoginFor] = useState(null)
 
-  // Subscribe to both doctors and hospitals collections
   useEffect(() => {
     const unsubDoctors = subscribe(COLLECTIONS.DOCTORS, (data) => {
       setDoctors(data)
       setLoading(false)
     })
-    const unsubHospitals = subscribe(COLLECTIONS.HOSPITALS, (data) => {
-      setHospitals(data)
-    })
+    const unsubHospitals = subscribe(COLLECTIONS.HOSPITALS, setHospitals)
     return () => {
       unsubDoctors()
       unsubHospitals()
@@ -47,13 +99,70 @@ export default function Doctors() {
   }
 
   const handleDelete = async (doctor) => {
-    if (!confirm(`Delete Dr. ${doctor.name}? This cannot be undone.`)) return
+    if (
+      !confirm(
+        `Delete Dr. ${doctor.name}? This cannot be undone.\n\nNote: Their Firebase Auth account stays — delete it from Firebase Console if needed.`
+      )
+    )
+      return
     try {
       await remove(COLLECTIONS.DOCTORS, doctor.id)
       toast.success('Doctor deleted')
     } catch (err) {
       toast.error('Failed to delete')
       console.error(err)
+    }
+  }
+
+  const handleSendPasswordReset = async (doctor) => {
+    if (!doctor.userEmail) {
+      toast.error('This doctor has no login account')
+      return
+    }
+    if (
+      !confirm(`Send password reset email to ${doctor.userEmail}?`)
+    )
+      return
+    try {
+      await sendPasswordResetEmail(auth, doctor.userEmail)
+      toast.success('Reset email sent')
+    } catch (err) {
+      console.error(err)
+      if (err.code === 'auth/user-not-found') {
+        toast.error('No account found for this email')
+      } else {
+        toast.error('Failed to send reset email')
+      }
+    }
+  }
+
+  const handleRevokeAccess = async (doctor) => {
+    if (!doctor.userEmail) {
+      toast.error('This doctor has no login account')
+      return
+    }
+    if (
+      !confirm(
+        `Revoke login access for Dr. ${doctor.name}?\n\nThey won't be able to log in.`
+      )
+    )
+      return
+    try {
+      const q = fsQuery(
+        collection(db, COLLECTIONS.USERS),
+        where('email', '==', doctor.userEmail)
+      )
+      const snap = await getDocs(q)
+      if (!snap.empty) {
+        for (const userDoc of snap.docs) {
+          await deleteDoc(doc(db, COLLECTIONS.USERS, userDoc.id))
+        }
+      }
+      await update(COLLECTIONS.DOCTORS, doctor.id, { userEmail: '' })
+      toast.success('Login access revoked')
+    } catch (err) {
+      console.error(err)
+      toast.error('Failed to revoke access')
     }
   }
 
@@ -67,7 +176,9 @@ export default function Doctors() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold">Doctors</h1>
-          <p className="text-gray-500 text-sm mt-1">Manage doctors and their schedules</p>
+          <p className="text-gray-500 text-sm mt-1">
+            Manage doctors and their schedules
+          </p>
         </div>
         <button onClick={handleAdd} className="btn-primary flex items-center gap-2">
           <Plus size={18} /> Add Doctor
@@ -76,7 +187,9 @@ export default function Doctors() {
 
       {hospitals.length > 0 && (
         <div className="mb-4 flex items-center gap-3">
-          <label className="text-sm font-medium text-gray-700">Filter by hospital:</label>
+          <label className="text-sm font-medium text-gray-700">
+            Filter by hospital:
+          </label>
           <select
             value={filterHospital}
             onChange={(e) => setFilterHospital(e.target.value)}
@@ -122,15 +235,43 @@ export default function Doctors() {
                   </div>
                 </div>
                 <div className="flex gap-1">
+                  {doctor.userEmail ? (
+                    <>
+                      <button
+                        onClick={() => handleSendPasswordReset(doctor)}
+                        className="p-1.5 text-gray-500 hover:text-amber-600 hover:bg-gray-100 rounded"
+                        title="Send password reset email"
+                      >
+                        <KeyRound size={16} />
+                      </button>
+                      <button
+                        onClick={() => handleRevokeAccess(doctor)}
+                        className="p-1.5 text-gray-500 hover:text-orange-600 hover:bg-gray-100 rounded"
+                        title="Revoke login access"
+                      >
+                        <Ban size={16} />
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      onClick={() => setCreatingLoginFor(doctor)}
+                      className="p-1.5 text-gray-500 hover:text-emerald-600 hover:bg-gray-100 rounded"
+                      title="Create login account"
+                    >
+                      <UserPlus size={16} />
+                    </button>
+                  )}
                   <button
                     onClick={() => handleEdit(doctor)}
                     className="p-1.5 text-gray-500 hover:text-primary-600 hover:bg-gray-100 rounded"
+                    title="Edit"
                   >
                     <Edit2 size={16} />
                   </button>
                   <button
                     onClick={() => handleDelete(doctor)}
                     className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-gray-100 rounded"
+                    title="Delete"
                   >
                     <Trash2 size={16} />
                   </button>
@@ -145,6 +286,17 @@ export default function Doctors() {
                   <p className="flex items-center gap-2">
                     <Clock size={14} />
                     {doctor.consultationHours}
+                  </p>
+                )}
+                {doctor.userEmail ? (
+                  <p className="flex items-center gap-2 text-xs text-emerald-700 bg-emerald-50 px-2 py-1 rounded">
+                    <CheckCircle size={12} />
+                    Has login: {doctor.userEmail}
+                  </p>
+                ) : (
+                  <p className="flex items-center gap-2 text-xs text-amber-700 bg-amber-50 px-2 py-1 rounded">
+                    <Lock size={12} />
+                    No login account
                   </p>
                 )}
                 {doctor.fee && (
@@ -163,15 +315,31 @@ export default function Doctors() {
           doctor={editingDoctor}
           hospitals={hospitals}
           onClose={() => setShowModal(false)}
+          onCredentialsCreated={setShowCredentials}
+        />
+      )}
+
+      {creatingLoginFor && (
+        <CreateLoginModal
+          doctor={creatingLoginFor}
+          onClose={() => setCreatingLoginFor(null)}
+          onCredentialsCreated={setShowCredentials}
+        />
+      )}
+
+      {showCredentials && (
+        <CredentialsModal
+          credentials={showCredentials}
+          onClose={() => setShowCredentials(null)}
         />
       )}
     </div>
   )
 }
 
-// ---------- Modal for adding/editing ----------
+// ---------- Add/Edit Doctor Modal ----------
 
-function DoctorModal({ doctor, hospitals, onClose }) {
+function DoctorModal({ doctor, hospitals, onClose, onCredentialsCreated }) {
   const isEditing = !!doctor
   const [formData, setFormData] = useState({
     name: doctor?.name || '',
@@ -179,11 +347,25 @@ function DoctorModal({ doctor, hospitals, onClose }) {
     hospitalId: doctor?.hospitalId || hospitals[0]?.id || '',
     fee: doctor?.fee || '',
     consultationHours: doctor?.consultationHours || '',
+    userEmail: doctor?.userEmail || '',
   })
+  const [createLogin, setCreateLogin] = useState(!isEditing)
+  const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [saving, setSaving] = useState(false)
 
   const handleChange = (field) => (e) => {
     setFormData({ ...formData, [field]: e.target.value })
+  }
+
+  const generatePassword = () => {
+    const chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789'
+    const symbols = '!@#$%'
+    let pw = ''
+    for (let i = 0; i < 10; i++)
+      pw += chars[Math.floor(Math.random() * chars.length)]
+    pw += symbols[Math.floor(Math.random() * symbols.length)]
+    setPassword(pw)
   }
 
   const handleSubmit = async (e) => {
@@ -196,21 +378,71 @@ function DoctorModal({ doctor, hospitals, onClose }) {
       toast.error('Please select a hospital')
       return
     }
+
+    if (createLogin && !isEditing) {
+      if (!formData.userEmail.trim()) {
+        toast.error('Email is required to create login')
+        return
+      }
+      if (!password || password.length < 6) {
+        toast.error('Password must be at least 6 characters')
+        return
+      }
+    }
+
     setSaving(true)
     try {
-      // Convert fee to number if provided
       const payload = {
         ...formData,
         fee: formData.fee ? Number(formData.fee) : null,
       }
+
+      let createdCredentials = null
+
       if (isEditing) {
         await update(COLLECTIONS.DOCTORS, doctor.id, payload)
         toast.success('Doctor updated')
       } else {
+        if (createLogin) {
+          const secondaryAuth = getSecondaryAuth()
+          try {
+            const userCred = await createUserWithEmailAndPassword(
+              secondaryAuth,
+              formData.userEmail.trim(),
+              password
+            )
+            await setDoc(doc(db, COLLECTIONS.USERS, userCred.user.uid), {
+              email: formData.userEmail.trim(),
+              role: 'doctor',
+              name: `Dr. ${formData.name}`,
+              createdAt: serverTimestamp(),
+            })
+            await secondaryAuth.signOut()
+            createdCredentials = {
+              email: formData.userEmail.trim(),
+              password,
+              doctorName: formData.name,
+            }
+          } catch (authErr) {
+            if (authErr.code === 'auth/email-already-in-use') {
+              toast.error('Email already has an account. Use a different email.')
+            } else if (authErr.code === 'auth/invalid-email') {
+              toast.error('Invalid email format')
+            } else {
+              toast.error(`Login creation failed: ${authErr.message}`)
+            }
+            setSaving(false)
+            return
+          }
+        }
         await create(COLLECTIONS.DOCTORS, payload)
-        toast.success('Doctor added')
+        toast.success(createLogin ? 'Doctor added with login' : 'Doctor added')
       }
+
       onClose()
+      if (createdCredentials) {
+        setTimeout(() => onCredentialsCreated(createdCredentials), 100)
+      }
     } catch (err) {
       toast.error('Failed to save')
       console.error(err)
@@ -232,10 +464,7 @@ function DoctorModal({ doctor, hospitals, onClose }) {
           <h2 className="text-xl font-bold">
             {isEditing ? 'Edit Doctor' : 'Add Doctor'}
           </h2>
-          <button
-            onClick={onClose}
-            className="p-1 hover:bg-gray-100 rounded"
-          >
+          <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded">
             <X size={20} />
           </button>
         </div>
@@ -263,7 +492,7 @@ function DoctorModal({ doctor, hospitals, onClose }) {
               className="input"
               value={formData.specialty}
               onChange={handleChange('specialty')}
-              placeholder="e.g. Cardiologist, Dermatologist"
+              placeholder="e.g. Cardiologist"
             />
           </div>
 
@@ -287,7 +516,9 @@ function DoctorModal({ doctor, hospitals, onClose }) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">Consultation Hours</label>
+            <label className="block text-sm font-medium mb-1">
+              Consultation Hours
+            </label>
             <input
               type="text"
               className="input"
@@ -298,7 +529,9 @@ function DoctorModal({ doctor, hospitals, onClose }) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">Consultation Fee (Rs.)</label>
+            <label className="block text-sm font-medium mb-1">
+              Consultation Fee (Rs.)
+            </label>
             <input
               type="number"
               min="0"
@@ -309,23 +542,359 @@ function DoctorModal({ doctor, hospitals, onClose }) {
             />
           </div>
 
+          {!isEditing && (
+            <div className="border-t pt-4">
+              <label className="flex items-center gap-2 mb-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={createLogin}
+                  onChange={(e) => setCreateLogin(e.target.checked)}
+                  className="w-4 h-4 text-primary-600 rounded"
+                />
+                <span className="text-sm font-medium">
+                  Create login account for this doctor
+                </span>
+              </label>
+
+              {createLogin && (
+                <div className="space-y-3 bg-blue-50 p-4 rounded-lg">
+                  <div>
+                    <label className="text-sm font-medium mb-1 flex items-center gap-2">
+                      <Mail size={14} /> Doctor's Email
+                    </label>
+                    <input
+                      type="email"
+                      className="input"
+                      value={formData.userEmail}
+                      onChange={handleChange('userEmail')}
+                      placeholder="doctor@hospital.com"
+                      required={createLogin}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium mb-1 flex items-center gap-2">
+                      <Lock size={14} /> Password
+                    </label>
+                    <div className="flex gap-2">
+                      <div className="flex-1 relative">
+                        <input
+                          type={showPassword ? 'text' : 'password'}
+                          className="input pr-10"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          placeholder="At least 6 characters"
+                          required={createLogin}
+                          minLength={6}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500"
+                        >
+                          {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                        </button>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={generatePassword}
+                        className="px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50"
+                      >
+                        Generate
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {isEditing && formData.userEmail && (
+            <div className="bg-gray-50 p-3 rounded-lg text-sm">
+              <p className="font-medium flex items-center gap-2 text-gray-700">
+                <Lock size={14} /> Login account
+              </p>
+              <p className="text-gray-600 mt-1">{formData.userEmail}</p>
+              <p className="text-xs text-gray-500 mt-2">
+                Use the key icon on the doctor card to send a password reset email.
+              </p>
+            </div>
+          )}
+
+          {isEditing && !formData.userEmail && (
+            <div className="bg-amber-50 border border-amber-200 p-3 rounded-lg text-sm">
+              <p className="font-medium text-amber-800">No login account yet</p>
+              <p className="text-xs text-amber-700 mt-1">
+                Close this dialog and use the green person icon on the doctor card
+                to create their login.
+              </p>
+            </div>
+          )}
+
           <div className="flex gap-3 pt-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="btn-secondary flex-1"
-            >
+            <button type="button" onClick={onClose} className="btn-secondary flex-1">
               Cancel
             </button>
-            <button
-              type="submit"
-              disabled={saving}
-              className="btn-primary flex-1"
-            >
-              {saving ? 'Saving...' : isEditing ? 'Update' : 'Add'}
+            <button type="submit" disabled={saving} className="btn-primary flex-1">
+              {saving
+                ? 'Saving...'
+                : isEditing
+                  ? 'Update'
+                  : createLogin
+                    ? 'Add & Create Login'
+                    : 'Add'}
             </button>
           </div>
         </form>
+      </div>
+    </div>
+  )
+}
+
+// ---------- Create Login for Existing Doctor ----------
+
+function CreateLoginModal({ doctor, onClose, onCredentialsCreated }) {
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [saving, setSaving] = useState(false)
+
+  const generatePassword = () => {
+    const chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789'
+    const symbols = '!@#$%'
+    let pw = ''
+    for (let i = 0; i < 10; i++)
+      pw += chars[Math.floor(Math.random() * chars.length)]
+    pw += symbols[Math.floor(Math.random() * symbols.length)]
+    setPassword(pw)
+  }
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    if (!email.trim()) {
+      toast.error('Email is required')
+      return
+    }
+    if (!password || password.length < 6) {
+      toast.error('Password must be at least 6 characters')
+      return
+    }
+
+    setSaving(true)
+    try {
+      const secondaryAuth = getSecondaryAuth()
+      try {
+        const userCred = await createUserWithEmailAndPassword(
+          secondaryAuth,
+          email.trim(),
+          password
+        )
+        await setDoc(doc(db, COLLECTIONS.USERS, userCred.user.uid), {
+          email: email.trim(),
+          role: 'doctor',
+          name: `Dr. ${doctor.name}`,
+          createdAt: serverTimestamp(),
+        })
+        await secondaryAuth.signOut()
+
+        // Link the email to the existing doctor record
+        await update(COLLECTIONS.DOCTORS, doctor.id, {
+          userEmail: email.trim(),
+        })
+
+        toast.success(`Login created for Dr. ${doctor.name}`)
+        onClose()
+        setTimeout(
+          () =>
+            onCredentialsCreated({
+              email: email.trim(),
+              password,
+              doctorName: doctor.name,
+            }),
+          100
+        )
+      } catch (authErr) {
+        if (authErr.code === 'auth/email-already-in-use') {
+          toast.error('This email already has an account. Use a different email.')
+        } else if (authErr.code === 'auth/invalid-email') {
+          toast.error('Invalid email format')
+        } else {
+          toast.error(`Failed: ${authErr.message}`)
+        }
+      }
+    } catch (err) {
+      toast.error('Failed to create login')
+      console.error(err)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-xl shadow-xl w-full max-w-md"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between p-6 border-b">
+          <div>
+            <h2 className="text-xl font-bold">Create Login</h2>
+            <p className="text-sm text-gray-500 mt-1">
+              For Dr. {doctor.name} · {doctor.specialty}
+            </p>
+          </div>
+          <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded">
+            <X size={20} />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          <div className="bg-blue-50 p-3 rounded-lg text-sm text-blue-900">
+            This will create a Firebase login account and link it to Dr.{' '}
+            {doctor.name}'s profile. Use a unique email — it can't already be in
+            use.
+          </div>
+
+          <div>
+            <label className="text-sm font-medium mb-1 flex items-center gap-2">
+              <Mail size={14} /> Doctor's Email
+            </label>
+            <input
+              type="email"
+              className="input"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="unique-email@hospital.com"
+              required
+              autoFocus
+            />
+          </div>
+
+          <div>
+            <label className="text-sm font-medium mb-1 flex items-center gap-2">
+              <Lock size={14} /> Password
+            </label>
+            <div className="flex gap-2">
+              <div className="flex-1 relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  className="input pr-10"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="At least 6 characters"
+                  required
+                  minLength={6}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500"
+                >
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+              <button
+                type="button"
+                onClick={generatePassword}
+                className="px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50"
+              >
+                Generate
+              </button>
+            </div>
+            <p className="text-xs text-gray-600 mt-1">
+              You'll see this password once after saving.
+            </p>
+          </div>
+
+          <div className="flex gap-3 pt-2">
+            <button type="button" onClick={onClose} className="btn-secondary flex-1">
+              Cancel
+            </button>
+            <button type="submit" disabled={saving} className="btn-primary flex-1">
+              {saving ? 'Creating...' : 'Create Login'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
+// ---------- Credentials Display Modal ----------
+
+function CredentialsModal({ credentials, onClose }) {
+  const [copied, setCopied] = useState(false)
+
+  const copyAll = () => {
+    const text = `Doctor: Dr. ${credentials.doctorName}
+Email: ${credentials.email}
+Password: ${credentials.password}
+Login at: ${window.location.origin}/login`
+    navigator.clipboard.writeText(text)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+    toast.success('Copied to clipboard')
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-md">
+        <div className="p-6 border-b bg-emerald-50">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center">
+              <CheckCircle className="text-emerald-600" size={20} />
+            </div>
+            <h2 className="text-xl font-bold text-emerald-900">Login Created</h2>
+          </div>
+          <p className="text-sm text-emerald-800">
+            Save these credentials and give them to Dr. {credentials.doctorName}.
+            They won't be shown again.
+          </p>
+        </div>
+
+        <div className="p-6 space-y-4">
+          <div className="bg-gray-50 p-4 rounded-lg space-y-3">
+            <div>
+              <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">
+                Email
+              </p>
+              <p className="font-mono font-medium">{credentials.email}</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">
+                Password
+              </p>
+              <p className="font-mono font-medium select-all">
+                {credentials.password}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">
+                Login URL
+              </p>
+              <p className="font-mono text-sm">{window.location.origin}/login</p>
+            </div>
+          </div>
+
+          <button
+            onClick={copyAll}
+            className="w-full btn-secondary flex items-center justify-center gap-2"
+          >
+            <Copy size={16} />
+            {copied ? 'Copied!' : 'Copy all details'}
+          </button>
+
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-800">
+            <strong>Important:</strong> This is the only time the password will be
+            shown. Share it with the doctor securely.
+          </div>
+
+          <button onClick={onClose} className="btn-primary w-full">
+            Done — I've saved these credentials
+          </button>
+        </div>
       </div>
     </div>
   )

@@ -14,6 +14,8 @@ import {
   calculateAvgServiceTime,
   estimateWaitMinutes,
   formatWaitTime,
+  projectedCallTime,
+  formatExpectedTime,
 } from '../../lib/waitTime'
 
 const todayString = () => {
@@ -191,7 +193,11 @@ export default function Board() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4">
             {upNext.map((b, idx) => {
-              const waitMins = estimateWaitMinutes(idx + 1, avgServiceTime)
+              // Use the time stored at booking creation, not a recalculated one
+              const storedCallTime = b.expectedCallAt ? new Date(b.expectedCallAt) : null
+              // Fallback if old booking has no stored time
+              const fallbackCallTime = projectedCallTime(idx + 1, avgServiceTime)
+              const callTime = storedCallTime || fallbackCallTime
               return (
                 <div
                   key={b.id}
@@ -203,8 +209,11 @@ export default function Board() {
                   <p className="text-lg md:text-xl font-medium mt-2 truncate">
                     {formatName(b.patientName)}
                   </p>
-                  <p className="text-sm md:text-base text-blue-200 mt-1">
-                    {formatWaitTime(waitMins)}
+                  <p className="text-sm md:text-base text-blue-200 mt-2">
+                    Expected
+                  </p>
+                  <p className="text-lg md:text-xl font-bold text-white">
+                    {formatExpectedTime(callTime)}
                   </p>
                 </div>
               )
