@@ -196,7 +196,7 @@ class _ParagraphCard extends StatelessWidget {
       ),
       child: Text(
         text,
-        style: const TextStyle(
+        style: TextStyle(
           fontFamily: 'Inter',
           fontSize: 13,
           color: AppColors.textPrimary,
@@ -246,7 +246,7 @@ class _FeatureTile extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: 'Inter',
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
@@ -256,7 +256,7 @@ class _FeatureTile extends StatelessWidget {
                 const SizedBox(height: 3),
                 Text(
                   subtitle,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: 'Inter',
                     fontSize: 12,
                     color: AppColors.textSecondary,
@@ -308,7 +308,7 @@ class _InfoRow extends StatelessWidget {
       decoration: BoxDecoration(
         border: isLast
             ? null
-            : const Border(
+            : Border(
                 bottom: BorderSide(color: AppColors.divider, width: 1),
               ),
       ),
@@ -317,7 +317,7 @@ class _InfoRow extends StatelessWidget {
           Expanded(
             child: Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: 'Inter',
                 fontSize: 13,
                 color: AppColors.textSecondary,
@@ -326,7 +326,7 @@ class _InfoRow extends StatelessWidget {
           ),
           Text(
             value,
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: 'Inter',
               fontSize: 13,
               fontWeight: FontWeight.w600,
@@ -372,7 +372,7 @@ class _LinkTile extends StatelessWidget {
               Expanded(
                 child: Text(
                   label,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: 'Inter',
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
@@ -380,7 +380,7 @@ class _LinkTile extends StatelessWidget {
                   ),
                 ),
               ),
-              const Icon(
+              Icon(
                 Icons.chevron_right_rounded,
                 color: AppColors.textMuted,
               ),
@@ -400,7 +400,7 @@ class _SectionTitle extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       title,
-      style: const TextStyle(
+      style: TextStyle(
         fontFamily: 'Inter',
         fontSize: 11,
         fontWeight: FontWeight.w700,

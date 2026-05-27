@@ -190,7 +190,7 @@ class _AccountCard extends StatelessWidget {
             children: [
               e.value,
               if (!isLast)
-                const Divider(
+                Divider(
                   height: 1,
                   indent: 16,
                   endIndent: 16,
@@ -236,7 +236,7 @@ class _AccountTile extends StatelessWidget {
                 ),
               ),
             ),
-            const Icon(
+            Icon(
               Icons.chevron_right_rounded,
               color: AppColors.textMuted,
               size: 22,
@@ -341,7 +341,7 @@ class _HelpFaqCardState extends State<_HelpFaqCard> {
                           AnimatedRotation(
                             turns: isOpen ? 0.5 : 0,
                             duration: const Duration(milliseconds: 180),
-                            child: const Icon(
+                            child: Icon(
                               Icons.keyboard_arrow_down_rounded,
                               color: AppColors.textSecondary,
                               size: 20,
@@ -684,7 +684,7 @@ class _TimelineVisitTile extends StatelessWidget {
                     const SizedBox(height: 10),
                     Row(
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.hourglass_bottom_rounded,
                           size: 14,
                           color: AppColors.textMuted,
@@ -711,3 +711,4 @@ class _TimelineVisitTile extends StatelessWidget {
     );
   }
 }
+

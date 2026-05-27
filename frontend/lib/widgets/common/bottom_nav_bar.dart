@@ -22,7 +22,7 @@ class AppBottomNavBar extends StatelessWidget {
         height: 72,
         padding: const EdgeInsets.symmetric(horizontal: 8),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.surface,
           borderRadius: BorderRadius.circular(36),
           boxShadow: [
             BoxShadow(
@@ -56,7 +56,9 @@ class AppBottomNavBar extends StatelessWidget {
             ),
             Transform.translate(
               offset: const Offset(0, -22),
-              child: _CenterButton(onTap: onCenterTap ?? () => onTap(2)),
+              child: _CenterButton(
+                onTap: onCenterTap ?? () => onTap(2),
+              ),
             ),
             _NavItem(
               icon: Icons.calendar_today_outlined,
@@ -117,7 +119,7 @@ class _NavItem extends StatelessWidget {
                   const SizedBox(width: 6),
                   Text(
                     label,
-                    style: TextStyle(fontFamily: 'Inter', 
+                    style: TextStyle(fontFamily: 'Inter',
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
                       color: Colors.white,

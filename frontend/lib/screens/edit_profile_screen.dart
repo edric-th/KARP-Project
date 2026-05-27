@@ -76,7 +76,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       lastDate: DateTime.now(),
       builder: (ctx, child) => Theme(
         data: Theme.of(ctx).copyWith(
-          colorScheme: const ColorScheme.light(
+          colorScheme: ColorScheme.light(
             primary: AppColors.primary,
             onPrimary: Colors.white,
             onSurface: AppColors.textPrimary,
@@ -387,7 +387,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     label: 'FULL NAME',
                     suffix: GestureDetector(
                       onTap: () => _nameCtrl.clear(),
-                      child: const Icon(
+                      child: Icon(
                         Icons.cancel_rounded,
                         color: AppColors.textMuted,
                         size: 18,
@@ -464,7 +464,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     fillColor: AppColors.cardGreenLight.withValues(alpha: 0.5),
                     borderColor: Colors.transparent,
                     onTap: _pickDob,
-                    suffix: const Icon(
+                    suffix: Icon(
                       Icons.calendar_month_outlined,
                       color: AppColors.textSecondary,
                       size: 20,
@@ -559,7 +559,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           ),
                         ),
                         const SizedBox(width: 6),
-                        const Icon(
+                        Icon(
                           Icons.keyboard_arrow_down_rounded,
                           color: AppColors.textSecondary,
                           size: 20,

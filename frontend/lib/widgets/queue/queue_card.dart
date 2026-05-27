@@ -83,7 +83,7 @@ class QueueCard extends StatelessWidget {
                 _buildStatusBadge(queue.status),
               ],
             ),
-            const Padding(
+            Padding(
               padding: EdgeInsets.symmetric(vertical: 14),
               child: Divider(height: 1, color: AppColors.divider),
             ),
@@ -112,7 +112,7 @@ class QueueCard extends StatelessWidget {
                     ),
                   )
                 else
-                  const Icon(
+                  Icon(
                     Icons.arrow_forward_ios_rounded,
                     color: AppColors.textMuted,
                     size: 14,

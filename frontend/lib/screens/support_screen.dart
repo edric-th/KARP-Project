@@ -138,7 +138,7 @@ class _SupportScreenState extends State<SupportScreen> {
   InputDecoration _inputDecoration(String hint) {
     return InputDecoration(
       hintText: hint,
-      hintStyle: const TextStyle(
+      hintStyle: TextStyle(
         fontFamily: 'Inter',
         color: AppColors.textMuted,
         fontSize: 13,
@@ -321,7 +321,7 @@ class _ContactTile extends StatelessWidget {
                   children: [
                     Text(
                       label,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: 'Inter',
                         fontSize: 12,
                         color: AppColors.textSecondary,
@@ -330,7 +330,7 @@ class _ContactTile extends StatelessWidget {
                     const SizedBox(height: 2),
                     Text(
                       value,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: 'Inter',
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
@@ -340,7 +340,7 @@ class _ContactTile extends StatelessWidget {
                   ],
                 ),
               ),
-              const Icon(
+              Icon(
                 Icons.chevron_right_rounded,
                 color: AppColors.textMuted,
               ),
@@ -392,7 +392,7 @@ class _FaqTile extends StatelessWidget {
                   Expanded(
                     child: Text(
                       question,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: 'Inter',
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
@@ -413,7 +413,7 @@ class _FaqTile extends StatelessWidget {
                 const SizedBox(height: 10),
                 Text(
                   answer,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: 'Inter',
                     fontSize: 13,
                     color: AppColors.textSecondary,
@@ -437,7 +437,7 @@ class _Label extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       text,
-      style: const TextStyle(
+      style: TextStyle(
         fontFamily: 'Inter',
         fontSize: 12,
         fontWeight: FontWeight.w600,
@@ -455,7 +455,7 @@ class _SectionTitle extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       title,
-      style: const TextStyle(
+      style: TextStyle(
         fontFamily: 'Inter',
         fontSize: 11,
         fontWeight: FontWeight.w700,

@@ -50,7 +50,7 @@ class _HospitalsScreenState extends State<HospitalsScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.local_hospital_outlined,
                           color: AppColors.textMuted,
                           size: 64,

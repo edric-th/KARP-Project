@@ -84,7 +84,7 @@ class HospitalCard extends StatelessWidget {
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.location_on_outlined,
                         size: 12,
                         color: AppColors.textMuted,

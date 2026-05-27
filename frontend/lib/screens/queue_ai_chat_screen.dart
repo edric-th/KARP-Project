@@ -201,9 +201,9 @@ class _QueueAiChatScreenState extends State<QueueAiChatScreen> {
         sender: _Sender.ai,
         text: "You're 5 tokens away — about 15 minutes. Here's a live view:",
         liveQueue: const _LiveQueueData(
-          nowServing: '042',
-          yourToken: '047',
-          ahead: 5,
+          nowServing: '041',
+          yourToken: '048',
+          ahead: 8,
           estWait: '~15 min',
           percentPositioned: 82,
         ),
@@ -270,7 +270,9 @@ class _QueueAiChatScreenState extends State<QueueAiChatScreen> {
         time: now,
       );
     }
-    if (t.contains('cancel') || t.contains('reschedule') || t.contains('leave')) {
+    if (t.contains('cancel') ||
+        t.contains('reschedule') ||
+        t.contains('leave')) {
       return _Message(
         sender: _Sender.ai,
         text:
@@ -281,7 +283,8 @@ class _QueueAiChatScreenState extends State<QueueAiChatScreen> {
     if (t.contains('thanks') || t.contains('thank')) {
       return _Message(
         sender: _Sender.ai,
-        text: 'Happy to help 💚 — I\'ll keep watching your queue in the background.',
+        text:
+            'Happy to help 💚 — I\'ll keep watching your queue in the background.',
         time: now,
       );
     }
@@ -509,9 +512,7 @@ class _GreenHeader extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: EdgeInsets.fromLTRB(16, topInset + 10, 16, 18),
-      decoration: const BoxDecoration(
-        gradient: AppColors.primaryGradient,
-      ),
+      decoration: const BoxDecoration(gradient: AppColors.primaryGradient),
       child: Row(
         children: [
           GestureDetector(
@@ -675,13 +676,11 @@ class _MessageBubble extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 14),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment:
-            isAi ? MainAxisAlignment.start : MainAxisAlignment.end,
+        mainAxisAlignment: isAi
+            ? MainAxisAlignment.start
+            : MainAxisAlignment.end,
         children: [
-          if (isAi) ...[
-            _AiAvatar(),
-            const SizedBox(width: 10),
-          ],
+          if (isAi) ...[_AiAvatar(), const SizedBox(width: 10)],
           Flexible(
             child: isAi
                 ? _AiContent(message: message)
@@ -704,11 +703,7 @@ class _AiAvatar extends StatelessWidget {
         shape: BoxShape.circle,
       ),
       alignment: Alignment.center,
-      child: const Icon(
-        Icons.auto_awesome,
-        color: Colors.white,
-        size: 14,
-      ),
+      child: const Icon(Icons.auto_awesome, color: Colors.white, size: 14),
     );
   }
 }
@@ -845,8 +840,9 @@ class _TimestampLabel extends StatelessWidget {
     final str = DateFormat('h:mm a').format(time);
     return Row(
       mainAxisSize: MainAxisSize.min,
-      mainAxisAlignment:
-          alignEnd ? MainAxisAlignment.end : MainAxisAlignment.start,
+      mainAxisAlignment: alignEnd
+          ? MainAxisAlignment.end
+          : MainAxisAlignment.start,
       children: [
         Text(
           str,
@@ -916,7 +912,8 @@ class _TypingIndicatorState extends State<_TypingIndicator>
             mainAxisSize: MainAxisSize.min,
             children: List.generate(3, (i) {
               final phase = (_ctrl.value + (i * 0.2)) % 1.0;
-              final scale = 0.6 + 0.6 * (phase < 0.5 ? phase * 2 : (1 - phase) * 2);
+              final scale =
+                  0.6 + 0.6 * (phase < 0.5 ? phase * 2 : (1 - phase) * 2);
               return Padding(
                 padding: EdgeInsets.only(left: i == 0 ? 0 : 6),
                 child: Transform.scale(
@@ -1112,8 +1109,10 @@ class _LiveQueueCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFFEEEAF6),
                     borderRadius: BorderRadius.circular(14),
@@ -1209,8 +1208,9 @@ class _LiveQueueCard extends StatelessWidget {
                     minHeight: 7,
                     value: data.percentPositioned / 100,
                     backgroundColor: AppColors.cardGreenLight,
-                    valueColor:
-                        const AlwaysStoppedAnimation<Color>(AppColors.primary),
+                    valueColor: const AlwaysStoppedAnimation<Color>(
+                      AppColors.primary,
+                    ),
                   ),
                 ),
               ],
@@ -1222,15 +1222,15 @@ class _LiveQueueCard extends StatelessWidget {
   }
 
   Widget _smallLabel(String text) => Text(
-        text,
-        style: TextStyle(
-          fontFamily: 'Inter',
-          fontSize: 10.5,
-          fontWeight: FontWeight.w800,
-          color: AppColors.textMuted,
-          letterSpacing: 0.7,
-        ),
-      );
+    text,
+    style: TextStyle(
+      fontFamily: 'Inter',
+      fontSize: 10.5,
+      fontWeight: FontWeight.w800,
+      color: AppColors.textMuted,
+      letterSpacing: 0.7,
+    ),
+  );
 }
 
 // ─── DOCTOR CARD (in-chat) ────────────────────────────────────────────────
@@ -1293,8 +1293,7 @@ class _DoctorCard extends StatelessWidget {
                 ),
               ),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: AppColors.cardGreenMedium,
                   borderRadius: BorderRadius.circular(10),
@@ -1312,7 +1311,7 @@ class _DoctorCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          const Divider(height: 1, color: AppColors.divider),
+          Divider(height: 1, color: AppColors.divider),
           const SizedBox(height: 12),
           Row(
             children: [
@@ -1659,7 +1658,7 @@ class _InputBar extends StatelessWidget {
                   color: Color(0xFFE9E4F5),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.add_rounded,
                   color: AppColors.textSecondary,
                   size: 22,
@@ -1704,10 +1703,8 @@ class _InputBar extends StatelessWidget {
             const SizedBox(width: 10),
             AnimatedSwitcher(
               duration: const Duration(milliseconds: 200),
-              transitionBuilder: (child, anim) => ScaleTransition(
-                scale: anim,
-                child: child,
-              ),
+              transitionBuilder: (child, anim) =>
+                  ScaleTransition(scale: anim, child: child),
               child: GestureDetector(
                 key: ValueKey(hasText),
                 onTap: hasText ? onSend : null,

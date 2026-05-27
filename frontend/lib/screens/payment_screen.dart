@@ -3,6 +3,7 @@ import 'package:frontend/constants/app_colors.dart';
 import 'package:frontend/models/models.dart';
 import 'package:frontend/widgets/common/custom_app_bar.dart';
 import 'package:frontend/widgets/common/custom_button.dart';
+import 'package:frontend/widgets/common/brand_logo.dart';
 
 enum PaymentMethod { esewa, khalti, imepay, bank, cash }
 
@@ -64,6 +65,22 @@ extension PaymentMethodX on PaymentMethod {
         return Icons.account_balance_rounded;
       case PaymentMethod.cash:
         return Icons.attach_money_rounded;
+    }
+  }
+
+  /// Official brand logo for digital methods; null methods fall back to [icon].
+  Brand? get brand {
+    switch (this) {
+      case PaymentMethod.esewa:
+        return Brand.esewa;
+      case PaymentMethod.khalti:
+        return Brand.khalti;
+      case PaymentMethod.imepay:
+        return Brand.imepay;
+      case PaymentMethod.bank:
+        return Brand.bank;
+      case PaymentMethod.cash:
+        return null;
     }
   }
 }
@@ -258,7 +275,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                     const SizedBox(height: 14),
                     Row(
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.lock_outline_rounded,
                           size: 14,
                           color: AppColors.textMuted,
@@ -424,13 +441,13 @@ class _SummaryCard extends StatelessWidget {
           _row('Speciality', speciality),
           _row('Hospital', hospital),
           const SizedBox(height: 6),
-          const Divider(height: 1, color: AppColors.cardGreenBorder),
+          Divider(height: 1, color: AppColors.cardGreenBorder),
           const SizedBox(height: 10),
           _amountRow('Consultation fee', fmt(consultationFee)),
           _amountRow('Service charge', fmt(serviceFee)),
           _amountRow('Booking charge', fmt(bookingCharge)),
           const SizedBox(height: 6),
-          const Divider(height: 1, color: AppColors.cardGreenBorder),
+          Divider(height: 1, color: AppColors.cardGreenBorder),
           const SizedBox(height: 10),
           Row(
             children: [
@@ -560,17 +577,22 @@ class _PaymentMethodTile extends StatelessWidget {
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                color: method.brandColor.withValues(alpha: 0.12),
+                color: method.brand != null
+                    ? AppColors.surface
+                    : method.brandColor.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
                   color: method.brandColor.withValues(alpha: 0.3),
                 ),
               ),
-              child: Icon(
-                method.icon,
-                color: method.brandColor,
-                size: 22,
-              ),
+              alignment: Alignment.center,
+              child: method.brand != null
+                  ? BrandLogo(method.brand!, size: 26)
+                  : Icon(
+                      method.icon,
+                      color: method.brandColor,
+                      size: 22,
+                    ),
             ),
             const SizedBox(width: 14),
             Expanded(

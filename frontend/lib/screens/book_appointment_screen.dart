@@ -20,9 +20,21 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
   // Step 1
   AppointmentType _appointmentType = AppointmentType.newPatient;
   final _patientNameCtrl = TextEditingController();
-  final _patientAgeCtrl = TextEditingController();
+  DateTime? _patientDob;
   final _patientPhoneCtrl = TextEditingController();
   String _patientGender = 'Male';
+
+  int? get _patientAge {
+    final dob = _patientDob;
+    if (dob == null) return null;
+    final now = DateTime.now();
+    var age = now.year - dob.year;
+    if (now.month < dob.month ||
+        (now.month == dob.month && now.day < dob.day)) {
+      age -= 1;
+    }
+    return age;
+  }
 
   // Step 2
   HospitalModel? _selectedHospital;
@@ -64,7 +76,6 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
   @override
   void dispose() {
     _patientNameCtrl.dispose();
-    _patientAgeCtrl.dispose();
     _patientPhoneCtrl.dispose();
     _problemCtrl.dispose();
     _notesController.dispose();
@@ -74,7 +85,7 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
   void _next() {
     if (_currentStep == 0 && _appointmentType == AppointmentType.newPatient) {
       if (_patientNameCtrl.text.trim().isEmpty ||
-          _patientAgeCtrl.text.trim().isEmpty ||
+          _patientDob == null ||
           _patientPhoneCtrl.text.trim().isEmpty) {
         _snack('Please fill all new patient details.');
         return;
@@ -111,6 +122,25 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
   }
 
+  Future<void> _pickPatientDob() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _patientDob ?? DateTime(2000, 1, 1),
+      firstDate: DateTime(1900),
+      lastDate: DateTime.now(),
+      builder: (ctx, child) => Theme(
+        data: Theme.of(ctx).copyWith(
+          colorScheme: const ColorScheme.light(
+            primary: AppColors.primary,
+            onPrimary: Colors.white,
+          ),
+        ),
+        child: child!,
+      ),
+    );
+    if (picked != null) setState(() => _patientDob = picked);
+  }
+
   void _proceedToPayment() {
     final tokenNumber = 40 + DateTime.now().millisecond % 30;
     final patientName = _appointmentType == AppointmentType.newPatient
@@ -120,7 +150,7 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
         ? _patientPhoneCtrl.text.trim()
         : DummyData.currentUser.phone;
     final patientAge = _appointmentType == AppointmentType.newPatient
-        ? int.tryParse(_patientAgeCtrl.text.trim()) ?? DummyData.currentUser.age
+        ? (_patientAge ?? DummyData.currentUser.age)
         : DummyData.currentUser.age;
 
     Navigator.pushNamed(
@@ -160,7 +190,7 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(color: AppColors.border),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.person_outline_rounded,
                 size: 20,
                 color: AppColors.textPrimary,
@@ -242,7 +272,9 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
                 : CrossFadeState.showSecond,
             firstChild: _NewPatientForm(
               nameCtrl: _patientNameCtrl,
-              ageCtrl: _patientAgeCtrl,
+              dob: _patientDob,
+              age: _patientAge,
+              onPickDob: _pickPatientDob,
               phoneCtrl: _patientPhoneCtrl,
               gender: _patientGender,
               onGenderChanged: (g) => setState(() => _patientGender = g),
@@ -411,8 +443,7 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
         ? _patientPhoneCtrl.text.trim()
         : DummyData.currentUser.phone;
     final patientAge = _appointmentType == AppointmentType.newPatient
-        ? (int.tryParse(_patientAgeCtrl.text.trim()) ??
-            DummyData.currentUser.age)
+        ? (_patientAge ?? DummyData.currentUser.age)
         : DummyData.currentUser.age;
 
     return SingleChildScrollView(
@@ -505,7 +536,7 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
                 ),
                 Row(
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.notifications_active_outlined,
                       size: 14,
                       color: AppColors.textMuted,
@@ -818,7 +849,7 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
                     color: AppColors.textPrimary,
                   ),
                 ),
-                trailing: const Icon(
+                trailing: Icon(
                   Icons.chevron_right_rounded,
                   color: AppColors.textMuted,
                 ),
@@ -1112,14 +1143,18 @@ class _AppointmentTypeCard extends StatelessWidget {
 
 class _NewPatientForm extends StatelessWidget {
   final TextEditingController nameCtrl;
-  final TextEditingController ageCtrl;
+  final DateTime? dob;
+  final int? age;
+  final VoidCallback onPickDob;
   final TextEditingController phoneCtrl;
   final String gender;
   final ValueChanged<String> onGenderChanged;
 
   const _NewPatientForm({
     required this.nameCtrl,
-    required this.ageCtrl,
+    required this.dob,
+    required this.age,
+    required this.onPickDob,
     required this.phoneCtrl,
     required this.gender,
     required this.onGenderChanged,
@@ -1185,7 +1220,60 @@ class _NewPatientForm extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              Expanded(
+                flex: 6,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _FormLabel('DATE OF BIRTH'),
+                    const SizedBox(height: 6),
+                    GestureDetector(
+                      onTap: onPickDob,
+                      behavior: HitTestBehavior.opaque,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: AppColors.backgroundLight,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: AppColors.border),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 13,
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.calendar_today_outlined,
+                              size: 17,
+                              color: AppColors.textSecondary,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                dob == null
+                                    ? 'Select'
+                                    : DateFormat('d MMM y').format(dob!),
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontFamily: 'Inter',
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700,
+                                  color: dob == null
+                                      ? AppColors.textMuted
+                                      : AppColors.textPrimary,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
               Expanded(
                 flex: 4,
                 child: Column(
@@ -1193,68 +1281,36 @@ class _NewPatientForm extends StatelessWidget {
                   children: [
                     _FormLabel('AGE'),
                     const SizedBox(height: 6),
-                    _FormField(
-                      controller: ageCtrl,
-                      hint: '20',
-                      icon: Icons.cake_outlined,
-                      keyboardType: TextInputType.number,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                flex: 6,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _FormLabel('GENDER'),
-                    const SizedBox(height: 6),
                     Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 4,
-                        vertical: 4,
-                      ),
                       decoration: BoxDecoration(
-                        color: AppColors.backgroundLight,
+                        color: AppColors.cardGreenLight,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.border),
+                        border: Border.all(color: AppColors.cardGreenBorder),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 13,
                       ),
                       child: Row(
-                        children: ['Male', 'Female', 'Other']
-                            .map(
-                              (g) => Expanded(
-                                child: GestureDetector(
-                                  onTap: () => onGenderChanged(g),
-                                  child: AnimatedContainer(
-                                    duration:
-                                        const Duration(milliseconds: 180),
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 8,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: gender == g
-                                          ? AppColors.primary
-                                          : Colors.transparent,
-                                      borderRadius: BorderRadius.circular(9),
-                                    ),
-                                    alignment: Alignment.center,
-                                    child: Text(
-                                      g,
-                                      style: TextStyle(
-                                        fontFamily: 'Inter',
-                                        fontSize: 11.5,
-                                        fontWeight: FontWeight.w700,
-                                        color: gender == g
-                                            ? Colors.white
-                                            : AppColors.textSecondary,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            )
-                            .toList(),
+                        children: [
+                          const Icon(
+                            Icons.cake_outlined,
+                            size: 17,
+                            color: AppColors.primary,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            age == null ? '—' : '$age yrs',
+                            style: TextStyle(
+                              fontFamily: 'Inter',
+                              fontSize: 14,
+                              fontWeight: FontWeight.w800,
+                              color: age == null
+                                  ? AppColors.textMuted
+                                  : AppColors.primaryDark,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
@@ -1263,11 +1319,55 @@ class _NewPatientForm extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
+          _FormLabel('GENDER'),
+          const SizedBox(height: 6),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+            decoration: BoxDecoration(
+              color: AppColors.backgroundLight,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.border),
+            ),
+            child: Row(
+              children: ['Male', 'Female', 'Other']
+                  .map(
+                    (g) => Expanded(
+                      child: GestureDetector(
+                        onTap: () => onGenderChanged(g),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 180),
+                          padding: const EdgeInsets.symmetric(vertical: 9),
+                          decoration: BoxDecoration(
+                            color: gender == g
+                                ? AppColors.primary
+                                : Colors.transparent,
+                            borderRadius: BorderRadius.circular(9),
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(
+                            g,
+                            style: TextStyle(
+                              fontFamily: 'Inter',
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w700,
+                              color: gender == g
+                                  ? Colors.white
+                                  : AppColors.textSecondary,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  )
+                  .toList(),
+            ),
+          ),
+          const SizedBox(height: 12),
           _FormLabel('PHONE'),
           const SizedBox(height: 6),
           _FormField(
             controller: phoneCtrl,
-            hint: '+977 98XXXXXXXX',
+            hint: '+977',
             icon: Icons.phone_outlined,
             keyboardType: TextInputType.phone,
           ),
@@ -1410,7 +1510,7 @@ class _HospitalPickerField extends StatelessWidget {
                       ),
                     ),
             ),
-            const Icon(
+            Icon(
               Icons.keyboard_arrow_down_rounded,
               color: AppColors.textMuted,
               size: 22,
@@ -1531,7 +1631,7 @@ class _DoctorPickCard extends StatelessWidget {
                     color: AppColors.cardGreenLight,
                     borderRadius: BorderRadius.circular(22),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.person_rounded,
                     color: AppColors.textSecondary,
                     size: 24,
@@ -1609,7 +1709,7 @@ class _DoctorPickCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 12),
-            const Divider(height: 1, color: AppColors.divider),
+            Divider(height: 1, color: AppColors.divider),
             const SizedBox(height: 12),
             Row(
               children: [
@@ -1642,7 +1742,7 @@ class _DoctorPickCard extends StatelessWidget {
                   ),
                   child: Row(
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.access_time_rounded,
                         size: 12,
                         color: AppColors.textSecondary,

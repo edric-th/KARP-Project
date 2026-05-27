@@ -16,23 +16,23 @@ class _QueueScreenState extends State<QueueScreen> {
   // ─── Patient's active queue context ───────────────────────────────────
   static const _myDepartment = 'Cardiology Department';
   static const _myWing = 'Main Clinic Wing';
-  static const _myDoctor = 'Dr. Sharma';
+  static const _myDoctor = 'Dr. Chameli';
   static const _myRoom = 'Room 101';
-  static const _myToken = '047';
-  static const _currentToken = '042';
-  static const _ahead = 5;
+  static const _myToken = '048';
+  static const _currentToken = '040';
+  static const _ahead = 8;
   static const _minutesAway = 18;
 
   // Same department, different specialists / supporting staff
   static const _departmentTeam = [
     _TeamMember(
-      name: 'Dr. Sharma',
+      name: 'Dr. Chameli',
       role: 'Consulting Cardiologist',
       room: 'Room 101',
       isPrimary: true,
     ),
     _TeamMember(
-      name: 'Dr. Maharjan',
+      name: 'Dr. Laitado',
       role: 'Cardiology Resident',
       room: 'Room 102',
       isPrimary: false,
@@ -1141,7 +1141,7 @@ class _VisitTimelineItem extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 8),
-                      const Icon(
+                      Icon(
                         Icons.hourglass_bottom_rounded,
                         size: 13,
                         color: AppColors.textMuted,
