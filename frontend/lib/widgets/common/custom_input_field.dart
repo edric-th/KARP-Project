@@ -108,11 +108,11 @@ class _CustomInputFieldState extends State<CustomInputField> {
             ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
-              borderSide: const BorderSide(color: AppColors.border),
+              borderSide: BorderSide(color: AppColors.border),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
-              borderSide: const BorderSide(color: AppColors.border),
+              borderSide: BorderSide(color: AppColors.border),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
@@ -175,7 +175,7 @@ class SearchField extends StatelessWidget {
             fontSize: 14,
             color: AppColors.textMuted,
           ),
-          prefixIcon: const Padding(
+          prefixIcon: Padding(
             padding: EdgeInsets.only(left: 16, right: 12),
             child: Icon(
               Icons.search_rounded,

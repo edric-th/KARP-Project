@@ -73,7 +73,7 @@ class HospitalDetailScreen extends StatelessWidget {
                 const SizedBox(height: 18),
                 Expanded(
                   child: Container(
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                       color: AppColors.backgroundLight,
                       borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
                     ),

@@ -190,7 +190,7 @@ class HomeScreen extends StatelessWidget {
       children: [
         Text(
           title,
-          style: const TextStyle(
+          style: TextStyle(
             fontFamily: 'Inter',
             fontSize: 18,
             fontWeight: FontWeight.w700,
@@ -238,7 +238,7 @@ class _GreetingBlock extends StatelessWidget {
       children: [
         Text(
           '$_greeting, $firstName 👋',
-          style: const TextStyle(
+          style: TextStyle(
             fontFamily: 'Inter',
             fontSize: 26,
             fontWeight: FontWeight.w800,
@@ -253,7 +253,7 @@ class _GreetingBlock extends StatelessWidget {
             children: [
               Text(
                 activeQueue!.hospitalName,
-                style: const TextStyle(
+                style: TextStyle(
                   fontFamily: 'Inter',
                   fontSize: 13,
                   color: AppColors.textSecondary,
@@ -261,11 +261,11 @@ class _GreetingBlock extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              const Icon(Icons.circle, size: 4, color: AppColors.textMuted),
+              Icon(Icons.circle, size: 4, color: AppColors.textMuted),
               const SizedBox(width: 8),
               Text(
                 'Token ${activeQueue!.queueNumber.toString().padLeft(3, '0')}',
-                style: const TextStyle(
+                style: TextStyle(
                   fontFamily: 'Inter',
                   fontSize: 13,
                   color: AppColors.textSecondary,
@@ -509,7 +509,7 @@ class _LiveQueueStatus extends StatelessWidget {
       children: [
         Row(
           children: [
-            const Text(
+            Text(
               'Live Queue Status',
               style: TextStyle(
                 fontFamily: 'Inter',
@@ -678,7 +678,7 @@ class _WaitingRow extends StatelessWidget {
             width: 56,
             child: Text(
               entry.number.toString().padLeft(3, '0'),
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: 'Inter',
                 fontSize: 18,
                 fontWeight: FontWeight.w800,
@@ -697,7 +697,7 @@ class _WaitingRow extends StatelessWidget {
           ),
           Text(
             '~${entry.etaMinutes} min',
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: 'Inter',
               fontSize: 13,
               fontWeight: FontWeight.w600,
@@ -745,7 +745,7 @@ class _YouRow extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    const Text(
+                    Text(
                       'YOU',
                       style: TextStyle(
                         fontFamily: 'Inter',
@@ -762,7 +762,7 @@ class _YouRow extends StatelessWidget {
                 const SizedBox(height: 4),
                 Row(
                   children: [
-                    const Text(
+                    Text(
                       'Next in line',
                       style: TextStyle(
                         fontFamily: 'Inter',
@@ -772,7 +772,7 @@ class _YouRow extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    const Icon(
+                    Icon(
                       Icons.circle,
                       size: 4,
                       color: AppColors.textMuted,
@@ -780,7 +780,7 @@ class _YouRow extends StatelessWidget {
                     const SizedBox(width: 8),
                     Text(
                       '${entry.etaMinutes} min',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: 'Inter',
                         fontSize: 12,
                         color: AppColors.textSecondary,

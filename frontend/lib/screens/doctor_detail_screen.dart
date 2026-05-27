@@ -73,7 +73,7 @@ class DoctorDetailScreen extends StatelessWidget {
                 const SizedBox(height: 16),
                 Expanded(
                   child: Container(
-                    decoration: const BoxDecoration(color: AppColors.backgroundLight,
+                    decoration: BoxDecoration(color: AppColors.backgroundLight,
                         borderRadius: BorderRadius.vertical(top: Radius.circular(32))),
                     child: SingleChildScrollView(
                       padding: const EdgeInsets.all(24),

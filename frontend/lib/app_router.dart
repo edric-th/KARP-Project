@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:frontend/models/models.dart';
 import 'package:frontend/screens/login_screen.dart';
 import 'package:frontend/screens/signup_screen.dart';
+import 'package:frontend/screens/registration_success_screen.dart';
 import 'package:frontend/screens/main_nav_screen.dart';
 import 'package:frontend/screens/home_screen.dart';
 import 'package:frontend/screens/hospitals_screen.dart';
@@ -30,6 +31,7 @@ class AppRouter {
   static const String login = '/login';
   static const String signup = '/signup';
   static const String register = '/register';
+  static const String registrationSuccess = '/registration-success';
   static const String main = '/main';
   static const String home = '/home';
   static const String hospitals = '/hospitals';
@@ -63,6 +65,17 @@ class AppRouter {
       case signup:
       case register:
         return _buildRoute(const SignupScreen(), routeSettings);
+
+      case registrationSuccess:
+        final args =
+            (routeSettings.arguments as Map<String, dynamic>?) ?? const {};
+        return _buildRoute(
+          RegistrationSuccessScreen(
+            name: args['name'] as String? ?? 'Patient',
+            bloodGroup: args['bloodGroup'] as String? ?? 'O+',
+          ),
+          routeSettings,
+        );
 
       case main:
         return _buildRoute(const MainNavScreen(), routeSettings);

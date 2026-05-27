@@ -397,7 +397,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     onPressed: () => Navigator.pop(ctx),
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 14),
-                      side: const BorderSide(color: AppColors.border),
+                      side: BorderSide(color: AppColors.border),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -648,7 +648,7 @@ class _RowDivider extends StatelessWidget {
   const _RowDivider();
   @override
   Widget build(BuildContext context) =>
-      const Divider(height: 1, color: AppColors.divider, indent: 16, endIndent: 16);
+      Divider(height: 1, color: AppColors.divider, indent: 16, endIndent: 16);
 }
 
 class _InfoRow extends StatelessWidget {

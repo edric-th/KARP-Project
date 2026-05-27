@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:frontend/constants/app_colors.dart';
 import 'package:frontend/models/dummy_data.dart';
 import 'package:frontend/models/models.dart';
+import 'package:frontend/widgets/common/app_logo.dart';
 
 class AppDrawer extends StatelessWidget {
   final int activeIndex;
@@ -147,47 +148,36 @@ class AppDrawer extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: Colors.white12,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(
-                  Icons.medical_services_outlined,
-                  color: Colors.white,
-                  size: 20,
-                ),
+              const AppLogo(
+                size: 44,
+                borderRadius: 12,
+                padding: EdgeInsets.all(5),
+                shadow: false,
               ),
               const SizedBox(width: 12),
               const Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'MeroPalo Care',
-                      style: TextStyle(
-                        fontFamily: 'Inter',
-                        fontSize: 17,
-                        fontWeight: FontWeight.w800,
-                        color: Colors.white,
-                        letterSpacing: -0.3,
-                      ),
+                child: Text.rich(
+                  TextSpan(
+                    style: TextStyle(
+                      fontFamily: 'Inter',
+                      // Inter lacks Devanagari glyphs, so fall back for पालो.
+                      fontFamilyFallback: [
+                        'Noto Sans Devanagari',
+                        'Kohinoor Devanagari',
+                        'Mangal',
+                      ],
+                      fontSize: 19,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                      letterSpacing: -0.3,
                     ),
-                    SizedBox(height: 2),
-                    Text(
-                      'मेरो पालो',
-                      style: TextStyle(
-                        fontFamily: 'Inter',
-                        fontSize: 12,
-                        color: AppColors.textOnDarkSecondary,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
+                    children: [
+                      TextSpan(text: 'Mero'),
+                      TextSpan(text: 'पालो'),
+                    ],
+                  ),
                 ),
               ),
               GestureDetector(
@@ -323,7 +313,7 @@ class AppDrawer extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text(
+            child: Text(
               'Cancel',
               style: TextStyle(
                 fontFamily: 'Inter',

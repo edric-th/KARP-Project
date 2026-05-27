@@ -75,7 +75,7 @@ class QueueDetailScreen extends StatelessWidget {
                 const SizedBox(height: 24),
                 Expanded(
                   child: Container(
-                    decoration: const BoxDecoration(color: AppColors.backgroundLight,
+                    decoration: BoxDecoration(color: AppColors.backgroundLight,
                         borderRadius: BorderRadius.vertical(top: Radius.circular(32))),
                     child: SingleChildScrollView(
                       padding: const EdgeInsets.all(24),

@@ -105,7 +105,7 @@ class DoctorCard extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 8),
-            const Icon(
+            Icon(
               Icons.arrow_forward_ios_rounded,
               color: AppColors.textMuted,
               size: 14,
