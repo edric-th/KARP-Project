@@ -83,13 +83,13 @@ class _SignupScreenState extends State<SignupScreen> {
               child: Form(
                 key: _formKey,
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  CustomInputField(label: AppStrings.fullName, hint: 'Aarav Sharma', controller: _nameController, keyboardType: TextInputType.name, prefixIcon: const Icon(Icons.person_outline_rounded, color: AppColors.textMuted, size: 20), validator: (v) => (v == null || v.isEmpty) ? 'Name is required' : null),
+                  CustomInputField(label: AppStrings.fullName, hint: 'Aarav Sharma', controller: _nameController, keyboardType: TextInputType.name, prefixIcon: Icon(Icons.person_outline_rounded, color: AppColors.textMuted, size: 20), validator: (v) => (v == null || v.isEmpty) ? 'Name is required' : null),
                   const SizedBox(height: 20),
-                  CustomInputField(label: AppStrings.email, hint: 'your@email.com', controller: _emailController, keyboardType: TextInputType.emailAddress, prefixIcon: const Icon(Icons.email_outlined, color: AppColors.textMuted, size: 20), validator: (v) { if (v == null || v.isEmpty) return 'Email is required'; if (!v.contains('@')) return 'Enter a valid email'; return null; }),
+                  CustomInputField(label: AppStrings.email, hint: 'your@email.com', controller: _emailController, keyboardType: TextInputType.emailAddress, prefixIcon: Icon(Icons.email_outlined, color: AppColors.textMuted, size: 20), validator: (v) { if (v == null || v.isEmpty) return 'Email is required'; if (!v.contains('@')) return 'Enter a valid email'; return null; }),
                   const SizedBox(height: 20),
-                  CustomInputField(label: AppStrings.phoneNumber, hint: '+977 98XXXXXXXX', controller: _phoneController, keyboardType: TextInputType.phone, prefixIcon: const Icon(Icons.phone_outlined, color: AppColors.textMuted, size: 20), validator: (v) => (v == null || v.isEmpty) ? 'Phone is required' : null),
+                  CustomInputField(label: AppStrings.phoneNumber, hint: '+977 98XXXXXXXX', controller: _phoneController, keyboardType: TextInputType.phone, prefixIcon: Icon(Icons.phone_outlined, color: AppColors.textMuted, size: 20), validator: (v) => (v == null || v.isEmpty) ? 'Phone is required' : null),
                   const SizedBox(height: 20),
-                  CustomInputField(label: AppStrings.password, hint: '••••••••', controller: _passwordController, isPassword: true, prefixIcon: const Icon(Icons.lock_outline_rounded, color: AppColors.textMuted, size: 20), validator: (v) { if (v == null || v.isEmpty) return 'Password is required'; if (v.length < 6) return 'Minimum 6 characters'; return null; }),
+                  CustomInputField(label: AppStrings.password, hint: '••••••••', controller: _passwordController, isPassword: true, prefixIcon: Icon(Icons.lock_outline_rounded, color: AppColors.textMuted, size: 20), validator: (v) { if (v == null || v.isEmpty) return 'Password is required'; if (v.length < 6) return 'Minimum 6 characters'; return null; }),
                   const SizedBox(height: 24),
                   GestureDetector(
                     onTap: () => setState(() => _agreed = !_agreed),

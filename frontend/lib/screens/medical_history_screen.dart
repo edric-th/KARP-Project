@@ -198,7 +198,7 @@ class _VisitCard extends StatelessWidget {
                   children: [
                     Text(
                       appointment.doctor.name,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: 'Inter',
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
@@ -208,7 +208,7 @@ class _VisitCard extends StatelessWidget {
                     const SizedBox(height: 2),
                     Text(
                       '${appointment.doctor.specialty} • $dateLabel',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: 'Inter',
                         fontSize: 12,
                         color: AppColors.textSecondary,
@@ -228,7 +228,7 @@ class _VisitCard extends StatelessWidget {
             ),
             child: Text(
               appointment.reason,
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: 'Inter',
                 fontSize: 12,
                 color: AppColors.textPrimary,
@@ -293,7 +293,7 @@ class _PrescriptionTile extends StatelessWidget {
               children: [
                 Text(
                   medicine,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: 'Inter',
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
@@ -303,7 +303,7 @@ class _PrescriptionTile extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   dose,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: 'Inter',
                     fontSize: 12,
                     color: AppColors.textSecondary,
@@ -312,7 +312,7 @@ class _PrescriptionTile extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   '$doctor • $date',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: 'Inter',
                     fontSize: 11,
                     color: AppColors.textMuted,
@@ -363,7 +363,7 @@ class _InfoRow extends StatelessWidget {
       decoration: BoxDecoration(
         border: isLast
             ? null
-            : const Border(
+            : Border(
                 bottom: BorderSide(color: AppColors.divider, width: 1),
               ),
       ),
@@ -372,7 +372,7 @@ class _InfoRow extends StatelessWidget {
           Expanded(
             child: Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: 'Inter',
                 fontSize: 13,
                 color: AppColors.textSecondary,
@@ -381,7 +381,7 @@ class _InfoRow extends StatelessWidget {
           ),
           Text(
             value,
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: 'Inter',
               fontSize: 13,
               fontWeight: FontWeight.w600,
@@ -402,7 +402,7 @@ class _SectionTitle extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       title,
-      style: const TextStyle(
+      style: TextStyle(
         fontFamily: 'Inter',
         fontSize: 11,
         fontWeight: FontWeight.w700,
@@ -423,7 +423,7 @@ class _EmptyState extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.border),
       ),
-      child: const Column(
+      child: Column(
         children: [
           Icon(
             Icons.folder_open_rounded,

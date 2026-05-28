@@ -26,8 +26,7 @@ class BookingSuccessScreen extends StatelessWidget {
     this.patientName,
   });
 
-  String get _token =>
-      (tokenNumber ?? 47).toString().padLeft(3, '0');
+  String get _token => (tokenNumber ?? 47).toString().padLeft(3, '0');
 
   String get _waitTime {
     final id = doctor?.id ?? 'd001';
@@ -57,10 +56,8 @@ class BookingSuccessScreen extends StatelessWidget {
                 tween: Tween(begin: 0.0, end: 1.0),
                 duration: const Duration(milliseconds: 700),
                 curve: Curves.elasticOut,
-                builder: (ctx, value, child) => Transform.scale(
-                  scale: value,
-                  child: child,
-                ),
+                builder: (ctx, value, child) =>
+                    Transform.scale(scale: value, child: child),
                 child: Container(
                   width: 110,
                   height: 110,
@@ -227,7 +224,7 @@ class _TokenCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 18),
-          const Divider(height: 1, color: AppColors.divider),
+          Divider(height: 1, color: AppColors.divider),
           const SizedBox(height: 16),
           Text(
             doctorName,
