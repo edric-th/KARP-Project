@@ -215,7 +215,7 @@ export default function DoctorQueue() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-emerald-900 via-teal-900 to-emerald-800 text-white flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-zinc-900 via-zinc-900 to-zinc-800 text-white flex items-center justify-center">
         <p className="text-xl">Loading your queue...</p>
       </div>
     )
@@ -224,11 +224,11 @@ export default function DoctorQueue() {
   // Doctor profile not found (admin needs to link their account to a doctor record)
   if (!doctorProfile) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-emerald-900 via-teal-900 to-emerald-800 text-white p-6 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-zinc-900 via-zinc-900 to-zinc-800 text-white p-6 flex items-center justify-center">
         <div className="bg-white/10 backdrop-blur rounded-2xl p-8 max-w-md w-full text-center">
           <AlertCircle size={48} className="mx-auto mb-4 text-amber-300" />
           <h1 className="text-2xl font-bold mb-2">Profile not linked</h1>
-          <p className="text-emerald-100 mb-6">
+          <p className="text-zinc-100 mb-6">
             Your doctor profile hasn't been set up yet. Please ask the
             administrator to add your email <strong>{user?.email}</strong> to
             your doctor record in the system.
@@ -245,7 +245,7 @@ export default function DoctorQueue() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-900 via-teal-900 to-emerald-800 text-white">
+    <div className="min-h-screen bg-gradient-to-br from-zinc-900 via-zinc-900 to-zinc-800 text-white">
       {/* Header */}
       <header className="px-4 md:px-8 py-4 border-b border-white/10 flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3 min-w-0">
@@ -256,7 +256,7 @@ export default function DoctorQueue() {
             <h1 className="font-bold text-lg md:text-xl truncate">
               Dr. {doctorProfile.name}
             </h1>
-            <p className="text-emerald-200 text-xs md:text-sm truncate">
+            <p className="text-zinc-200 text-xs md:text-sm truncate">
               {doctorProfile.specialty}
               {hospital ? ` · ${hospital.name}` : ''}
             </p>
@@ -268,14 +268,14 @@ export default function DoctorQueue() {
           </p>
           <button
             onClick={() => navigate('/account-settings')}
-            className="p-2 hover:bg-white/10 rounded-lg text-emerald-200 hover:text-white transition"
+            className="p-2 hover:bg-white/10 rounded-lg text-zinc-200 hover:text-white transition"
             title="Account settings"
           >
             <Settings size={20} />
           </button>
           <button
             onClick={handleSignOut}
-            className="p-2 hover:bg-white/10 rounded-lg text-emerald-200 hover:text-white transition"
+            className="p-2 hover:bg-white/10 rounded-lg text-zinc-200 hover:text-white transition"
             title="Sign out"
           >
             <LogOut size={20} />
@@ -293,7 +293,7 @@ export default function DoctorQueue() {
 
         {/* Now Serving Card */}
         <div className="bg-white/10 backdrop-blur rounded-2xl p-6 md:p-8 mb-6 border border-white/10">
-          <p className="text-emerald-200 text-sm uppercase tracking-wider font-medium mb-2">
+          <p className="text-zinc-200 text-sm uppercase tracking-wider font-medium mb-2">
             Now in consultation
           </p>
           {active ? (
@@ -313,7 +313,7 @@ export default function DoctorQueue() {
                       {bookingTypeLabel[active.bookingType]}
                     </span>
                     {active.patientPhone && (
-                      <span className="text-sm text-emerald-200 flex items-center gap-1">
+                      <span className="text-sm text-zinc-200 flex items-center gap-1">
                         <Phone size={12} />
                         {active.patientPhone}
                       </span>
@@ -326,7 +326,7 @@ export default function DoctorQueue() {
               <div className="grid grid-cols-2 gap-3">
                 <button
                   onClick={handleDoneAndNext}
-                  className="bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 px-4 py-5 rounded-xl font-bold text-lg md:text-xl flex items-center justify-center gap-2 transition shadow-lg shadow-emerald-900/50"
+                  className="bg-zinc-500 hover:bg-zinc-400 active:bg-zinc-600 px-4 py-5 rounded-xl font-bold text-lg md:text-xl flex items-center justify-center gap-2 transition shadow-lg shadow-zinc-900/50"
                 >
                   <Check size={24} /> Done — Call Next
                 </button>
@@ -340,7 +340,7 @@ export default function DoctorQueue() {
             </div>
           ) : (
             <div>
-              <p className="text-emerald-200 text-xl mb-4">
+              <p className="text-zinc-200 text-xl mb-4">
                 {pending.length === 0
                   ? 'No patients in queue right now'
                   : 'Ready to start with the next patient'}
@@ -348,7 +348,7 @@ export default function DoctorQueue() {
               {pending.length > 0 && (
                 <button
                   onClick={handleDoneAndNext}
-                  className="w-full bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 px-4 py-5 rounded-xl font-bold text-lg md:text-xl flex items-center justify-center gap-2 transition shadow-lg shadow-emerald-900/50"
+                  className="w-full bg-zinc-500 hover:bg-zinc-400 active:bg-zinc-600 px-4 py-5 rounded-xl font-bold text-lg md:text-xl flex items-center justify-center gap-2 transition shadow-lg shadow-zinc-900/50"
                 >
                   Call First Patient <ChevronRight size={24} />
                 </button>
@@ -377,8 +377,8 @@ export default function DoctorQueue() {
 
           {pending.length === 0 ? (
             <div className="text-center py-8">
-              <Coffee className="mx-auto mb-2 text-emerald-300" size={32} />
-              <p className="text-emerald-200">No one waiting. Take a break ☕</p>
+              <Coffee className="mx-auto mb-2 text-zinc-300" size={32} />
+              <p className="text-zinc-200">No one waiting. Take a break ☕</p>
             </div>
           ) : (
             <div className="space-y-2">
@@ -406,7 +406,7 @@ export default function DoctorQueue() {
                         >
                           {bookingTypeLabel[b.bookingType]}
                         </span>
-                        <span className="text-xs text-emerald-200">
+                        <span className="text-xs text-zinc-200">
                           Expected {formatExpectedTime(callTime)}
                         </span>
                       </div>
@@ -419,7 +419,7 @@ export default function DoctorQueue() {
         </div>
 
         {/* Footer info */}
-        <p className="text-center text-emerald-300/60 text-xs mt-6">
+        <p className="text-center text-zinc-300/60 text-xs mt-6">
           🔴 Live · Changes appear instantly across all screens
         </p>
       </main>
@@ -430,7 +430,7 @@ export default function DoctorQueue() {
 function Stat({ label, value }) {
   return (
     <div className="bg-white/10 backdrop-blur rounded-xl p-3 md:p-4 text-center border border-white/10">
-      <p className="text-emerald-200 text-xs uppercase tracking-wider">
+      <p className="text-zinc-200 text-xs uppercase tracking-wider">
         {label}
       </p>
       <p className="text-2xl md:text-3xl font-bold mt-1 tabular-nums">{value}</p>

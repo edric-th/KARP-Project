@@ -30,9 +30,16 @@ export default function Layout() {
   return (
     <div className="min-h-screen flex">
       <aside className="w-64 bg-white border-r border-gray-200 flex flex-col">
-        <div className="p-6 border-b border-gray-200">
-          <h1 className="font-bold text-lg">Hospital Queue</h1>
-          <p className="text-xs text-gray-500 mt-1">Admin Panel</p>
+        <div className="p-6 border-b border-gray-200 flex items-center gap-3">
+          <img
+            src="/mero-palo-logo.jpeg"
+            alt="Meroपालो"
+            className="w-10 h-10 object-contain rounded"
+          />
+          <div>
+            <h1 className="font-bold text-lg">Meroपालो</h1>
+            <p className="text-xs text-gray-500">Admin Panel</p>
+          </div>
         </div>
         <nav className="flex-1 p-4 space-y-1">
           {navItems.map(({ to, icon: Icon, label, end }) => (
