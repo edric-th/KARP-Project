@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -8,6 +10,7 @@ import 'package:frontend/models/booking_model.dart';
 import 'package:frontend/providers/auth_provider.dart';
 import 'package:frontend/providers/catalog_provider.dart';
 import 'package:frontend/providers/bookings_provider.dart';
+import 'package:frontend/providers/queue_provider.dart';
 import 'package:frontend/widgets/common/custom_input_field.dart';
 import 'package:frontend/widgets/common/state_views.dart';
 import 'package:frontend/widgets/home/doctor_card.dart';
@@ -22,6 +25,9 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  String? _trackingDoctorId;
+  Timer? _pollTimer;
+
   @override
   void initState() {
     super.initState();
@@ -29,19 +35,55 @@ class _HomeScreenState extends State<HomeScreen> {
       context.read<CatalogProvider>().load();
       context.read<BookingsProvider>().load();
     });
+    // Keep the booking list fresh so the queue card reflects served/advanced
+    // tokens without a manual pull-to-refresh (the QueueProvider polls too).
+    _pollTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+      if (mounted) context.read<BookingsProvider>().load();
+    });
+  }
+
+  @override
+  void dispose() {
+    _pollTimer?.cancel();
+    super.dispose();
+  }
+
+  /// Keep the polling QueueProvider pointed at the active booking's doctor, so
+  /// the live "ahead of you" count and ETA stay accurate without a refresh.
+  void _syncTracking(BookingModel? active) {
+    if (active != null && active.doctorId != _trackingDoctorId) {
+      _trackingDoctorId = active.doctorId;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          context
+              .read<QueueProvider>()
+              .start(active.doctorId, date: active.bookingDate);
+        }
+      });
+    } else if (active == null && _trackingDoctorId != null) {
+      _trackingDoctorId = null;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) context.read<QueueProvider>().stop();
+      });
+    }
   }
 
   Future<void> _refresh() async {
-    await Future.wait([
-      context.read<CatalogProvider>().load(force: true),
-      context.read<BookingsProvider>().load(),
-    ]);
+    final catalog = context.read<CatalogProvider>();
+    final bookings = context.read<BookingsProvider>();
+    final queue = context.read<QueueProvider>();
+    await Future.wait([catalog.load(force: true), bookings.load()]);
+    await queue.refreshNow();
   }
 
-  /// Synthesize the home hero card from the patient's live booking + ETA.
-  QueueModel? _activeQueueModel(BookingModel? b) {
+  /// Build the home hero card from the patient's booking + the LIVE queue
+  /// snapshot (real people-ahead + ETA), falling back to the booking's own
+  /// fields before the queue has loaded.
+  QueueModel? _activeQueueModel(BookingModel? b, QueueProvider queue) {
     if (b == null) return null;
-    final ahead = b.position ?? 0;
+    final entry = queue.status?.entryFor(b.id);
+    final ahead = entry?.position ?? b.position ?? 0;
+    final eta = entry?.estimatedWaitMinutes ?? b.estimatedWaitMinutes ?? 0;
     final token = b.tokenNumber;
     final current = (token - ahead).clamp(0, token);
     return QueueModel(
@@ -52,7 +94,7 @@ class _HomeScreenState extends State<HomeScreen> {
       queueNumber: token,
       currentNumber: current,
       totalAhead: ahead,
-      estimatedMinutes: b.estimatedWaitMinutes ?? 0,
+      estimatedMinutes: eta,
       status: b.isActive ? QueueStatus.active : QueueStatus.waiting,
       department: b.hospitalName,
     );
@@ -63,9 +105,13 @@ class _HomeScreenState extends State<HomeScreen> {
     final auth = context.watch<AuthProvider>();
     final catalog = context.watch<CatalogProvider>();
     final bookings = context.watch<BookingsProvider>();
+    final queue = context.watch<QueueProvider>();
+
+    final activeBooking = bookings.activeBooking;
+    _syncTracking(activeBooking);
 
     final firstName = (auth.profile?.displayName ?? 'there').split(' ').first;
-    final activeQueue = _activeQueueModel(bookings.activeBooking);
+    final activeQueue = _activeQueueModel(activeBooking, queue);
     final hospitals = catalog.hospitals.take(3).toList();
 
     return Scaffold(
@@ -531,25 +577,32 @@ class _LiveQueueStatus extends StatelessWidget {
     final entries = <_TokenEntry>[];
     final current = queue.currentNumber;
     final yours = queue.queueNumber;
+    final ahead = queue.totalAhead;
+    final perPerson = ahead > 0 ? queue.estimatedMinutes / ahead : 0.0;
 
-    entries.add(
-      _TokenEntry(
-        number: current,
-        state: _TokenState.inConsult,
-        tag: _statusFor(current),
-        etaMinutes: 0,
-      ),
-    );
-
-    for (var t = current + 1; t < yours; t++) {
+    // Only render people who are genuinely ahead of you: the patient currently
+    // in consult plus anyone still waiting. When nobody is ahead, the card
+    // shows only your token — no phantom "already served" rows.
+    if (ahead > 0) {
       entries.add(
         _TokenEntry(
-          number: t,
-          state: _TokenState.waiting,
-          tag: _statusFor(t),
-          etaMinutes: 5 + (t * 3 % 12),
+          number: current,
+          state: _TokenState.inConsult,
+          tag: _statusFor(current),
+          etaMinutes: 0,
         ),
       );
+      for (var i = 1; i < ahead; i++) {
+        final t = current + i;
+        entries.add(
+          _TokenEntry(
+            number: t,
+            state: _TokenState.waiting,
+            tag: _statusFor(t),
+            etaMinutes: (perPerson * i).round(),
+          ),
+        );
+      }
     }
 
     entries.add(
@@ -578,6 +631,8 @@ class _LiveQueueStatus extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = _tokens;
+    final ahead = queue.totalAhead;
+    final badgeText = ahead <= 0 ? "It's your turn" : '$ahead ahead of you';
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -601,7 +656,7 @@ class _LiveQueueStatus extends StatelessWidget {
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Text(
-                '${tokens.length} people in queue',
+                badgeText,
                 style: const TextStyle(
                   fontFamily: 'Inter',
                   fontSize: 11,
