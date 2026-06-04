@@ -1,0 +1,10 @@
+# Mero Palo FastAPI backend
+# (these are already present in ./venv — listed for reproducibility)
+fastapi>=0.110
+uvicorn[standard]>=0.27
+pydantic>=2.6
+firebase-admin>=6.5
+google-cloud-firestore>=2.16
+httpx>=0.27
+python-dotenv>=1.0
+google-genai>=1.0  # in-process Gemini chatbot (Chatbot/bot.py)

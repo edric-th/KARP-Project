@@ -1,0 +1,88 @@
+{
+  "category": "general",
+  "intents": [
+    {
+      "name": "greeting",
+      "examples": [
+        "Hi",
+        "Hello",
+        "Namaste",
+        "Good morning",
+        "Good evening",
+        "Good afternoon",
+        "Hey there",
+        "Hello chatbot",
+        "Namaskar"
+      ],
+      "response": "Namaste! 🙏 Welcome to the Hospital Queue Assistant. I'm here to help you with:\n\n• **App questions** — booking tokens, checking queue status, managing appointments, and more.\n• **Medical guidance** — I can point you to the right specialist based on your symptoms.\n\nHow can I help you today? Feel free to ask anything!"
+    },
+    {
+      "name": "thanks",
+      "examples": [
+        "Thank you",
+        "Thanks",
+        "Dhanyabad",
+        "Thank you very much",
+        "Thanks a lot",
+        "That was helpful, thanks",
+        "I appreciate your help",
+        "Shukriya"
+      ],
+      "response": "You're very welcome! 😊 I'm glad I could help. If you have any more questions — whether about the app or a health concern — feel free to ask anytime. Take care!"
+    },
+    {
+      "name": "goodbye",
+      "examples": [
+        "Bye",
+        "Goodbye",
+        "See you",
+        "See you later",
+        "Take care",
+        "I'm done",
+        "Bye bye",
+        "Alvida"
+      ],
+      "response": "Goodbye! Take care of yourself, and don't hesitate to come back if you have more questions. Wishing you good health! 🙏"
+    },
+    {
+      "name": "help",
+      "examples": [
+        "Help",
+        "What can you do?",
+        "What can you help me with?",
+        "What do you know?",
+        "What are your features?",
+        "How can you assist me?",
+        "Tell me what you can do",
+        "Show me your capabilities"
+      ],
+      "response": "I'm your Hospital Queue Assistant. Here is what I can help you with:\n\n**App & Queue:**\n• Booking, cancelling, or rescheduling tokens\n• Understanding queue status and wait times\n• Finding doctors and hospitals\n• Notifications and profile management\n• Troubleshooting app issues\n\n**Medical Guidance:**\n• Pointing you to the right specialist based on your symptoms\n• Emergency guidance for urgent situations\n• General health information\n\nJust type your question naturally — for example, *\"How do I cancel my token?\"* or *\"I have a headache, which doctor should I see?\"* I'll do my best to help!"
+    },
+    {
+      "name": "bot_info",
+      "examples": [
+        "Who are you?",
+        "What are you?",
+        "Are you a robot?",
+        "Are you a real person?",
+        "Tell me about yourself",
+        "What is this chatbot?",
+        "Who made you?"
+      ],
+      "response": "I'm the **Hospital Queue Assistant** — an AI-powered chatbot built for the Hospital Queue Management App. I'm designed to help patients in Nepal navigate the app and get quick guidance about health concerns.\n\nI can answer questions about booking appointments, managing your queue tokens, and provide general medical guidance by routing you to the right specialist.\n\n**Important:** I am not a doctor. For any medical concern, please always consult a qualified healthcare professional. For emergencies, call an ambulance (102 / 101) immediately."
+    },
+    {
+      "name": "fallback",
+      "examples": [
+        "asdfgh",
+        "I don't know what to ask",
+        "something something",
+        "random question",
+        "xyz",
+        "tell me a joke",
+        "what is the weather"
+      ],
+      "response": "I'm sorry, I didn't quite understand that. I'm best at answering questions about:\n\n• **Using the app** — bookings, tokens, queue status, finding doctors\n• **Medical guidance** — which specialist to see for your symptoms\n\nCould you rephrase your question? For example, try *\"How do I book a token?\"* or *\"I have a fever, which doctor should I see?\"*\n\nIf you need help with something urgent, type **\"help\"** to see everything I can do."
+    }
+  ]
+}

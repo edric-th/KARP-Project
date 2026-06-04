@@ -1,0 +1,132 @@
+[2026-05-19 12:50:35] USER: 'what are some reasons I am feeling dizzy'
+[2026-05-19 12:50:35] BOT : intent=None category=general emergency=False confidence=0.0
+[2026-05-19 12:50:35] RESP: I'm having trouble processing that right now. Please try again or contact reception directly.
+────────────────────────────────────────────────────────────────────────────────
+[2026-05-19 12:52:46] USER: 'what are some reasons I am feeling dizzy'
+[2026-05-19 12:52:46] BOT : intent=None category=general emergency=False confidence=0.0
+[2026-05-19 12:52:46] RESP: I'm having trouble processing that right now. Please try again or contact reception directly.
+────────────────────────────────────────────────────────────────────────────────
+[2026-05-19 13:13:06] USER: 'what are some reasons I am feeling dizzy'
+[2026-05-19 13:13:06] BOT : intent=dizziness_causes category=medical emergency=False confidence=95.0
+[2026-05-19 13:13:06] RESP: Feeling dizzy can be unsettling, and it has several common causes. It might be due to simple things like dehydration, inner ear issues (like vertigo), low blood pressure, or even anxiety. Sometimes, c
+────────────────────────────────────────────────────────────────────────────────
+[2026-05-19 13:13:46] USER: 'I have a headache'
+[2026-05-19 13:13:46] BOT : intent=headache_symptoms category=medical emergency=False confidence=90.0
+[2026-05-19 13:13:46] RESP: Headaches are very common and can be caused by many things like stress, dehydration, lack of sleep, eye strain, or even sinus issues. Sometimes they can be a symptom of a migraine. If your headache is
+────────────────────────────────────────────────────────────────────────────────
+[2026-05-19 13:13:54] USER: 'since yesterday morning'
+[2026-05-19 13:13:54] BOT : intent=headache_duration category=medical emergency=False confidence=90.0
+[2026-05-19 13:13:54] RESP: I understand you've had a headache since yesterday morning. Headaches can be caused by many things like stress, dehydration, lack of sleep, or even sinus issues. If it's persistent, severe, or comes w
+────────────────────────────────────────────────────────────────────────────────
+[2026-05-19 13:14:03] USER: 'it keeps getting worse when I move around'
+[2026-05-19 13:14:03] BOT : intent=headache_worsening_with_movement category=medical emergency=False confidence=90.0
+[2026-05-19 13:14:03] RESP: I'm sorry to hear your headache is getting worse when you move around. This can sometimes be a sign of different things, from tension headaches or migraines to sinus problems or, less commonly, other 
+────────────────────────────────────────────────────────────────────────────────
+[2026-05-19 13:18:48] USER: 'I feel dizzy'
+[2026-05-19 13:18:48] BOT : intent=dizziness_symptom category=medical emergency=False confidence=95.0
+[2026-05-19 13:18:48] RESP: I understand that feeling dizzy can be unsettling. Dizziness can have many causes, such as dehydration, inner ear issues (like vertigo), low blood pressure, anxiety, or side effects from certain medic
+────────────────────────────────────────────────────────────────────────────────
+[2026-05-19 13:19:10] USER: 'it has been going on for 3 daya'
+[2026-05-19 13:19:10] BOT : intent=dizziness_duration category=medical emergency=False confidence=90.0
+[2026-05-19 13:19:10] RESP: I'm sorry to hear your dizziness has been going on for three days. Persistent dizziness definitely warrants a check-up. Common reasons for prolonged dizziness can include inner ear problems, certain t
+────────────────────────────────────────────────────────────────────────────────
+[2026-05-19 13:19:43] USER: 'what is the wait time for my queue'
+[2026-05-19 13:19:43] BOT : intent=wait_time category=app emergency=False confidence=95.0
+[2026-05-19 13:19:43] RESP: Wait time is calculated based on the number of patients ahead of you in the queue and the average consultation time for that doctor. The app updates your estimated wait time in real time as patients a
+────────────────────────────────────────────────────────────────────────────────
+[2026-05-19 13:20:10] USER: 'cant you tell me the time left'
+[2026-05-19 13:20:10] BOT : intent=check_token_number category=app emergency=False confidence=95.0
+[2026-05-19 13:20:10] RESP: To check your current token number and estimated wait time, please go to the 'My Appointments' section in the app. Your active token will be displayed at the top with your token number, your position 
+────────────────────────────────────────────────────────────────────────────────
+[2026-05-19 13:20:46] USER: 'i feel itchy around my bum and its kinda ring shaped'
+[2026-05-19 13:20:46] BOT : intent=itchy_ring_rash category=medical emergency=False confidence=95.0
+[2026-05-19 13:20:46] RESP: I understand that feeling itchy and seeing a ring-shaped rash can be quite uncomfortable. This description often suggests a fungal infection, commonly known as ringworm, which can occur on various par
+────────────────────────────────────────────────────────────────────────────────
+[2026-05-19 13:21:13] USER: 'which hospital would you suggest'
+[2026-05-19 13:21:13] BOT : intent=None category=general emergency=False confidence=0.0
+[2026-05-19 13:21:13] RESP: I'm having trouble processing that right now. Please try again or contact reception directly.
+────────────────────────────────────────────────────────────────────────────────
+[2026-05-21 07:27:28] USER: 'How do I book a token?'
+[2026-05-21 07:27:28] BOT : intent=book_token category=app emergency=False confidence=100.0
+[2026-05-21 07:27:28] RESP: To book a token, open the app and tap 'Book Appointment'. Select your preferred hospital, then choose a doctor or specialization. Pick the type of visit — First-Time, Follow-Up, or Show Report — then 
+────────────────────────────────────────────────────────────────────────────────
+[2026-05-21 07:28:44] USER: 'im having vomit'
+[2026-05-21 07:28:44] BOT : intent=vomiting_symptoms category=medical emergency=False confidence=90.0
+[2026-05-21 07:28:44] RESP: I'm sorry to hear you're feeling unwell and experiencing vomiting. Vomiting can be caused by many things, such as food poisoning, stomach flu (gastroenteritis), migraines, or even certain medications.
+────────────────────────────────────────────────────────────────────────────────
+[2026-05-21 07:29:03] USER: 'how does food poisoning happen'
+[2026-05-21 07:29:03] BOT : intent=food_poisoning_causes category=medical emergency=False confidence=95.0
+[2026-05-21 07:29:03] RESP: Food poisoning happens when you eat food or drink water contaminated with harmful bacteria, viruses, parasites, or toxins. Common ways this can occur include: eating undercooked meat or eggs, consumin
+────────────────────────────────────────────────────────────────────────────────
+[2026-05-21 07:44:08] USER: 'I feel dizzy'
+[2026-05-21 07:44:08] BOT : intent=dizziness_causes category=medical emergency=False confidence=95.0
+[2026-05-21 07:44:08] RESP: I understand that feeling dizzy can be quite unsettling. Dizziness can have many causes, such as dehydration, inner ear issues (like vertigo), low blood pressure, anxiety, or even side effects from ce
+────────────────────────────────────────────────────────────────────────────────
+[2026-05-21 07:44:18] USER: 'How do I book a token?'
+[2026-05-21 07:44:18] BOT : intent=book_token category=app emergency=False confidence=100.0
+[2026-05-21 07:44:18] RESP: To book a token, open the app and tap 'Book Appointment'. Select your preferred hospital, then choose a doctor or specialization. Pick the type of visit — First-Time, Follow-Up, or Show Report — then 
+────────────────────────────────────────────────────────────────────────────────
+[2026-05-21 07:44:33] USER: 'i think im gay'
+[2026-05-21 07:44:33] BOT : intent=out_of_scope category=out_of_scope emergency=False confidence=100.0
+[2026-05-21 07:44:33] RESP: I'm focused on helping with hospital app questions and basic health guidance. Is there something I can help with on those topics?
+────────────────────────────────────────────────────────────────────────────────
+[2026-05-21 07:46:05] USER: 'i am having backpain. To which i have to consult ?'
+[2026-05-21 07:46:05] BOT : intent=back_pain_specialist category=medical emergency=False confidence=95.0
+[2026-05-21 07:46:05] RESP: For back pain, you should consult an Orthopedic Specialist. They specialize in conditions related to bones, joints, and muscles. Please consult a qualified doctor for proper evaluation.
+────────────────────────────────────────────────────────────────────────────────
+[2026-05-21 07:47:04] USER: 'name the doctors avilable at the movement'
+[2026-05-21 07:47:04] BOT : intent=find_doctor category=app emergency=False confidence=90.0
+[2026-05-21 07:47:04] RESP: To find available doctors, go to the 'Find Doctor' tab in the app. You can search by specialization or browse the list. You can also filter by hospital and check their availability. Tap on any doctor'
+────────────────────────────────────────────────────────────────────────────────
+[2026-05-21 07:48:33] USER: 'so my friend is having a common cold not only that but also throat pain and chest pain so preventive measures for that'
+[2026-05-21 07:48:33] BOT : intent=None category=general emergency=False confidence=0.0
+[2026-05-21 07:48:33] RESP: I'm having trouble processing that right now. Please try again or contact reception directly.
+────────────────────────────────────────────────────────────────────────────────
+[2026-05-26 07:41:44] USER: 'nanu maya is suffering from gonohrrea. what should she do? and what are causes of gonohrrea'
+[2026-05-26 07:41:44] BOT : intent=None category=general emergency=False confidence=0.0
+[2026-05-26 07:41:44] RESP: I'm having trouble processing that right now. Please try again or contact reception directly.
+────────────────────────────────────────────────────────────────────────────────
+[2026-05-26 07:42:50] USER: 'my friend is suffering from gonorrhea. how did it happen and what should she do'
+[2026-05-26 07:42:50] BOT : intent=gonorrhea_guidance category=medical emergency=False confidence=95.0
+[2026-05-26 07:42:50] RESP: I understand you're concerned about your friend. Gonorrhea is a common sexually transmitted infection (STI) caused by bacteria. It's primarily spread through unprotected sexual contact, including vagi
+────────────────────────────────────────────────────────────────────────────────
+[2026-05-26 07:54:14] USER: 'so my friend got nemonia and waht should ber done?'
+[2026-05-26 07:54:14] BOT : intent=pneumonia_guidance category=medical emergency=False confidence=95.0
+[2026-05-26 07:54:14] RESP: I'm sorry to hear your friend has pneumonia. Pneumonia is a serious lung infection that can cause symptoms like cough, fever, chills, and difficulty breathing. It's very important that your friend fol
+────────────────────────────────────────────────────────────────────────────────
+[2026-05-26 07:57:09] USER: 'donalaura is having calf pain in his left leg? what should he do and how can he prevent it'
+[2026-05-26 07:57:09] BOT : intent=None category=general emergency=False confidence=0.0
+[2026-05-26 07:57:09] RESP: I'm having trouble processing that right now. Please try again or contact reception directly.
+────────────────────────────────────────────────────────────────────────────────
+[2026-05-26 07:57:51] USER: 'donalaura is the name of my friend'
+[2026-05-26 07:57:51] BOT : intent=calf_pain_causes_prevention category=medical emergency=False confidence=95.0
+[2026-05-26 07:57:51] RESP: I understand your friend Donalaura is experiencing calf pain in their left leg. Calf pain can be caused by various factors such as muscle strain from overuse or injury, dehydration, muscle cramps, or 
+────────────────────────────────────────────────────────────────────────────────
+[2026-05-26 07:58:25] USER: 'NIrmaya is having vomits what might be the causes'
+[2026-05-26 07:58:25] BOT : intent=vomiting_causes category=medical emergency=False confidence=95.0
+[2026-05-26 07:58:25] RESP: I'm sorry to hear Nirmaya is having vomits. Vomiting can be caused by many things, such as food poisoning, stomach flu (gastroenteritis), motion sickness, migraines, or even certain medications. Somet
+────────────────────────────────────────────────────────────────────────────────
+[2026-05-26 07:59:12] USER: 'suntali is having fever .why?'
+[2026-05-26 07:59:12] BOT : intent=fever_causes category=medical emergency=False confidence=90.0
+[2026-05-26 07:59:12] RESP: I'm sorry to hear Suntali is having a fever. Fever is usually a sign that the body is fighting off an infection. Common causes include viral infections like the common cold or flu, bacterial infection
+────────────────────────────────────────────────────────────────────────────────
+[2026-05-26 08:01:13] USER: 'kaji wants to perform vaginoplasty. whats should he do to prepare for the said surgary'
+[2026-05-26 08:01:13] BOT : intent=vaginoplasty_preparation category=medical emergency=False confidence=95.0
+[2026-05-26 08:01:13] RESP: I understand Kaji is considering vaginoplasty. This is a significant surgical procedure, and preparing for it involves several important steps that must be guided by medical professionals. Generally, 
+────────────────────────────────────────────────────────────────────────────────
+[2026-05-26 08:02:00] USER: 'what happens in this surgery'
+[2026-05-26 08:02:00] BOT : intent=vaginoplasty_procedure category=medical emergency=False confidence=95.0
+[2026-05-26 08:02:00] RESP: Vaginoplasty is a surgical procedure that involves the construction or reconstruction of a vagina. The specific techniques used can vary greatly depending on the individual's needs and the goal of the
+────────────────────────────────────────────────────────────────────────────────
+[2026-06-01 09:59:05] USER: 'I feel dizzy'
+[2026-06-01 09:59:05] BOT : intent=dizziness_symptoms category=medical emergency=False confidence=95.0
+[2026-06-01 09:59:05] RESP: I understand that feeling dizzy can be quite unsettling. Dizziness can have many causes, such as dehydration, inner ear issues (like vertigo), low blood pressure, anxiety, or even side effects from ce
+────────────────────────────────────────────────────────────────────────────────
+[2026-06-01 09:59:16] USER: 'I feel dizzy'
+[2026-06-01 09:59:16] BOT : intent=dizziness_symptoms category=medical emergency=False confidence=95.0
+[2026-06-01 09:59:16] RESP: Dizziness can have many causes — dehydration, inner ear issues (like vertigo), low blood pressure, anxiety, or medication side effects. Most are manageable, but some need evaluation. I'd suggest seein
+────────────────────────────────────────────────────────────────────────────────
+[2026-06-04 00:35:27] USER: 'How do I book a token?'
+[2026-06-04 00:35:27] BOT : intent=book_token category=app emergency=False confidence=100.0
+[2026-06-04 00:35:27] RESP: To book a token, open the app and tap 'Book Appointment'. Select your preferred hospital, then choose a doctor or specialization. Pick the type of visit — First-Time, Follow-Up, or Show Report — then 
+────────────────────────────────────────────────────────────────────────────────

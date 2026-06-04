@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
-import '../theme/app_theme.dart';
+import 'package:provider/provider.dart';
+import 'package:frontend/constants/app_colors.dart';
+import 'package:frontend/providers/auth_provider.dart';
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
@@ -10,48 +13,729 @@ class EditProfileScreen extends StatefulWidget {
 }
 
 class _EditProfileScreenState extends State<EditProfileScreen> {
-  final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController(text: 'Aryan Thakuri');
-  final _phoneController = TextEditingController(text: '9845437057');
-  DateTime? _selectedDate;
-  String _selectedGender = 'Male';
-  String _selectedBloodGroup = 'B+';
-  final List<String> _allergies = ['Dust'];
-  final List<String> _conditions = ['Hypertension'];
-  final List<String> _medications = ['Amlodipine 5mg'];
+  late final TextEditingController _nameCtrl;
+  late final TextEditingController _phoneCtrl;
 
-  final List<String> _bloodGroups = [
-    'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'
-  ];
+  DateTime _dob = DateTime(2000, 1, 1);
+  String _gender = 'Male';
+  String _bloodGroup = 'B+';
+
+  List<String> _allergies = [];
+  List<String> _conditions = [];
+  List<String> _medications = [];
+
+  bool _saving = false;
+  String? _phoneError;
+
+  static const _bloodGroups = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
+
+  @override
+  void initState() {
+    super.initState();
+    final p = context.read<AuthProvider>().profile;
+    _nameCtrl = TextEditingController(text: p?.name ?? '');
+    _phoneCtrl = TextEditingController(text: p?.phone ?? '');
+    if (p != null) {
+      if (p.gender.isNotEmpty) _gender = p.gender;
+      if (p.bloodGroup.isNotEmpty && _bloodGroups.contains(p.bloodGroup)) {
+        _bloodGroup = p.bloodGroup;
+      }
+      _dob = DateTime.tryParse(p.dateOfBirth) ?? _dob;
+      _allergies = List<String>.from(p.allergies);
+      _conditions = List<String>.from(p.chronicConditions);
+      _medications = p.currentMedications
+          .map((m) => [m['name'], m['dose']]
+              .where((e) => e != null && '$e'.isNotEmpty)
+              .join(' '))
+          .where((s) => s.isNotEmpty)
+          .toList();
+    }
+  }
 
   @override
   void dispose() {
-    _nameController.dispose();
-    _phoneController.dispose();
+    _nameCtrl.dispose();
+    _phoneCtrl.dispose();
     super.dispose();
+  }
+
+  String _initials() {
+    final parts = _nameCtrl.text.trim().split(RegExp(r'\s+'));
+    if (parts.isEmpty || parts.first.isEmpty) return '?';
+    if (parts.length == 1) return parts.first.substring(0, 1).toUpperCase();
+    return (parts.first.substring(0, 1) + parts.last.substring(0, 1))
+        .toUpperCase();
+  }
+
+  Future<void> _save() async {
+    if (_saving) return;
+    final phone = _phoneCtrl.text.trim();
+    if (phone.isNotEmpty && phone.length < 7) {
+      setState(() => _phoneError = 'Please enter a valid phone number');
+      return;
+    }
+    setState(() {
+      _phoneError = null;
+      _saving = true;
+    });
+
+    final fields = <String, dynamic>{
+      'name': _nameCtrl.text.trim(),
+      if (phone.isNotEmpty) 'phone': phone,
+      'dateOfBirth': DateFormat('yyyy-MM-dd').format(_dob),
+      'gender': _gender,
+      'bloodGroup': _bloodGroup,
+      'allergies': _allergies,
+      'chronicConditions': _conditions,
+      'currentMedications': _medications.map((m) => {'name': m}).toList(),
+    };
+
+    final ok = await context.read<AuthProvider>().saveProfile(fields);
+    if (!mounted) return;
+    setState(() => _saving = false);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content:
+            Text(ok ? 'Profile updated successfully' : 'Could not save profile'),
+        backgroundColor: ok ? AppColors.primary : AppColors.error,
+      ),
+    );
+    if (ok) Navigator.pop(context);
+  }
+
+  Future<void> _pickDob() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _dob,
+      firstDate: DateTime(1900),
+      lastDate: DateTime.now(),
+      builder: (ctx, child) => Theme(
+        data: Theme.of(ctx).copyWith(
+          colorScheme: ColorScheme.light(
+            primary: AppColors.primary,
+            onPrimary: Colors.white,
+            onSurface: AppColors.textPrimary,
+          ),
+        ),
+        child: child!,
+      ),
+    );
+    if (picked != null) setState(() => _dob = picked);
+  }
+
+  Future<void> _pickBloodGroup() async {
+    final picked = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: AppColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.fromLTRB(20, 18, 20, 30),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.only(bottom: 16),
+              decoration: BoxDecoration(
+                color: AppColors.border,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            Text(
+              'Select Blood Group',
+              style: TextStyle(
+                fontFamily: 'Inter',
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 14),
+            Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              alignment: WrapAlignment.center,
+              children: _bloodGroups
+                  .map(
+                    (g) => GestureDetector(
+                      onTap: () => Navigator.pop(ctx, g),
+                      child: Container(
+                        width: 64,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        decoration: BoxDecoration(
+                          color: g == _bloodGroup
+                              ? AppColors.primary
+                              : AppColors.cardGreenLight,
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: Center(
+                          child: Text(
+                            g,
+                            style: TextStyle(
+                              fontFamily: 'Inter',
+                              fontSize: 15,
+                              fontWeight: FontWeight.w800,
+                              color: g == _bloodGroup
+                                  ? Colors.white
+                                  : AppColors.primaryDark,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  )
+                  .toList(),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (picked != null) setState(() => _bloodGroup = picked);
+  }
+
+  Future<void> _addChip(String title, List<String> target) async {
+    final ctrl = TextEditingController();
+    final result = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.fromLTRB(
+          20,
+          20,
+          20,
+          MediaQuery.of(ctx).viewInsets.bottom + 24,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.border,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              title,
+              style: TextStyle(
+                fontFamily: 'Inter',
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              decoration: BoxDecoration(
+                color: AppColors.backgroundLight,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: TextField(
+                controller: ctrl,
+                autofocus: true,
+                style: TextStyle(
+                  fontFamily: 'Inter',
+                  fontSize: 14,
+                  color: AppColors.textPrimary,
+                ),
+                decoration: const InputDecoration(
+                  hintText: 'Type and press Add',
+                  contentPadding:
+                      EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                  border: InputBorder.none,
+                ),
+              ),
+            ),
+            const SizedBox(height: 14),
+            ElevatedButton(
+              onPressed: () {
+                final v = ctrl.text.trim();
+                if (v.isNotEmpty) Navigator.pop(ctx, v);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                minimumSize: const Size.fromHeight(48),
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+              child: Text(
+                'Add',
+                style: TextStyle(
+                  fontFamily: 'Inter',
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+    ctrl.dispose();
+    if (result != null) setState(() => target.add(result));
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.backgroundWhite,
-      body: SafeArea(
+      backgroundColor: AppColors.backgroundLight,
+      body: SingleChildScrollView(
         child: Column(
           children: [
-            _buildAppBar(),
-            Expanded(
-              child: SingleChildScrollView(
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    children: [
-                      _buildProfilePhoto(),
-                      _buildPersonalInfo(),
-                      _buildMedicalInfo(),
-                      _buildButtons(),
-                    ],
+            _GreenTopBar(
+              onCancel: () => Navigator.pop(context),
+              onSave: _save,
+            ),
+            const SizedBox(height: 16),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 30),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEEEAF6),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border(
+                        left: BorderSide(
+                          color: AppColors.primary,
+                          width: 4,
+                        ),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 28,
+                          height: 28,
+                          decoration: BoxDecoration(
+                            color: AppColors.primary,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.info_outline,
+                            color: Colors.white,
+                            size: 16,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'Tap any field to edit. Tap Save in the header when done.',
+                            style: TextStyle(
+                              fontFamily: 'Inter',
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textPrimary,
+                              height: 1.4,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
+                  const SizedBox(height: 22),
+                  Center(
+                    child: Column(
+                      children: [
+                        SizedBox(
+                          width: 90,
+                          height: 90,
+                          child: Stack(
+                            children: [
+                              Container(
+                                width: 90,
+                                height: 90,
+                                decoration: BoxDecoration(
+                                  color: AppColors.cardGreenMedium,
+                                  shape: BoxShape.circle,
+                                ),
+                                alignment: Alignment.center,
+                                child: Text(
+                                  _initials(),
+                                  style: TextStyle(
+                                    fontFamily: 'Inter',
+                                    fontSize: 26,
+                                    fontWeight: FontWeight.w800,
+                                    color: AppColors.primaryDark,
+                                  ),
+                                ),
+                              ),
+                              Positioned(
+                                right: 0,
+                                bottom: 0,
+                                child: Container(
+                                  width: 28,
+                                  height: 28,
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primary,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: AppColors.surface,
+                                      width: 2,
+                                    ),
+                                  ),
+                                  child: const Icon(
+                                    Icons.photo_camera_rounded,
+                                    color: Colors.white,
+                                    size: 14,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          'Change profile photo',
+                          style: TextStyle(
+                            fontFamily: 'Inter',
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.primaryDark,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  _SubHeading('Personal Information'),
+                  const SizedBox(height: 18),
+                  _OutlinedField(
+                    label: 'FULL NAME',
+                    suffix: GestureDetector(
+                      onTap: () => _nameCtrl.clear(),
+                      child: Icon(
+                        Icons.cancel_rounded,
+                        color: AppColors.textMuted,
+                        size: 18,
+                      ),
+                    ),
+                    child: TextField(
+                      controller: _nameCtrl,
+                      onChanged: (_) => setState(() {}),
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                      ),
+                      decoration: const InputDecoration(
+                        isCollapsed: true,
+                        border: InputBorder.none,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  _OutlinedField(
+                    label: 'PHONE NUMBER',
+                    error: _phoneError,
+                    child: Row(
+                      children: [
+                        Text(
+                          '+977',
+                          style: TextStyle(
+                            fontFamily: 'Inter',
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Container(
+                          width: 1,
+                          height: 18,
+                          color: AppColors.border,
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: TextField(
+                            controller: _phoneCtrl,
+                            keyboardType: TextInputType.phone,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly,
+                              LengthLimitingTextInputFormatter(10),
+                            ],
+                            onChanged: (_) {
+                              if (_phoneError != null) {
+                                setState(() => _phoneError = null);
+                              }
+                            },
+                            style: TextStyle(
+                              fontFamily: 'Inter',
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textPrimary,
+                            ),
+                            decoration: const InputDecoration(
+                              isCollapsed: true,
+                              border: InputBorder.none,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  _OutlinedField(
+                    label: 'DATE OF BIRTH',
+                    fillColor: AppColors.cardGreenLight.withValues(alpha: 0.5),
+                    borderColor: Colors.transparent,
+                    onTap: _pickDob,
+                    suffix: Icon(
+                      Icons.calendar_month_outlined,
+                      color: AppColors.textSecondary,
+                      size: 20,
+                    ),
+                    child: Text(
+                      DateFormat('d MMM y').format(_dob),
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  _OutlinedField(
+                    label: 'GENDER',
+                    fillColor: AppColors.cardGreenLight.withValues(alpha: 0.5),
+                    borderColor: Colors.transparent,
+                    contentPadding: const EdgeInsets.fromLTRB(4, 12, 4, 6),
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: AppColors.surface,
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                      child: Row(
+                        children: ['Male', 'Female', 'Other']
+                            .map(
+                              (g) => Expanded(
+                                child: GestureDetector(
+                                  behavior: HitTestBehavior.opaque,
+                                  onTap: () => setState(() => _gender = g),
+                                  child: AnimatedContainer(
+                                    duration:
+                                        const Duration(milliseconds: 180),
+                                    padding:
+                                        const EdgeInsets.symmetric(vertical: 10),
+                                    decoration: BoxDecoration(
+                                      color: _gender == g
+                                          ? AppColors.primary
+                                          : Colors.transparent,
+                                      borderRadius: BorderRadius.circular(26),
+                                    ),
+                                    alignment: Alignment.center,
+                                    child: Text(
+                                      g,
+                                      style: TextStyle(
+                                        fontFamily: 'Inter',
+                                        fontSize: 13.5,
+                                        fontWeight: FontWeight.w700,
+                                        color: _gender == g
+                                            ? Colors.white
+                                            : AppColors.textSecondary,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            )
+                            .toList(),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  _OutlinedField(
+                    label: 'BLOOD GROUP',
+                    fillColor: AppColors.cardGreenLight.withValues(alpha: 0.5),
+                    borderColor: Colors.transparent,
+                    onTap: _pickBloodGroup,
+                    suffix: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.surface,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: AppColors.border),
+                          ),
+                          child: Text(
+                            _bloodGroup,
+                            style: TextStyle(
+                              fontFamily: 'Inter',
+                              fontSize: 13,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Icon(
+                          Icons.keyboard_arrow_down_rounded,
+                          color: AppColors.textSecondary,
+                          size: 20,
+                        ),
+                      ],
+                    ),
+                    child: const SizedBox.shrink(),
+                  ),
+                  const SizedBox(height: 24),
+                  _SubHeading('Medical Info'),
+                  const SizedBox(height: 16),
+                  _MedicalLabel('KNOWN ALLERGIES'),
+                  const SizedBox(height: 10),
+                  _ChipEditor(
+                    items: _allergies,
+                    color: const Color(0xFFFDE0C4),
+                    textColor: const Color(0xFF8A4B14),
+                    onRemove: (i) =>
+                        setState(() => _allergies.removeAt(i)),
+                    onAdd: () => _addChip('Add allergy', _allergies),
+                    addLabel: '+ Add allergy',
+                  ),
+                  const SizedBox(height: 18),
+                  _MedicalLabel('CHRONIC CONDITIONS'),
+                  const SizedBox(height: 10),
+                  _ChipEditor(
+                    items: _conditions,
+                    color: const Color(0xFFFDE0E0),
+                    textColor: const Color(0xFFB42323),
+                    onRemove: (i) =>
+                        setState(() => _conditions.removeAt(i)),
+                    onAdd: () => _addChip('Add condition', _conditions),
+                    addLabel: '+ Add condition',
+                  ),
+                  const SizedBox(height: 18),
+                  _MedicalLabel('MEDICATIONS'),
+                  const SizedBox(height: 10),
+                  ..._medications.asMap().entries.map(
+                        (e) => Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: _MedicationRow(
+                            text: e.value,
+                            onDelete: () => setState(
+                                () => _medications.removeAt(e.key)),
+                          ),
+                        ),
+                      ),
+                  GestureDetector(
+                    onTap: () => _addChip('Add medication', _medications),
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      decoration: BoxDecoration(
+                        color: Colors.transparent,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: AppColors.primary.withValues(alpha: 0.4),
+                          style: BorderStyle.solid,
+                        ),
+                      ),
+                      child: Center(
+                        child: Text(
+                          '+ Add medication',
+                          style: TextStyle(
+                            fontFamily: 'Inter',
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 26),
+                  GestureDetector(
+                    onTap: _save,
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      decoration: BoxDecoration(
+                        gradient: AppColors.primaryGradient,
+                        borderRadius: BorderRadius.circular(28),
+                        boxShadow: AppColors.primaryShadow,
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(
+                            Icons.check_circle_outline_rounded,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Save Changes',
+                            style: TextStyle(
+                              fontFamily: 'Inter',
+                              fontSize: 15,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      decoration: BoxDecoration(
+                        color: AppColors.surface,
+                        borderRadius: BorderRadius.circular(28),
+                        border: Border.all(color: AppColors.border),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(
+                            Icons.close_rounded,
+                            color: AppColors.primary,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Discard Changes',
+                            style: TextStyle(
+                              fontFamily: 'Inter',
+                              fontSize: 15,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                ],
               ),
             ),
           ],
@@ -59,62 +743,67 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       ),
     );
   }
+}
 
-  Widget _buildAppBar() {
+// ─── GREEN TOP BAR ─────────────────────────────────────────────────────────
+
+class _GreenTopBar extends StatelessWidget {
+  final VoidCallback onCancel;
+  final VoidCallback onSave;
+  const _GreenTopBar({required this.onCancel, required this.onSave});
+
+  @override
+  Widget build(BuildContext context) {
+    final topInset = MediaQuery.of(context).padding.top;
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.md,
-        vertical: AppSpacing.md,
-      ),
+      width: double.infinity,
+      padding: EdgeInsets.fromLTRB(20, topInset + 14, 20, 22),
       decoration: const BoxDecoration(
-        color: AppColors.primaryGreen,
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primaryGreen,
-            blurRadius: 10,
-            offset: Offset(0, 2),
-          ),
-        ],
+        gradient: AppColors.primaryGradient,
+        borderRadius: BorderRadius.vertical(bottom: Radius.circular(24)),
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           GestureDetector(
-            onTap: () => Navigator.pop(context),
-            child: const Row(
+            onTap: onCancel,
+            child: Row(
               children: [
-                Icon(
-                  Icons.close,
-                  color: AppColors.textWhite,
-                  size: 28,
-                ),
-                SizedBox(width: AppSpacing.sm),
+                const Icon(Icons.close_rounded, color: Colors.white, size: 18),
+                const SizedBox(width: 4),
                 Text(
                   'Cancel',
                   style: TextStyle(
-                    color: AppColors.textWhite,
-                    fontSize: 16,
+                    fontFamily: 'Inter',
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
                   ),
                 ),
               ],
             ),
           ),
-          const Text(
-            'Edit Profile',
-            style: TextStyle(
-              color: AppColors.textWhite,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
+          Expanded(
+            child: Center(
+              child: Text(
+                'Edit Profile',
+                style: TextStyle(
+                  fontFamily: 'Inter',
+                  fontSize: 17,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                ),
+              ),
             ),
           ),
           GestureDetector(
-            onTap: _saveChanges,
-            child: const Text(
+            onTap: onSave,
+            child: Text(
               'Save',
               style: TextStyle(
-                color: AppColors.textWhite,
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
+                fontFamily: 'Inter',
+                fontSize: 14,
+                fontWeight: FontWeight.w800,
+                color: Colors.white,
               ),
             ),
           ),
@@ -122,558 +811,294 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       ),
     );
   }
+}
 
-  Widget _buildProfilePhoto() {
-    return Padding(
-      padding: const EdgeInsets.all(AppSpacing.lg),
+// ─── HEADING ───────────────────────────────────────────────────────────────
+
+class _SubHeading extends StatelessWidget {
+  final String text;
+  const _SubHeading(this.text);
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          text,
+          style: TextStyle(
+            fontFamily: 'Inter',
+            fontSize: 17,
+            fontWeight: FontWeight.w800,
+            color: AppColors.textPrimary,
+            letterSpacing: -0.4,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Container(
+          width: 60,
+          height: 3,
+          decoration: BoxDecoration(
+            color: AppColors.primary,
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _MedicalLabel extends StatelessWidget {
+  final String text;
+  const _MedicalLabel(this.text);
+  @override
+  Widget build(BuildContext context) => Text(
+        text,
+        style: TextStyle(
+          fontFamily: 'Inter',
+          fontSize: 11,
+          fontWeight: FontWeight.w800,
+          color: AppColors.textMuted,
+          letterSpacing: 0.8,
+        ),
+      );
+}
+
+// ─── OUTLINED FIELD ────────────────────────────────────────────────────────
+
+class _OutlinedField extends StatelessWidget {
+  final String label;
+  final Widget child;
+  final Widget? suffix;
+  final VoidCallback? onTap;
+  final String? error;
+  final Color? fillColor;
+  final Color? borderColor;
+  final EdgeInsets? contentPadding;
+
+  const _OutlinedField({
+    required this.label,
+    required this.child,
+    this.suffix,
+    this.onTap,
+    this.error,
+    this.fillColor,
+    this.borderColor,
+    this.contentPadding,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final errVal = error;
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            padding: const EdgeInsets.all(4),
+            padding: contentPadding ??
+                const EdgeInsets.fromLTRB(14, 10, 12, 12),
             decoration: BoxDecoration(
-              color: AppColors.mintGreen,
-              shape: BoxShape.circle,
-            ),
-            child: Stack(
-              children: [
-                Container(
-                  width: 100,
-                  height: 100,
-                  decoration: BoxDecoration(
-                    color: AppColors.mintGreen,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Center(
-                    child: Text(
-                      'AT',
-                      style: TextStyle(
-                        color: AppColors.primaryGreen,
-                        fontSize: 40,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-                Positioned(
-                  bottom: 0,
-                  right: 0,
-                  child: Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryGreen,
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: Colors.white,
-                        width: 3,
-                      ),
-                    ),
-                    child: const Icon(
-                      Icons.camera_alt,
-                      color: AppColors.textWhite,
-                      size: 18,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: AppSpacing.md),
-          const Text(
-            'Change profile photo',
-            style: TextStyle(
-              color: AppColors.primaryGreen,
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPersonalInfo() {
-    return Padding(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Personal Information',
-            style: AppTextStyles.headlineSmall,
-          ),
-          const SizedBox(height: AppSpacing.lg),
-          _buildNameField(),
-          const SizedBox(height: AppSpacing.md),
-          _buildPhoneField(),
-          const SizedBox(height: AppSpacing.md),
-          _buildDateOfBirthField(),
-          const SizedBox(height: AppSpacing.md),
-          _buildGenderField(),
-          const SizedBox(height: AppSpacing.md),
-          _buildBloodGroupField(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildNameField() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'FULL NAME',
-          style: AppTextStyles.labelSmall,
-        ),
-        const SizedBox(height: AppSpacing.xs),
-        TextFormField(
-          controller: _nameController,
-          decoration: const InputDecoration(
-            hintText: 'Enter your name',
-            suffixIcon: Icon(Icons.close),
-          ),
-          validator: (value) {
-            if (value == null || value.isEmpty) {
-              return 'Please enter your name';
-            }
-            return null;
-          },
-        ),
-      ],
-    );
-  }
-
-  Widget _buildPhoneField() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'PHONE NUMBER',
-          style: AppTextStyles.labelSmall,
-        ),
-        const SizedBox(height: AppSpacing.xs),
-        TextFormField(
-          controller: _phoneController,
-          keyboardType: TextInputType.phone,
-          decoration: const InputDecoration(
-            prefixText: '+977  ',
-            hintText: '9845437057',
-          ),
-          validator: (value) {
-            if (value == null || value.length < 10) {
-              return 'Please enter a valid phone number';
-            }
-            return null;
-          },
-        ),
-        const SizedBox(height: AppSpacing.xs),
-        const Text(
-          'Please enter a valid phone number',
-          style: TextStyle(
-            color: AppColors.errorRed,
-            fontSize: 12,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildDateOfBirthField() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'DATE OF BIRTH',
-          style: AppTextStyles.labelSmall,
-        ),
-        const SizedBox(height: AppSpacing.xs),
-        InkWell(
-          onTap: _selectDate,
-          child: Container(
-            padding: const EdgeInsets.all(AppSpacing.md),
-            decoration: BoxDecoration(
-              color: AppColors.lightPurpleBg,
-              borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+              color: fillColor ?? AppColors.surface,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: errVal != null
+                    ? AppColors.error
+                    : (borderColor ?? AppColors.primary),
+                width: 1.5,
+              ),
             ),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Text(
-                  _selectedDate != null
-                      ? DateFormat('dd MMM yyyy').format(_selectedDate!)
-                      : '10 Oct 2006',
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w500,
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        label,
+                        style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w800,
+                          color: errVal != null
+                              ? AppColors.error
+                              : AppColors.primaryDark,
+                          letterSpacing: 0.6,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      child,
+                    ],
                   ),
                 ),
-                const Icon(
-                  Icons.calendar_today,
-                  color: AppColors.textMedium,
-                  size: 20,
-                ),
+                if (suffix != null) ...[
+                  const SizedBox(width: 8),
+                  suffix!,
+                ],
               ],
             ),
           ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildGenderField() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'GENDER',
-          style: AppTextStyles.labelSmall,
-        ),
-        const SizedBox(height: AppSpacing.sm),
-        Container(
-          padding: const EdgeInsets.all(4),
-          decoration: BoxDecoration(
-            color: AppColors.lightPurpleBg,
-            borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: _buildGenderOption('Male'),
+          if (errVal != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(4, 6, 4, 0),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.error_outline_rounded,
+                    color: AppColors.error,
+                    size: 14,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    errVal,
+                    style: TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.error,
+                    ),
+                  ),
+                ],
               ),
-              Expanded(
-                child: _buildGenderOption('Female'),
-              ),
-              Expanded(
-                child: _buildGenderOption('Other'),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildGenderOption(String gender) {
-    final isSelected = _selectedGender == gender;
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _selectedGender = gender;
-        });
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-        decoration: BoxDecoration(
-          color: isSelected ? AppColors.primaryGreen : Colors.transparent,
-          borderRadius: BorderRadius.circular(AppBorderRadius.md),
-        ),
-        child: Text(
-          gender,
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            color: isSelected ? AppColors.textWhite : AppColors.textMedium,
-            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-            fontSize: 14,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBloodGroupField() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'BLOOD GROUP',
-          style: AppTextStyles.labelSmall,
-        ),
-        const SizedBox(height: AppSpacing.sm),
-        DropdownButtonFormField<String>(
-          value: _selectedBloodGroup,
-          decoration: InputDecoration(
-            filled: true,
-            fillColor: Colors.white,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AppBorderRadius.lg),
             ),
-          ),
-          items: _bloodGroups.map((bg) {
-            return DropdownMenuItem(
-              value: bg,
-              child: Text(bg),
-            );
-          }).toList(),
-          onChanged: (value) {
-            setState(() {
-              _selectedBloodGroup = value!;
-            });
-          },
-        ),
-      ],
-    );
-  }
-
-  Widget _buildMedicalInfo() {
-    return Padding(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Medical Info',
-            style: AppTextStyles.headlineSmall,
-          ),
-          const SizedBox(height: AppSpacing.lg),
-          _buildAllergiesSection(),
-          const SizedBox(height: AppSpacing.md),
-          _buildConditionsSection(),
-          const SizedBox(height: AppSpacing.md),
-          _buildMedicationsSection(),
         ],
       ),
     );
   }
+}
 
-  Widget _buildAllergiesSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+// ─── CHIP EDITOR ───────────────────────────────────────────────────────────
+
+class _ChipEditor extends StatelessWidget {
+  final List<String> items;
+  final Color color;
+  final Color textColor;
+  final void Function(int) onRemove;
+  final VoidCallback onAdd;
+  final String addLabel;
+
+  const _ChipEditor({
+    required this.items,
+    required this.color,
+    required this.textColor,
+    required this.onRemove,
+    required this.onAdd,
+    required this.addLabel,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
       children: [
-        const Text(
-          'KNOWN ALLERGIES',
-          style: AppTextStyles.labelSmall,
-        ),
-        const SizedBox(height: AppSpacing.sm),
-        Wrap(
-          spacing: AppSpacing.sm,
-          runSpacing: AppSpacing.sm,
-          children: [
-            ..._allergies.map((allergy) => _buildChip(allergy, AppColors.chipOrange)),
-            GestureDetector(
-              onTap: () => _addNewItem('allergy'),
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.sm,
-                  vertical: AppSpacing.xs,
-                ),
+        ...items.asMap().entries.map(
+              (e) => Container(
+                padding: const EdgeInsets.fromLTRB(12, 5, 8, 5),
                 decoration: BoxDecoration(
-                  border: Border.all(
-                    color: AppColors.primaryGreen,
-                    style: BorderStyle.solid,
-                  ),
-                  borderRadius: BorderRadius.circular(AppBorderRadius.xl),
+                  color: color,
+                  borderRadius: BorderRadius.circular(20),
                 ),
-                child: const Text(
-                  '+ Add allergy',
-                  style: TextStyle(
-                    color: AppColors.primaryGreen,
-                    fontSize: 12,
-                  ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      e.value,
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w700,
+                        color: textColor,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    GestureDetector(
+                      onTap: () => onRemove(e.key),
+                      child: Icon(
+                        Icons.close_rounded,
+                        size: 14,
+                        color: textColor,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildConditionsSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'CHRONIC CONDITIONS',
-          style: AppTextStyles.labelSmall,
-        ),
-        const SizedBox(height: AppSpacing.sm),
-        Wrap(
-          spacing: AppSpacing.sm,
-          runSpacing: AppSpacing.sm,
-          children: _conditions
-              .map((condition) => _buildChip(condition, AppColors.chipRed))
-              .toList(),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildMedicationsSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'MEDICATIONS',
-          style: AppTextStyles.labelSmall,
-        ),
-        const SizedBox(height: AppSpacing.sm),
-        ..._medications.map((med) => _buildMedicationItem(med)),
-      ],
-    );
-  }
-
-  Widget _buildChip(String label, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.sm,
-        vertical: AppSpacing.xs,
-      ),
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            label,
-            style: const TextStyle(fontSize: 12),
+        GestureDetector(
+          onTap: onAdd,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+            decoration: BoxDecoration(
+              color: Colors.transparent,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: AppColors.textMuted,
+                style: BorderStyle.solid,
+              ),
+            ),
+            child: Text(
+              addLabel,
+              style: TextStyle(
+                fontFamily: 'Inter',
+                fontSize: 12.5,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textSecondary,
+              ),
+            ),
           ),
-          const SizedBox(width: AppSpacing.xs),
-          const Icon(
-            Icons.close,
-            size: 14,
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
+}
 
-  Widget _buildMedicationItem(String medication) {
+// ─── MEDICATION ROW ────────────────────────────────────────────────────────
+
+class _MedicationRow extends StatelessWidget {
+  final String text;
+  final VoidCallback onDelete;
+  const _MedicationRow({required this.text, required this.onDelete});
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
+      padding: const EdgeInsets.fromLTRB(14, 14, 10, 14),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-        border: Border.all(color: AppColors.borderLight),
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.border),
       ),
       child: Row(
         children: [
           const Icon(
             Icons.medication_outlined,
-            color: AppColors.primaryGreen,
-            size: 20,
+            color: AppColors.primary,
+            size: 18,
           ),
-          const SizedBox(width: AppSpacing.md),
+          const SizedBox(width: 10),
           Expanded(
             child: Text(
-              medication,
-              style: const TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w500,
+              text,
+              style: TextStyle(
+                fontFamily: 'Inter',
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
               ),
             ),
           ),
-          const Icon(
-            Icons.delete_outline,
-            color: AppColors.errorRed,
-            size: 20,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildButtons() {
-    return Padding(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      child: Column(
-        children: [
-          SizedBox(
-            width: double.infinity,
-            height: 52,
-            child: ElevatedButton.icon(
-              onPressed: _saveChanges,
-              icon: const Icon(Icons.check_circle),
-              label: const Text('Save Changes'),
-              style: ElevatedButton.styleFrom(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          SizedBox(
-            width: double.infinity,
-            height: 52,
-            child: OutlinedButton.icon(
-              onPressed: () => Navigator.pop(context),
-              icon: const Icon(Icons.close),
-              label: const Text('Discard Changes'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.primaryGreen,
-                side: const BorderSide(color: AppColors.borderMedium),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-                ),
-              ),
+          GestureDetector(
+            onTap: onDelete,
+            child: const Icon(
+              Icons.delete_outline_rounded,
+              color: AppColors.error,
+              size: 20,
             ),
           ),
         ],
       ),
     );
-  }
-
-  Future<void> _selectDate() async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: _selectedDate ?? DateTime(2006, 10, 14),
-      firstDate: DateTime(1900),
-      lastDate: DateTime.now(),
-    );
-    if (picked != null) {
-      setState(() {
-        _selectedDate = picked;
-      });
-    }
-  }
-
-  void _addNewItem(String type) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Add ${type.capitalize()}'),
-        content: TextField(
-          decoration: InputDecoration(
-            hintText: 'Enter ${type}',
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-            ),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              // Add item logic here
-            },
-            child: const Text('Add'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _saveChanges() {
-    if (_formKey.currentState?.validate() ?? false) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Changes saved successfully'),
-          backgroundColor: AppColors.primaryGreen,
-        ),
-      );
-      Navigator.pop(context);
-    }
-  }
-}
-
-extension StringExtension on String {
-  String capitalize() {
-    return '${this[0].toUpperCase()}${substring(1).toLowerCase()}';
   }
 }

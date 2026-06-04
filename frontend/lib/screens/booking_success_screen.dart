@@ -1,240 +1,317 @@
 import 'package:flutter/material.dart';
-import '../theme/app_theme.dart';
+import 'package:frontend/constants/app_colors.dart';
+import 'package:frontend/models/models.dart';
+import 'package:frontend/widgets/common/custom_button.dart';
 
 class BookingSuccessScreen extends StatelessWidget {
-  const BookingSuccessScreen({super.key});
+  final DoctorModel? doctor;
+  final String? date;
+  final String? time;
+  final AppointmentType? appointmentType;
+  final String? speciality;
+  final int? tokenNumber;
+  final int? estimatedWaitMinutes;
+  final bool notifyMe;
+  final String? patientName;
+
+  const BookingSuccessScreen({
+    super.key,
+    this.doctor,
+    this.date,
+    this.time,
+    this.appointmentType,
+    this.speciality,
+    this.tokenNumber,
+    this.estimatedWaitMinutes,
+    this.notifyMe = true,
+    this.patientName,
+  });
+
+  String get _token => (tokenNumber ?? 0).toString().padLeft(3, '0');
+
+  String get _waitTime {
+    final mins = estimatedWaitMinutes;
+    if (mins == null) return 'Calculating…';
+    if (mins <= 0) return 'Now';
+    if (mins < 60) return '~$mins mins';
+    final hours = (mins / 60).round();
+    return '~$hours hour${hours > 1 ? 's' : ''}';
+  }
 
   @override
   Widget build(BuildContext context) {
+    final displayName = (patientName == null || patientName!.trim().isEmpty)
+        ? 'Patient'
+        : patientName!;
+    final spec = speciality ?? doctor?.specialty ?? 'General Medicine';
+    final docName = doctor?.name ?? 'Dr. Assigned';
+
     return Scaffold(
-      backgroundColor: AppColors.lightMint,
+      backgroundColor: AppColors.backgroundLight,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.lg),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
           child: Column(
             children: [
-              const Spacer(),
-              _buildSuccessIcon(),
-              const SizedBox(height: AppSpacing.lg),
-              _buildSuccessMessage(),
-              const SizedBox(height: AppSpacing.xl),
-              _buildTokenCard(),
-              const SizedBox(height: AppSpacing.md),
-              _buildNotificationInfo(),
-              const Spacer(),
-              _buildButtons(context),
-              const SizedBox(height: AppSpacing.xxl),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSuccessIcon() {
-    return Container(
-      width: 80,
-      height: 80,
-      decoration: BoxDecoration(
-        color: AppColors.primaryGreen,
-        shape: BoxShape.circle,
-        border: Border.all(
-          color: AppColors.mintGreen,
-          width: 8,
-        ),
-      ),
-      child: const Icon(
-        Icons.check,
-        color: AppColors.textWhite,
-        size: 48,
-      ),
-    );
-  }
-
-  Widget _buildSuccessMessage() {
-    return const Column(
-      children: [
-        Text(
-          'Booking Successful!',
-          style: AppTextStyles.headlineLarge,
-        ),
-        SizedBox(height: AppSpacing.sm),
-        Text(
-          'Your appointment has been secured.',
-          style: AppTextStyles.bodyMedium,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildTokenCard() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(AppBorderRadius.xxl),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.md,
-              vertical: AppSpacing.xs,
-            ),
-            decoration: BoxDecoration(
-              color: AppColors.lightPurpleBg,
-              borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-            ),
-            child: const Text(
-              'TOKEN NUMBER',
-              style: TextStyle(
-                color: AppColors.textMedium,
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 0.5,
+              const SizedBox(height: 18),
+              TweenAnimationBuilder<double>(
+                tween: Tween(begin: 0.0, end: 1.0),
+                duration: const Duration(milliseconds: 700),
+                curve: Curves.elasticOut,
+                builder: (ctx, value, child) =>
+                    Transform.scale(scale: value, child: child),
+                child: Container(
+                  width: 110,
+                  height: 110,
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: AppColors.cardGreenBorder,
+                      width: 6,
+                    ),
+                  ),
+                  padding: const EdgeInsets.all(4),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: AppColors.primaryGradient,
+                      shape: BoxShape.circle,
+                      boxShadow: AppColors.primaryShadow,
+                    ),
+                    child: const Icon(
+                      Icons.check_rounded,
+                      color: Colors.white,
+                      size: 54,
+                    ),
+                  ),
+                ),
               ),
-            ),
-          ),
-          const SizedBox(height: AppSpacing.md),
-          const Text(
-            'Aryan Thakuri',
-            style: AppTextStyles.titleMedium,
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          const Text(
-            'Your token number:',
-            style: AppTextStyles.bodySmall,
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          const Text(
-            '047',
-            style: AppTextStyles.tokenMedium,
-          ),
-          const SizedBox(height: AppSpacing.lg),
-          const Divider(),
-          const SizedBox(height: AppSpacing.lg),
-          const Text(
-            'Dr. Chameli',
-            style: AppTextStyles.titleLarge,
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          const Text(
-            'GENERAL MEDICINE',
-            style: AppTextStyles.labelSmall,
-          ),
-          const SizedBox(height: AppSpacing.md),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(
-                Icons.hourglass_empty,
-                size: 18,
-                color: AppColors.textMedium,
-              ),
-              const SizedBox(width: AppSpacing.xs),
-              const Text(
-                'Estimated wait: ',
-                style: AppTextStyles.bodyMedium,
-              ),
-              const Text(
-                '~1 hours',
+              const SizedBox(height: 22),
+              Text(
+                'Booking Successful!',
                 style: TextStyle(
-                  color: AppColors.errorRed,
-                  fontWeight: FontWeight.w600,
+                  fontFamily: 'Inter',
+                  fontSize: 24,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.textPrimary,
+                  letterSpacing: -0.5,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Your appointment has been secured.',
+                style: TextStyle(
+                  fontFamily: 'Inter',
+                  fontSize: 14,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+              const SizedBox(height: 26),
+              _TokenCard(
+                patientName: displayName,
+                token: _token,
+                doctorName: docName,
+                speciality: spec.toUpperCase(),
+                waitTime: _waitTime,
+              ),
+              const SizedBox(height: 18),
+              if (notifyMe) _NotificationBanner(),
+              const SizedBox(height: 26),
+              PrimaryButton(
+                label: 'Go to Home',
+                onTap: () => Navigator.pushNamedAndRemoveUntil(
+                  context,
+                  '/main',
+                  (route) => false,
+                ),
+              ),
+              const SizedBox(height: 12),
+              SecondaryButton(
+                label: 'View Queue',
+                onTap: () => Navigator.pushNamedAndRemoveUntil(
+                  context,
+                  '/main',
+                  (route) => false,
+                  arguments: 1,
                 ),
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─── TOKEN CARD ─────────────────────────────────────────────────────────────
+
+class _TokenCard extends StatelessWidget {
+  final String patientName;
+  final String token;
+  final String doctorName;
+  final String speciality;
+  final String waitTime;
+
+  const _TokenCard({
+    required this.patientName,
+    required this.token,
+    required this.doctorName,
+    required this.speciality,
+    required this.waitTime,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(20, 22, 20, 22),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.cardGreenBorder),
+        boxShadow: AppColors.cardShadow,
+      ),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+            decoration: BoxDecoration(
+              color: const Color(0xFFE9E4F5),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              'TOKEN NUMBER',
+              style: TextStyle(
+                fontFamily: 'Inter',
+                fontSize: 11,
+                fontWeight: FontWeight.w800,
+                color: const Color(0xFF584C8E),
+                letterSpacing: 0.8,
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            patientName,
+            style: TextStyle(
+              fontFamily: 'Inter',
+              fontSize: 16,
+              fontWeight: FontWeight.w800,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Your token number:',
+            style: TextStyle(
+              fontFamily: 'Inter',
+              fontSize: 13,
+              color: AppColors.textSecondary,
+            ),
+          ),
+          const SizedBox(height: 6),
+          ShaderMask(
+            shaderCallback: (rect) =>
+                AppColors.primaryGradient.createShader(rect),
+            child: Text(
+              token,
+              style: TextStyle(
+                fontFamily: 'Inter',
+                fontSize: 72,
+                fontWeight: FontWeight.w900,
+                color: Colors.white,
+                letterSpacing: 2,
+                height: 1,
+              ),
+            ),
+          ),
+          const SizedBox(height: 18),
+          Divider(height: 1, color: AppColors.divider),
+          const SizedBox(height: 16),
+          Text(
+            doctorName,
+            style: TextStyle(
+              fontFamily: 'Inter',
+              fontSize: 15,
+              fontWeight: FontWeight.w800,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            speciality,
+            style: TextStyle(
+              fontFamily: 'Inter',
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textMuted,
+              letterSpacing: 1,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Estimated wait: $waitTime',
+            style: TextStyle(
+              fontFamily: 'Inter',
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: AppColors.primary,
+            ),
+          ),
         ],
       ),
     );
   }
+}
 
-  Widget _buildNotificationInfo() {
+// ─── NOTIFICATION BANNER ─────────────────────────────────────────────────────
+
+class _NotificationBanner extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.primaryGreen.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-        border: Border.all(
-          color: AppColors.primaryGreen.withOpacity(0.3),
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border(
+          left: BorderSide(color: AppColors.primary, width: 4),
+          top: BorderSide(color: AppColors.border),
+          right: BorderSide(color: AppColors.border),
+          bottom: BorderSide(color: AppColors.border),
         ),
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            padding: const EdgeInsets.all(AppSpacing.sm),
+            width: 32,
+            height: 32,
             decoration: BoxDecoration(
-              color: AppColors.mintGreen,
-              borderRadius: BorderRadius.circular(AppBorderRadius.md),
+              color: AppColors.cardGreenLight,
+              borderRadius: BorderRadius.circular(10),
             ),
             child: const Icon(
-              Icons.notifications_active,
-              color: AppColors.primaryGreen,
-              size: 24,
+              Icons.notifications_active_rounded,
+              size: 18,
+              color: AppColors.primary,
             ),
           ),
-          const SizedBox(width: AppSpacing.md),
+          const SizedBox(width: 12),
           Expanded(
-            child: const Text(
+            child: Text(
               'You will receive a push notification 2 tokens before your turn. Please arrive at the clinic on time.',
-              style: AppTextStyles.bodySmall,
+              style: TextStyle(
+                fontFamily: 'Inter',
+                fontSize: 12.5,
+                color: AppColors.textSecondary,
+                height: 1.5,
+              ),
             ),
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildButtons(BuildContext context) {
-    return Column(
-      children: [
-        SizedBox(
-          width: double.infinity,
-          height: 52,
-          child: ElevatedButton(
-            onPressed: () {
-              Navigator.pushNamedAndRemoveUntil(
-                context,
-                '/home',
-                (route) => false,
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-              ),
-            ),
-            child: const Text('Go to Home'),
-          ),
-        ),
-        const SizedBox(height: AppSpacing.md),
-        SizedBox(
-          width: double.infinity,
-          height: 52,
-          child: OutlinedButton(
-            onPressed: () {
-              Navigator.pushNamed(context, '/queue');
-            },
-            style: OutlinedButton.styleFrom(
-              foregroundColor: AppColors.primaryGreen,
-              side: const BorderSide(color: AppColors.primaryGreen),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-              ),
-            ),
-            child: const Text('View Queue'),
-          ),
-        ),
-      ],
     );
   }
 }

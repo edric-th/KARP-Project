@@ -1,0 +1,355 @@
+{
+  "category": "medical",
+  "intents": [
+    {
+      "name": "headache_migraine",
+      "is_emergency": false,
+      "examples": [
+        "I have a headache",
+        "My head is hurting",
+        "I keep getting migraines",
+        "I have a severe headache",
+        "My head hurts a lot",
+        "I have been having headaches for days",
+        "What doctor should I see for migraine?"
+      ],
+      "response": "I'm sorry to hear you're experiencing head pain. Headaches can have many causes — stress, dehydration, tension, or in some cases an underlying neurological condition.\n\nFor persistent, severe, or recurring headaches and migraines, we recommend booking an appointment with a **Neurologist** or a **General Physician** through the app who can properly evaluate your symptoms.\n\n⚠️ If your headache is sudden and extremely severe (the worst of your life), is accompanied by a stiff neck, confusion, fever, vision changes, or weakness on one side of the body — please go to the **Emergency Department immediately** or call an ambulance.\n\nThis is general guidance only. Please book an appointment with a qualified doctor for proper evaluation."
+    },
+    {
+      "name": "fever",
+      "is_emergency": false,
+      "examples": [
+        "I have a fever",
+        "My temperature is high",
+        "I feel very hot and cold",
+        "I have been having fever since yesterday",
+        "High fever not going down",
+        "I have chills and fever",
+        "What to do when you have a fever?"
+      ],
+      "response": "A fever is often a sign that your body is fighting an infection. Rest and staying hydrated are important, but the underlying cause needs to be identified by a doctor.\n\nWe recommend booking an appointment with a **General Physician** through the app, who can diagnose the cause and recommend appropriate treatment.\n\n⚠️ If your fever is above 39.5°C (103°F), has lasted more than 3 days, is accompanied by difficulty breathing, rash, severe headache, or confusion — please seek **emergency care immediately**.\n\nThis is general guidance only. Please book an appointment with a qualified doctor for proper evaluation."
+    },
+    {
+      "name": "cough_cold",
+      "is_emergency": false,
+      "examples": [
+        "I have a cough",
+        "I have a cold",
+        "My nose is running",
+        "I keep coughing",
+        "I have a sore throat",
+        "Bad cough for two weeks",
+        "Cough and runny nose"
+      ],
+      "response": "Coughs and colds are usually caused by viral infections and often improve on their own within 7–10 days. However, a persistent cough lasting more than 2 weeks, or one producing blood-tinged mucus, deserves a proper medical evaluation.\n\nWe recommend booking an appointment with a **General Physician** or a **Pulmonologist** (lung specialist) through the app.\n\n⚠️ If you experience severe difficulty breathing, coughing up blood, or the cough is accompanied by high fever and chest pain — please seek **emergency care immediately**.\n\nThis is general guidance only. Please book an appointment with a qualified doctor for proper evaluation."
+    },
+    {
+      "name": "chest_pain",
+      "is_emergency": true,
+      "examples": [
+        "I have chest pain",
+        "My chest hurts",
+        "I am having chest tightness",
+        "Pain in my chest",
+        "Chest discomfort",
+        "Pressure in my chest",
+        "I feel like something is crushing my chest"
+      ],
+      "response": "🚨 **EMERGENCY — Please act immediately.**\n\nChest pain can be a sign of a heart attack or other serious cardiac emergency. **Do NOT wait or ignore this symptom.**\n\n**Call an ambulance (102 / 101) RIGHT NOW or have someone take you to the nearest Emergency Department immediately.**\n\nWhile waiting for help: sit or lie down comfortably, loosen tight clothing, and do not eat or drink anything.\n\nIf the chest pain turns out to be non-emergency (e.g., acid reflux, muscle strain), a **Cardiologist** or **General Physician** can do a full cardiac evaluation for you through the app after you have been assessed by emergency services.\n\nThis is general guidance only. Please seek emergency care without delay."
+    },
+    {
+      "name": "stomach_pain",
+      "is_emergency": false,
+      "examples": [
+        "I have stomach pain",
+        "My stomach hurts",
+        "I have abdominal pain",
+        "I have digestive problems",
+        "I feel nauseous",
+        "I have been vomiting",
+        "I have diarrhea and cramps"
+      ],
+      "response": "Stomach and abdominal pain can range from minor indigestion to more serious digestive conditions. Common causes include gas, gastritis, food poisoning, ulcers, or irritable bowel syndrome.\n\nWe recommend booking an appointment with a **Gastroenterologist** (digestive specialist) or a **General Physician** through the app.\n\n⚠️ If the pain is sudden and severe, is located in the lower right abdomen (possible appendicitis), is accompanied by high fever, or you notice blood in your stool or vomit — please go to the **Emergency Department immediately**.\n\nThis is general guidance only. Please book an appointment with a qualified doctor for proper evaluation."
+    },
+    {
+      "name": "skin_problems",
+      "is_emergency": false,
+      "examples": [
+        "I have a skin rash",
+        "My skin is itchy",
+        "I have acne",
+        "Skin irritation and redness",
+        "I have eczema",
+        "My skin is peeling",
+        "I have a rash on my body"
+      ],
+      "response": "Skin problems such as rashes, acne, eczema, and allergic reactions are very common and have a wide range of causes. Some are minor irritations while others require targeted treatment.\n\nWe recommend booking an appointment with a **Dermatologist** (skin specialist) through the app for proper diagnosis and treatment.\n\n⚠️ If you experience a rapidly spreading rash along with difficulty breathing, swelling of the face or throat, or dizziness — this may be a **severe allergic reaction (anaphylaxis)**. Call an ambulance immediately.\n\nThis is general guidance only. Please book an appointment with a qualified doctor for proper evaluation."
+    },
+    {
+      "name": "eye_problems",
+      "is_emergency": false,
+      "examples": [
+        "My eyes hurt",
+        "I have eye pain",
+        "My eye is red and itchy",
+        "I have an eye infection",
+        "My eyes are watery",
+        "I have conjunctivitis",
+        "My eye is swollen"
+      ],
+      "response": "Eye discomfort, redness, itching, or discharge can be caused by infections like conjunctivitis, allergies, or eye strain. These conditions are treatable but should be examined by a specialist to rule out more serious issues.\n\nWe recommend booking an appointment with an **Ophthalmologist** (eye specialist) through the app.\n\n⚠️ If you experience sudden loss of vision, severe eye pain, a chemical getting into your eye, or a physical injury to the eye — please go to the **Emergency Department immediately**.\n\nThis is general guidance only. Please book an appointment with a qualified doctor for proper evaluation."
+    },
+    {
+      "name": "joint_back_pain",
+      "is_emergency": false,
+      "examples": [
+        "I have joint pain",
+        "My back hurts",
+        "I have knee pain",
+        "My bones ache",
+        "I have pain in my joints",
+        "Lower back pain",
+        "My neck and shoulder hurts"
+      ],
+      "response": "Joint and back pain are very common and can result from muscle strain, arthritis, poor posture, or injuries. Early proper treatment prevents these issues from becoming chronic.\n\nWe recommend booking an appointment with an **Orthopedic Specialist** (bone and joint doctor) through the app. For mild cases, a **General Physician** can also provide initial guidance.\n\n⚠️ If joint pain follows a significant injury (fall, accident), or if you experience sudden numbness or weakness in your limbs along with back pain — please seek **emergency care immediately**.\n\nThis is general guidance only. Please book an appointment with a qualified doctor for proper evaluation."
+    },
+    {
+      "name": "mental_health",
+      "is_emergency": false,
+      "examples": [
+        "I am feeling anxious",
+        "I think I am depressed",
+        "I have been feeling very sad lately",
+        "I am having panic attacks",
+        "I feel stressed and overwhelmed",
+        "I am struggling with my mental health",
+        "I have anxiety and cannot sleep"
+      ],
+      "response": "Thank you for reaching out — taking care of your mental health is just as important as physical health, and it takes courage to ask for help.\n\nWe recommend booking an appointment with a **Psychiatrist** or a **Psychologist** through the app. They can properly evaluate your symptoms and offer the right support, whether that is therapy, medication, or both.\n\nIn Nepal, you can also reach the **Transcultural Psychosocial Organization (TPO) Nepal helpline at 1660-01-11116** for mental health support.\n\n⚠️ If you or someone you know is experiencing thoughts of self-harm or suicide — please go to the **Emergency Department immediately** or call a crisis line right away. You are not alone.\n\nThis is general guidance only. Please book an appointment with a qualified doctor for proper evaluation."
+    },
+    {
+      "name": "suicidal_thoughts",
+      "is_emergency": true,
+      "examples": [
+        "I want to hurt myself",
+        "I am thinking about suicide",
+        "I don't want to live anymore",
+        "I am having thoughts of ending my life",
+        "I feel like giving up",
+        "I want to kill myself",
+        "I have suicidal thoughts"
+      ],
+      "response": "🚨 **PLEASE SEEK HELP IMMEDIATELY — You matter, and help is available.**\n\nWhat you are feeling is real and serious, and you deserve support right now.\n\n**Please call or go to the Emergency Department at the nearest hospital immediately.**\n\n**Nepal Crisis Helpline: 1660-01-11116** (TPO Nepal — free, available now)\n\nYou do not have to face this alone. Please reach out to someone you trust, or call the helpline right now. A qualified professional can help you through this.\n\nThis is general guidance only. Please seek emergency care without delay."
+    },
+    {
+      "name": "pregnancy",
+      "is_emergency": false,
+      "examples": [
+        "I think I am pregnant",
+        "I am having pregnancy questions",
+        "What should I do during pregnancy?",
+        "I need prenatal care",
+        "I am pregnant and have concerns",
+        "Antenatal check-up",
+        "Questions about my pregnancy"
+      ],
+      "response": "Congratulations on your pregnancy! Proper prenatal care is very important for both you and your baby's health throughout the entire pregnancy.\n\nWe recommend booking an appointment with a **Gynecologist** or **Obstetrician** through the app as soon as possible to begin regular antenatal check-ups.\n\n⚠️ If you experience heavy bleeding, severe abdominal pain, sudden severe swelling, decreased fetal movement, or any other alarming symptoms during pregnancy — please go to the **Emergency Department immediately**.\n\nThis is general guidance only. Please book an appointment with a qualified doctor for proper evaluation."
+    },
+    {
+      "name": "child_illness",
+      "is_emergency": false,
+      "examples": [
+        "My child is sick",
+        "My baby has a fever",
+        "My kid is not eating",
+        "My child has been crying a lot",
+        "What doctor for a sick child?",
+        "My toddler has a rash",
+        "My child has diarrhea and vomiting"
+      ],
+      "response": "Children's health concerns should always be taken seriously, as symptoms can progress quickly in young ones.\n\nWe recommend booking an appointment with a **Pediatrician** (children's doctor) through the app, who specialises in the care of infants, children, and adolescents.\n\n⚠️ If your child has a very high fever, is having difficulty breathing, is unresponsive, has a seizure, or shows any signs of severe distress — please go to the **Emergency Department immediately** or call an ambulance.\n\nThis is general guidance only. Please book an appointment with a qualified doctor for proper evaluation."
+    },
+    {
+      "name": "dental_pain",
+      "is_emergency": false,
+      "examples": [
+        "I have tooth pain",
+        "My teeth hurt",
+        "I have a toothache",
+        "My gums are swollen and bleeding",
+        "I have a cavity",
+        "I need to see a dentist",
+        "Dental problem"
+      ],
+      "response": "Tooth and gum pain can be caused by cavities, gum disease, infections, or cracked teeth. Dental problems rarely resolve on their own and tend to worsen over time without treatment.\n\nWe recommend booking an appointment with a **Dentist** through the app as soon as possible.\n\n⚠️ If you have severe jaw swelling, difficulty swallowing or breathing due to a dental abscess, or a dental injury causing heavy bleeding — please go to the **Emergency Department immediately**.\n\nThis is general guidance only. Please book an appointment with a qualified doctor for proper evaluation."
+    },
+    {
+      "name": "high_blood_pressure",
+      "is_emergency": false,
+      "examples": [
+        "I have high blood pressure",
+        "My blood pressure is high",
+        "I am hypertensive",
+        "How to manage hypertension?",
+        "My BP reading is high",
+        "I was told I have high BP",
+        "Blood pressure problems"
+      ],
+      "response": "High blood pressure (hypertension) is a serious condition that, if unmanaged, can lead to heart disease, stroke, and kidney problems. However, it is very manageable with the right medical care and lifestyle adjustments.\n\nWe recommend booking an appointment with a **Cardiologist** or a **General Physician** through the app for proper evaluation, monitoring, and treatment guidance.\n\n⚠️ If your blood pressure reading is extremely high (e.g., systolic above 180 mmHg) and you have symptoms like severe headache, chest pain, or vision problems — please go to the **Emergency Department immediately**.\n\nThis is general guidance only. Please book an appointment with a qualified doctor for proper evaluation."
+    },
+    {
+      "name": "diabetes",
+      "is_emergency": false,
+      "examples": [
+        "I think I have diabetes",
+        "I was diagnosed with diabetes",
+        "How to manage blood sugar?",
+        "My blood sugar is high",
+        "I have diabetes questions",
+        "What doctor treats diabetes?",
+        "I need help with my diabetes management"
+      ],
+      "response": "Diabetes is a manageable condition that requires proper medical supervision, regular monitoring, and healthy lifestyle habits. The right specialist can help you understand your options and create a management plan.\n\nWe recommend booking an appointment with an **Endocrinologist** (hormone and metabolism specialist) or a **General Physician** through the app.\n\n⚠️ If you experience extreme thirst, frequent urination along with confusion, are vomiting and unable to keep fluids down, or feel very faint — these can be signs of a diabetic crisis. Please go to the **Emergency Department immediately**.\n\nThis is general guidance only. Please book an appointment with a qualified doctor for proper evaluation."
+    },
+    {
+      "name": "sleep_problems",
+      "is_emergency": false,
+      "examples": [
+        "I cannot sleep",
+        "I have insomnia",
+        "I have trouble sleeping",
+        "I wake up in the middle of the night",
+        "I feel tired even after sleeping",
+        "Bad sleep quality",
+        "How to sleep better?"
+      ],
+      "response": "Sleep problems can significantly affect your quality of life, energy, and overall health. Causes range from stress and anxiety to sleep apnoea and other medical conditions.\n\nWe recommend booking an appointment with a **General Physician** through the app, who can evaluate potential causes and, if needed, refer you to a Sleep Specialist or Neurologist.\n\nIn the meantime, maintaining consistent sleep and wake times, limiting screen time before bed, and avoiding caffeine in the evenings can help improve sleep quality.\n\nThis is general guidance only. Please book an appointment with a qualified doctor for proper evaluation."
+    },
+    {
+      "name": "difficulty_breathing",
+      "is_emergency": true,
+      "examples": [
+        "I am having trouble breathing",
+        "I cannot breathe properly",
+        "I feel short of breath",
+        "Difficulty breathing",
+        "I am breathless",
+        "I feel like I am suffocating",
+        "I can't catch my breath"
+      ],
+      "response": "🚨 **EMERGENCY — Please act immediately.**\n\nDifficulty breathing is a serious medical emergency that requires immediate attention.\n\n**Call an ambulance (102 / 101) RIGHT NOW or have someone take you to the nearest Emergency Department immediately.** Do not wait to see if it improves on its own.\n\nWhile waiting: sit upright, try to stay calm, and loosen any tight clothing around your chest and neck.\n\nAfter emergency care, a **Pulmonologist** (lung specialist) can provide follow-up evaluation and treatment through the app.\n\nThis is general guidance only. Please seek emergency care without delay."
+    },
+    {
+      "name": "vision_problems",
+      "is_emergency": false,
+      "examples": [
+        "My vision is blurry",
+        "I cannot see well",
+        "I need glasses",
+        "My eyesight is getting worse",
+        "I see floaters in my vision",
+        "I have double vision",
+        "My vision has changed"
+      ],
+      "response": "Changes in vision — including blurriness, floaters, or worsening eyesight — should always be evaluated by a specialist, as they can sometimes indicate serious underlying conditions.\n\nWe recommend booking an appointment with an **Ophthalmologist** (eye specialist) through the app for a comprehensive eye examination.\n\n⚠️ If you experience sudden vision loss, sudden onset of many floaters with flashing lights, or vision loss on one side — please go to the **Emergency Department immediately**, as these can be signs of a retinal detachment or stroke.\n\nThis is general guidance only. Please book an appointment with a qualified doctor for proper evaluation."
+    },
+    {
+      "name": "allergies",
+      "is_emergency": false,
+      "examples": [
+        "I have allergies",
+        "I am allergic to something",
+        "I have a food allergy",
+        "I sneeze a lot and have itchy eyes",
+        "I have seasonal allergies",
+        "Allergic reaction",
+        "I think I am allergic to a medication"
+      ],
+      "response": "Allergies can range from mild seasonal symptoms to more serious reactions. Identifying your specific allergens and managing them properly makes a significant difference in your quality of life.\n\nWe recommend booking an appointment with a **General Physician** or an **Allergist/Immunologist** through the app for proper allergy testing and management.\n\n⚠️ If you experience sudden swelling of the face, lips, or throat, difficulty breathing, hives spreading rapidly, or dizziness after exposure to an allergen — this is a **severe allergic reaction (anaphylaxis)**. Call an ambulance immediately.\n\nThis is general guidance only. Please book an appointment with a qualified doctor for proper evaluation."
+    },
+    {
+      "name": "vaccination",
+      "is_emergency": false,
+      "examples": [
+        "What vaccines do I need?",
+        "I want to get vaccinated",
+        "Which vaccinations are important?",
+        "My child needs vaccination",
+        "Immunisation schedule",
+        "What shots should I get?",
+        "Where can I get a vaccine?"
+      ],
+      "response": "Vaccinations are one of the most effective ways to protect yourself and your family from serious diseases. Nepal has a national immunisation programme for children, and several vaccines are recommended for adults too.\n\nWe recommend booking an appointment with a **General Physician** or a **Pediatrician** (for children) through the app, who can advise on which vaccines are due based on age and medical history, and administer them at the clinic.\n\nThis is general guidance only. Please book an appointment with a qualified doctor for proper evaluation."
+    },
+    {
+      "name": "wellness_checkup",
+      "is_emergency": false,
+      "examples": [
+        "I want a general health checkup",
+        "I want a full body checkup",
+        "How do I get a health screening?",
+        "Preventive health examination",
+        "I am feeling fine but want a checkup",
+        "Annual health checkup",
+        "Routine medical examination"
+      ],
+      "response": "Regular health check-ups are an excellent habit — they can catch potential health issues early, even before symptoms appear. This is especially important for adults over 30 and those with a family history of chronic diseases.\n\nWe recommend booking an appointment with a **General Physician** through the app for a routine health screening. They can guide you on any further specialised tests that may be appropriate for your age and health history.\n\nThis is general guidance only. Please book an appointment with a qualified doctor for proper evaluation."
+    },
+    {
+      "name": "severe_bleeding",
+      "is_emergency": true,
+      "examples": [
+        "I am bleeding heavily",
+        "There is a lot of blood",
+        "I have a deep cut that won't stop bleeding",
+        "Severe bleeding from a wound",
+        "I am losing a lot of blood",
+        "Heavy bleeding that won't stop",
+        "Uncontrolled bleeding"
+      ],
+      "response": "🚨 **EMERGENCY — Please act immediately.**\n\nSevere or uncontrolled bleeding is a life-threatening emergency.\n\n**Call an ambulance (102 / 101) RIGHT NOW or have someone take you to the nearest Emergency Department immediately.**\n\nWhile waiting for help: apply firm, direct pressure to the wound using a clean cloth or bandage. Do not remove the cloth if it becomes soaked — add more on top. If the bleeding is from a limb, elevate it above the level of the heart if possible.\n\nThis is general guidance only. Please seek emergency care without delay."
+    },
+    {
+      "name": "loss_of_consciousness",
+      "is_emergency": true,
+      "examples": [
+        "Someone fainted",
+        "I passed out",
+        "Person is unconscious",
+        "Someone collapsed",
+        "I lost consciousness",
+        "My family member is unresponsive",
+        "Someone is not waking up"
+      ],
+      "response": "🚨 **EMERGENCY — Please act immediately.**\n\nLoss of consciousness or unresponsiveness is a medical emergency.\n\n**Call an ambulance (102 / 101) RIGHT NOW.**\n\nWhile waiting: check if the person is breathing. If they are breathing, place them in the recovery position (on their side). If they are NOT breathing normally, begin CPR if you are trained to do so. Do not leave them alone.\n\nThis is general guidance only. Please seek emergency care without delay."
+    },
+    {
+      "name": "stroke_symptoms",
+      "is_emergency": true,
+      "examples": [
+        "I think I am having a stroke",
+        "Sudden face drooping",
+        "I can't move my arm suddenly",
+        "Sudden confusion and speech problems",
+        "One side of my body is weak suddenly",
+        "Sudden slurred speech",
+        "My face is drooping on one side"
+      ],
+      "response": "🚨 **EMERGENCY — Please act immediately.**\n\nThese are signs of a stroke. **Time is critical — every minute matters.**\n\nRemember **FAST**:\n• **F**ace — Is one side drooping?\n• **A**rms — Can they raise both arms?\n• **S**peech — Is speech slurred or strange?\n• **T**ime — Call an ambulance **NOW** (102 / 101).\n\n**Do NOT drive yourself — call an ambulance immediately or have someone rush you to the Emergency Department.**\n\nDo not give the person anything to eat or drink.\n\nThis is general guidance only. Please seek emergency care without delay."
+    },
+    {
+      "name": "severe_allergic_reaction",
+      "is_emergency": true,
+      "examples": [
+        "My throat is swelling after eating something",
+        "I am having a severe allergic reaction",
+        "My face is swelling up",
+        "I ate something and now I can't breathe",
+        "Anaphylaxis reaction",
+        "Throat closing up after bee sting",
+        "Severe hives and difficulty breathing"
+      ],
+      "response": "🚨 **EMERGENCY — Please act immediately.**\n\nSwelling of the throat, tongue, or face combined with difficulty breathing is a sign of **anaphylaxis**, which is a life-threatening allergic emergency.\n\n**Call an ambulance (102 / 101) RIGHT NOW.**\n\nIf you or the person has an EpiPen (epinephrine auto-injector), use it immediately in the outer thigh. Then still call for emergency services — EpiPens provide temporary relief, not a cure.\n\nWhile waiting: keep the person still, lying down with legs raised (unless breathing is easier sitting up). Do not give anything by mouth.\n\nThis is general guidance only. Please seek emergency care without delay."
+    }
+  ]
+}

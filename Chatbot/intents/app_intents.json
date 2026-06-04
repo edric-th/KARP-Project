@@ -1,0 +1,239 @@
+{
+  "category": "app",
+  "intents": [
+    {
+      "name": "book_token",
+      "examples": [
+        "How do I book a token?",
+        "How to get a token number?",
+        "I want to book an appointment",
+        "How can I register for a queue?",
+        "How do I get in line to see a doctor?",
+        "Steps to book a doctor appointment",
+        "How to schedule a visit to the hospital"
+      ],
+      "response": "To book a token, open the app and tap 'Book Appointment'. Select your preferred hospital, then choose a doctor or specialization. Pick the type of visit — First-Time, Follow-Up, or Show Report — then confirm your booking. Your token number will appear immediately, along with your estimated wait time. You will also receive a notification when your turn is approaching."
+    },
+    {
+      "name": "cancel_token",
+      "examples": [
+        "How do I cancel my token?",
+        "I want to cancel my appointment",
+        "How to cancel a booking",
+        "Can I cancel my queue token?",
+        "I need to cancel my visit",
+        "How do I remove myself from the queue?",
+        "Cancel my hospital appointment"
+      ],
+      "response": "To cancel a token, go to 'My Appointments' in the app, find the appointment you want to cancel, and tap the 'Cancel' button. Please cancel as early as possible so the slot can be offered to another patient. Tokens cancelled more than 30 minutes before your estimated turn may be eligible for a reschedule without penalty."
+    },
+    {
+      "name": "reschedule_token",
+      "examples": [
+        "How do I reschedule my appointment?",
+        "Can I change my appointment time?",
+        "I want to change my booking date",
+        "How to move my token to another day?",
+        "Can I postpone my hospital visit?",
+        "How do I change when I see the doctor?",
+        "Reschedule my queue number"
+      ],
+      "response": "To reschedule, go to 'My Appointments', select the appointment, and tap 'Reschedule'. You can choose a new available slot with the same doctor. Note that rescheduling is subject to doctor availability, and you will receive a new token number for the updated time. You cannot reschedule a token that is already within 15 minutes of its estimated turn."
+    },
+    {
+      "name": "first_time_appointment",
+      "examples": [
+        "What is a first-time appointment?",
+        "I am a new patient, how does it work?",
+        "What does first visit mean?",
+        "Explain the first-time booking option",
+        "I have never seen this doctor before",
+        "What is a new patient booking?",
+        "How do I book as a new patient?"
+      ],
+      "response": "A First-Time Appointment is for patients who are visiting a particular doctor for the very first time. When you select this option, the doctor will take a full medical history and conduct an initial assessment. These appointments are typically slightly longer than follow-up visits. If you have never seen the selected doctor before — even if you have visited the hospital previously — choose this option."
+    },
+    {
+      "name": "follow_up_appointment",
+      "examples": [
+        "What is a follow-up appointment?",
+        "I need to see my doctor again",
+        "How does a follow-up booking work?",
+        "I was already treated and need to go back",
+        "What is a return visit?",
+        "I have a previous consultation and need follow-up",
+        "Explain the follow-up option"
+      ],
+      "response": "A Follow-Up Appointment is for patients who have already consulted a specific doctor and need to revisit for ongoing treatment, test result review, or continued care. Select this option if you have seen this doctor before. Follow-up visits are typically shorter than first-time appointments, as the doctor already has your medical history on file."
+    },
+    {
+      "name": "show_report_appointment",
+      "examples": [
+        "What is a show report appointment?",
+        "I need to show my test results",
+        "How do I book to show lab results?",
+        "I got my blood test done and need to show it to the doctor",
+        "Show report booking explained",
+        "How to submit reports to the doctor through the app?",
+        "I have my X-ray results to show"
+      ],
+      "response": "A Show Report appointment is specifically for patients who have completed diagnostic tests (blood work, X-ray, MRI, ultrasound, etc.) and need to show the results to their doctor for review and further guidance. Choose this option when you already have test results in hand. These are usually short consultations focused on interpreting your reports."
+    },
+    {
+      "name": "wait_time",
+      "examples": [
+        "How is wait time calculated?",
+        "How long will I have to wait?",
+        "Why is my estimated wait time so long?",
+        "How does the app know when my turn will be?",
+        "Is the wait time accurate?",
+        "How is queue time estimated?",
+        "What determines how long I wait?"
+      ],
+      "response": "Wait time is calculated based on the number of patients ahead of you in the queue and the average consultation time for that doctor. The app updates your estimated wait time in real time as patients are seen. Factors like no-shows, emergencies, or longer-than-average consultations can affect the estimate. The app will send you a notification when you are approximately 2–3 patients away from your turn."
+    },
+    {
+      "name": "queue_status",
+      "examples": [
+        "What does my queue status mean?",
+        "What is the meaning of waiting status?",
+        "My token says active, what does that mean?",
+        "What are the different queue statuses?",
+        "What does in-progress mean for my appointment?",
+        "My status shows completed but I haven't been seen",
+        "Explain the token status"
+      ],
+      "response": "Your token can have one of the following statuses: \n• Waiting — You are in the queue and have not been called yet.\n• Active — It is nearly your turn; please be ready at the clinic.\n• In Progress — You are currently being seen by the doctor.\n• Completed — Your consultation is done.\n• Cancelled — You or the hospital cancelled the token.\n• Missed — Your turn passed without you checking in; contact reception to rejoin the queue."
+    },
+    {
+      "name": "notifications",
+      "examples": [
+        "How do notifications work?",
+        "Will I get an alert when my turn is near?",
+        "How does the app notify me?",
+        "I am not getting notifications",
+        "How to enable appointment notifications?",
+        "Does the app send reminders?",
+        "Set up push notifications"
+      ],
+      "response": "The app sends push notifications to alert you when your turn is approaching — typically when 3 patients are ahead of you. You will also receive notifications for booking confirmations, cancellations, and appointment reminders. To receive notifications, make sure they are enabled for this app in your phone settings. If you are not getting alerts, go to Settings > Notifications in the app and ensure they are turned on."
+    },
+    {
+      "name": "check_token_number",
+      "examples": [
+        "How do I check my current token number?",
+        "Where can I see my token?",
+        "What is my queue number?",
+        "How to find out my position in line?",
+        "Show me my token",
+        "I forgot my token number",
+        "How do I know what number I am?"
+      ],
+      "response": "To check your current token number, go to the 'My Appointments' section in the app. Your active token will be displayed at the top with your token number, your position in the queue, and your estimated wait time. You can also tap the token card to see a detailed view including the doctor's name, clinic, and real-time queue progress."
+    },
+    {
+      "name": "find_doctor",
+      "examples": [
+        "How do I find a doctor by specialization?",
+        "I need to find a cardiologist",
+        "How to search for a specific type of doctor?",
+        "I want to see a skin doctor",
+        "How to find a specialist in the app?",
+        "Search for doctors by specialty",
+        "Can I look up doctors by their field?"
+      ],
+      "response": "To find a doctor by specialization, go to the 'Find Doctor' tab and use the search bar or browse by specialty (e.g., Cardiology, Dermatology, Orthopedics). You can filter results by hospital, availability, and consultation type. Tap on any doctor's profile to see their qualifications, consultation hours, and patient reviews before booking."
+    },
+    {
+      "name": "find_hospital",
+      "examples": [
+        "How do I find a hospital near me?",
+        "How to search for hospitals in the app?",
+        "Show me hospitals",
+        "I need to find a nearby clinic",
+        "How to pick which hospital to go to?",
+        "Which hospitals are available?",
+        "Can I see hospitals on a map?"
+      ],
+      "response": "To find a hospital, tap the 'Hospitals' tab on the home screen. You can search by name, browse by location, or use the map view to see hospitals near you. Each hospital listing shows available specializations, current queue activity, and operating hours. Tap a hospital to see all available doctors and their current queue lengths before booking."
+    },
+    {
+      "name": "update_profile",
+      "examples": [
+        "How do I update my profile?",
+        "How to edit my personal information?",
+        "I want to change my name in the app",
+        "How to update my details?",
+        "Edit my profile information",
+        "Where do I change my profile picture?",
+        "How to update my address?"
+      ],
+      "response": "To update your profile, go to the 'Profile' tab and tap 'Edit Profile'. You can update your name, date of birth, gender, blood group, address, and profile photo. Tap 'Save Changes' when done. Keeping your profile up to date ensures accurate medical records and smooth check-ins at the hospital."
+    },
+    {
+      "name": "change_contact",
+      "examples": [
+        "How do I change my phone number?",
+        "How to update my email address?",
+        "I want to change my mobile number",
+        "How to edit contact information?",
+        "Update my phone in the app",
+        "How do I change the email on my account?",
+        "I have a new phone number"
+      ],
+      "response": "To change your phone number or email, go to 'Profile' > 'Account Settings' > 'Contact Information'. Tap the field you want to update. For phone number changes, you will receive an OTP on your new number for verification. For email changes, a confirmation link will be sent to your new email address. Verify the change to make it active."
+    },
+    {
+      "name": "missed_turn",
+      "examples": [
+        "What if I miss my turn?",
+        "I missed my token number",
+        "What happens if I am late to my appointment?",
+        "My turn passed and I wasn't there",
+        "I missed my queue number, what do I do?",
+        "What to do when you miss your slot?",
+        "Can I rejoin the queue if I missed my turn?"
+      ],
+      "response": "If you miss your turn, your token status will change to 'Missed'. You have two options: \n1. Contact the hospital reception directly — they can often add you back to the end of the queue if there are slots available.\n2. Book a new token for the same day (if the doctor still has available slots) or for a future date.\nTo avoid missing your turn, make sure notifications are enabled so you are alerted when you are 2–3 patients away."
+    },
+    {
+      "name": "view_appointments",
+      "examples": [
+        "How do I see my past appointments?",
+        "Where can I view my appointment history?",
+        "Show me my previous visits",
+        "I want to see all my old bookings",
+        "How to check appointment records?",
+        "View my medical visit history",
+        "How to see doctors I have visited before?"
+      ],
+      "response": "To view your appointment history, go to 'My Appointments' and switch to the 'Past' tab. You will see a complete list of all previous consultations, including the date, doctor name, hospital, and visit type. You can tap any past appointment to see details and, if the doctor is still available, quickly book a follow-up appointment from the same screen."
+    },
+    {
+      "name": "contact_reception",
+      "examples": [
+        "How do I contact the hospital reception?",
+        "I need to call the hospital",
+        "How to get the hospital phone number?",
+        "Can I contact hospital staff through the app?",
+        "How to reach the front desk?",
+        "I need help from the hospital",
+        "Contact information for the hospital"
+      ],
+      "response": "To contact a hospital's reception, go to the hospital's profile page in the app and tap 'Contact'. You will find the main phone number, WhatsApp contact (where available), and email address. You can also tap 'Call Reception' to dial directly from the app. For urgent issues at the hospital, always speak with reception staff in person or call their number directly."
+    },
+    {
+      "name": "troubleshooting",
+      "examples": [
+        "The app is not working",
+        "App keeps crashing",
+        "I can't log in to the app",
+        "The app is showing an error",
+        "My booking is not going through",
+        "App is very slow",
+        "I am having trouble using the app"
+      ],
+      "response": "Sorry to hear you are having trouble! Here are some steps to try:\n1. Check your internet connection — a stable connection is required.\n2. Force-close the app and reopen it.\n3. Make sure you have the latest version installed (check your app store).\n4. Clear the app cache in your phone settings.\n5. Restart your phone.\nIf the problem persists, please contact our support team via the 'Help & Support' section in the app, or email support@hospitalqueue.app with a description of the issue."
+    }
+  ]
+}
