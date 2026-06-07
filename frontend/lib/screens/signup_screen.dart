@@ -9,7 +9,16 @@ import 'package:frontend/services/api_client.dart';
 import 'package:frontend/widgets/common/custom_button.dart';
 
 class SignupScreen extends StatefulWidget {
-  const SignupScreen({super.key});
+  /// false = registration (account basics + email verification only).
+  /// true  = complete/edit profile (personal + medical + emergency, saved via
+  /// PUT /profile). The same rich form serves both completion and editing.
+  final bool profileMode;
+  final bool isCompletion;
+  const SignupScreen({
+    super.key,
+    this.profileMode = false,
+    this.isCompletion = false,
+  });
 
   @override
   State<SignupScreen> createState() => _SignupScreenState();
@@ -18,6 +27,18 @@ class SignupScreen extends StatefulWidget {
 class _SignupScreenState extends State<SignupScreen> {
   int _step = 0;
   bool _submitting = false;
+
+  // Which underlying steps are visible, based on mode
+  // (0=account, 1=personal, 2=medical, 3=emergency).
+  List<int> get _activeSteps =>
+      widget.profileMode ? const [1, 2, 3] : const [0];
+  List<String> get _activeLabels =>
+      [for (final s in _activeSteps) _stepLabels[s]];
+  int get _logicalStep => _activeSteps[_step];
+  bool get _isLastStep => _step >= _activeSteps.length - 1;
+  String get _bottomLabel => widget.profileMode
+      ? (_isLastStep ? 'Save Profile' : 'Continue')
+      : 'Create Account';
 
   // ── Step 1 — Account (basics + auth) ─────────────────────────────────
   final _nameCtrl = TextEditingController();
@@ -82,6 +103,58 @@ class _SignupScreenState extends State<SignupScreen> {
   void initState() {
     super.initState();
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.light);
+    if (widget.profileMode) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _prefillFromProfile());
+    }
+  }
+
+  /// Pre-fill the personal/medical/emergency fields from the saved profile so
+  /// the same form works for completing AND editing.
+  void _prefillFromProfile() {
+    final p = context.read<AuthProvider>().profile;
+    if (p == null || !mounted) return;
+    setState(() {
+      _dob = DateTime.tryParse(p.dateOfBirth) ?? _dob;
+      if (p.gender.isNotEmpty) _gender = p.gender;
+      if (p.nationality.isNotEmpty) _nationality = p.nationality;
+      _nationalIdCtrl.text = p.nationalId;
+      _altPhoneCtrl.text = p.alternatePhone;
+      _addressCtrl.text = p.address;
+      if (p.maritalStatus.isNotEmpty) _maritalStatus = p.maritalStatus;
+      if (p.bloodGroup.isNotEmpty) _bloodGroup = p.bloodGroup;
+      if (p.height != null) _heightCtrl.text = p.height!.toStringAsFixed(0);
+      if (p.weight != null) _weightCtrl.text = p.weight!.toStringAsFixed(0);
+      _allergies
+        ..clear()
+        ..addAll(p.allergies);
+      _conditions
+        ..clear()
+        ..addAll(p.chronicConditions);
+      _surgeriesCtrl.text = p.pastSurgeries;
+      _medications
+        ..clear()
+        ..addAll(p.currentMedications.map((m) => _Medication(
+              name: (m['name'] ?? '').toString(),
+              dose: (m['dose'] ?? '').toString(),
+            )));
+      _vaccinations
+        ..clear()
+        ..addAll(p.vaccinations);
+      if (p.smokingStatus.isNotEmpty) _smoking = p.smokingStatus;
+      if (p.alcoholConsumption.isNotEmpty) _alcohol = p.alcoholConsumption;
+      _emPrimaryName.text = (p.primaryContact['name'] ?? '').toString();
+      _emPrimaryRelation.text = (p.primaryContact['relation'] ?? '').toString();
+      _emPrimaryPhone.text = (p.primaryContact['phone'] ?? '').toString();
+      _emPrimaryAddress.text = (p.primaryContact['address'] ?? '').toString();
+      _emSecondaryName.text = (p.secondaryContact['name'] ?? '').toString();
+      _emSecondaryRelation.text =
+          (p.secondaryContact['relation'] ?? '').toString();
+      _emSecondaryPhone.text = (p.secondaryContact['phone'] ?? '').toString();
+      _famDoctorName.text = (p.familyDoctor['name'] ?? '').toString();
+      _famDoctorSpecialty.text = (p.familyDoctor['specialty'] ?? '').toString();
+      _famDoctorPhone.text = (p.familyDoctor['clinicPhone'] ?? '').toString();
+      _famDoctorClinic.text = (p.familyDoctor['clinicName'] ?? '').toString();
+    });
   }
 
   @override
@@ -130,7 +203,8 @@ class _SignupScreenState extends State<SignupScreen> {
   }
 
   Future<void> _next() async {
-    if (_step == 0) {
+    // Registration (account step): validate basics + require a verified email.
+    if (_logicalStep == 0) {
       if (_nameCtrl.text.trim().isEmpty) {
         _snack('Please enter your full name.');
         return;
@@ -149,91 +223,20 @@ class _SignupScreenState extends State<SignupScreen> {
         return;
       }
       if (!_emailVerified) {
-        final verified = await _showOtpSheet();
-        if (verified != true) return;
-        setState(() => _emailVerified = true);
-      }
-    }
-    if (!mounted) return;
-
-    if (_step == 1) {
-      if (_dob == null) {
-        _snack('Please select your date of birth.');
-        return;
-      }
-      if (_gender == null) {
-        _snack('Please choose your gender.');
-        return;
-      }
-      if (_nationality == null) {
-        _snack('Please choose your nationality.');
-        return;
-      }
-      if (_nationalIdCtrl.text.trim().isEmpty) {
-        _snack('Please enter your national ID.');
-        return;
-      }
-      if (_altPhoneCtrl.text.trim().length < 7) {
-        _snack('Please enter an alternate phone number.');
-        return;
-      }
-      if (_addressCtrl.text.trim().isEmpty) {
-        _snack('Please enter your home address.');
-        return;
-      }
-      if (_maritalStatus == null) {
-        _snack('Please choose your marital status.');
+        _snack('Please verify your email — tap "Verify" next to it.');
         return;
       }
     }
 
-    if (_step == 2) {
-      if (_bloodGroup == null) {
-        _snack('Please select your blood group.');
-        return;
-      }
-      if (_heightCtrl.text.trim().isEmpty) {
-        _snack('Please enter your height.');
-        return;
-      }
-      if (_weightCtrl.text.trim().isEmpty) {
-        _snack('Please enter your weight.');
-        return;
-      }
-      if (_surgeriesCtrl.text.trim().isEmpty) {
-        _snack('Past surgeries — write "None" if not applicable.');
-        return;
-      }
-      if (_smoking == null) {
-        _snack('Please choose your smoking status.');
-        return;
-      }
-      if (_alcohol == null) {
-        _snack('Please choose your alcohol consumption.');
-        return;
-      }
-    }
+    // Profile completion is optional, so its steps aren't hard-validated —
+    // patients can fill in as much as they like and save.
 
-    if (_step == 3) {
-      if (_emPrimaryName.text.trim().isEmpty ||
-          _emPrimaryRelation.text.trim().isEmpty ||
-          _emPrimaryPhone.text.trim().length < 7 ||
-          _emPrimaryAddress.text.trim().isEmpty) {
-        _snack('Please fill all primary emergency contact fields.');
-        return;
+    if (_isLastStep) {
+      if (widget.profileMode) {
+        await _submitProfile();
+      } else {
+        await _submitRegistration();
       }
-    }
-
-    if (_step == 3) {
-      if (!_consent1 || !_consent2 || !_consent3) {
-        _snack('Please review and accept all consents.');
-        return;
-      }
-      if (!_signed) {
-        _snack('Please sign in the signature box.');
-        return;
-      }
-      await _submitRegistration();
       return;
     }
     setState(() => _step += 1);
@@ -293,13 +296,14 @@ class _SignupScreenState extends State<SignupScreen> {
     if (_submitting) return;
     setState(() => _submitting = true);
 
+    // Lean registration: only the account is created here. The rich
+    // profile (personal/medical/emergency) is filled later via /complete-profile.
     final auth = context.read<AuthProvider>();
     final ok = await auth.signup(
       name: _nameCtrl.text.trim(),
       email: _emailCtrl.text.trim(),
       password: _passwordCtrl.text,
       phone: _phoneCtrl.text.trim(),
-      profileFields: _buildProfileFields(),
     );
 
     if (!mounted) return;
@@ -309,14 +313,42 @@ class _SignupScreenState extends State<SignupScreen> {
       Navigator.pushReplacementNamed(
         context,
         '/registration-success',
-        arguments: {
-          'name': _nameCtrl.text.trim(),
-          'bloodGroup': _bloodGroup,
-        },
+        arguments: {'name': _nameCtrl.text.trim()},
       );
     } else {
       _snack(auth.error ?? 'Could not create your account. Please try again.');
     }
+  }
+
+  Future<void> _submitProfile() async {
+    if (_submitting) return;
+    setState(() => _submitting = true);
+    final ok =
+        await context.read<AuthProvider>().saveProfile(_buildProfileFields());
+    if (!mounted) return;
+    setState(() => _submitting = false);
+    if (ok) {
+      _snack('Profile saved.');
+      Navigator.pop(context);
+    } else {
+      _snack('Could not save your profile. Please try again.');
+    }
+  }
+
+  bool get _emailLooksValid {
+    final e = _emailCtrl.text.trim();
+    return e.contains('@') && e.contains('.') && e.length >= 5;
+  }
+
+  /// Inline verification at the email field: open the OTP sheet (which sends
+  /// the code) and flip the VERIFIED badge on success.
+  Future<void> _verifyEmailInline() async {
+    if (!_emailLooksValid) {
+      _snack('Enter a valid email first.');
+      return;
+    }
+    final ok = await _showOtpSheet();
+    if (ok == true && mounted) setState(() => _emailVerified = true);
   }
 
   Future<bool?> _showOtpSheet() {
@@ -535,12 +567,19 @@ class _SignupScreenState extends State<SignupScreen> {
         child: Column(
           children: [
             _Header(
+              title: widget.profileMode
+                  ? (widget.isCompletion
+                      ? 'Complete your profile'
+                      : 'Edit profile')
+                  : 'Create account',
               step: _step,
-              total: _stepLabels.length,
+              total: _activeSteps.length,
               onBack: _back,
               onSaveDraft: () => _snack('Draft saved.'),
+              showProgress: _activeSteps.length > 1,
             ),
-            _StepperBar(currentStep: _step, labels: _stepLabels),
+            if (_activeSteps.length > 1)
+              _StepperBar(currentStep: _step, labels: _activeLabels),
             Expanded(
               child: AnimatedSwitcher(
                 duration: const Duration(milliseconds: 220),
@@ -554,11 +593,11 @@ class _SignupScreenState extends State<SignupScreen> {
               ),
             ),
             _BottomBar(
-              step: _step,
-              total: _stepLabels.length,
+              label: _bottomLabel,
               onNext: _next,
               onSaveDraft: () => _snack('Draft saved.'),
               busy: _submitting,
+              showSaveDraft: widget.profileMode,
             ),
           ],
         ),
@@ -567,7 +606,7 @@ class _SignupScreenState extends State<SignupScreen> {
   }
 
   Widget _stepBody() {
-    switch (_step) {
+    switch (_logicalStep) {
       case 0:
         return _accountStep();
       case 1:
@@ -641,13 +680,31 @@ class _SignupScreenState extends State<SignupScreen> {
                     ],
                   ),
                 )
-              : null,
+              : (_emailLooksValid
+                  ? GestureDetector(
+                      onTap: _verifyEmailInline,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Text('Verify',
+                            style: TextStyle(
+                                fontFamily: 'Inter',
+                                fontSize: 11,
+                                fontWeight: FontWeight.w800,
+                                color: Colors.white)),
+                      ),
+                    )
+                  : null),
           child: TextField(
             controller: _emailCtrl,
             keyboardType: TextInputType.emailAddress,
-            onChanged: (_) {
-              if (_emailVerified) setState(() => _emailVerified = false);
-            },
+            onChanged: (_) => setState(() {
+              if (_emailVerified) _emailVerified = false;
+            }),
             decoration: const InputDecoration(
               isCollapsed: true,
               border: InputBorder.none,
@@ -1264,15 +1321,19 @@ const TextStyle _valueStyle = TextStyle(
 // ──────────────────────────────────────────────────────────────────────────
 
 class _Header extends StatelessWidget {
+  final String title;
   final int step;
   final int total;
   final VoidCallback onBack;
   final VoidCallback onSaveDraft;
+  final bool showProgress;
   const _Header({
+    required this.title,
     required this.step,
     required this.total,
     required this.onBack,
     required this.onSaveDraft,
+    this.showProgress = true,
   });
 
   @override
@@ -1303,30 +1364,33 @@ class _Header extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 4),
-              Text(
-                'Patient Registration',
-                style: TextStyle(
-                  fontFamily: 'Inter',
-                  fontSize: 17,
-                  fontWeight: FontWeight.w800,
-                  color: Colors.white,
-                ),
-              ),
-              const Spacer(),
-              GestureDetector(
-                onTap: onSaveDraft,
+              Expanded(
                 child: Text(
-                  'Save Draft',
-                  style: TextStyle(
+                  title,
+                  style: const TextStyle(
                     fontFamily: 'Inter',
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
+                    fontSize: 17,
+                    fontWeight: FontWeight.w800,
                     color: Colors.white,
                   ),
                 ),
               ),
+              if (showProgress)
+                GestureDetector(
+                  onTap: onSaveDraft,
+                  child: const Text(
+                    'Save Draft',
+                    style: TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
             ],
           ),
+          if (showProgress) ...[
           const SizedBox(height: 12),
           Container(
             padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
@@ -1389,6 +1453,7 @@ class _Header extends StatelessWidget {
               ],
             ),
           ),
+          ],
         ],
       ),
     );
@@ -1483,36 +1548,18 @@ class _StepperBar extends StatelessWidget {
 }
 
 class _BottomBar extends StatelessWidget {
-  final int step;
-  final int total;
+  final String label;
   final VoidCallback onNext;
   final VoidCallback onSaveDraft;
   final bool busy;
+  final bool showSaveDraft;
   const _BottomBar({
-    required this.step,
-    required this.total,
+    required this.label,
     required this.onNext,
     required this.onSaveDraft,
     this.busy = false,
+    this.showSaveDraft = true,
   });
-
-  String get _nextLabel {
-    switch (step) {
-      case 0:
-        return 'Next: Personal Information';
-      case 1:
-        return 'Next: Medical Information';
-      case 2:
-        return 'Next: Emergency Contact';
-      case 3:
-        return 'Complete Registration';
-      default:
-        return 'Next';
-    }
-  }
-
-  IconData get _nextIcon =>
-      step == 3 ? Icons.verified_user_rounded : Icons.arrow_forward_rounded;
 
   @override
   Widget build(BuildContext context) {
@@ -1534,24 +1581,27 @@ class _BottomBar extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             PrimaryButton(
-              label: _nextLabel,
+              label: label,
               onTap: onNext,
               isLoading: busy,
-              icon: Icon(_nextIcon, color: Colors.white, size: 18),
+              icon: const Icon(Icons.arrow_forward_rounded,
+                  color: Colors.white, size: 18),
             ),
-            const SizedBox(height: 8),
-            GestureDetector(
-              onTap: onSaveDraft,
-              child: Text(
-                'Save as Draft for later',
-                style: TextStyle(
-                  fontFamily: 'Inter',
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.primary,
+            if (showSaveDraft) ...[
+              const SizedBox(height: 8),
+              GestureDetector(
+                onTap: onSaveDraft,
+                child: Text(
+                  'Save as Draft for later',
+                  style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.primary,
+                  ),
                 ),
               ),
-            ),
+            ],
           ],
         ),
       ),

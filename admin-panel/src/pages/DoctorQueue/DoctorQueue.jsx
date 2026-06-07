@@ -66,6 +66,9 @@ export default function DoctorQueue() {
   const [diagOpen, setDiagOpen] = useState(false)
   const [noShowOpen, setNoShowOpen] = useState(false)
   const [acting, setActing] = useState(false)
+  const [view, setView] = useState('today') // 'today' | 'history'
+  const [history, setHistory] = useState([])
+  const [historyLoading, setHistoryLoading] = useState(false)
 
   // Live clock
   useEffect(() => {
@@ -128,6 +131,37 @@ export default function DoctorQueue() {
     )
     return () => unsubscribe()
   }, [doctorProfile])
+
+  // Served-visit history across all dates (single-field query → no composite
+  // index; filter/sort in JS). Lazily subscribed only while viewing History.
+  useEffect(() => {
+    if (view !== 'history' || !doctorProfile?.id) return
+    setHistoryLoading(true)
+    const q = query(
+      collection(db, COLLECTIONS.BOOKINGS),
+      where('doctorId', '==', doctorProfile.id)
+    )
+    const unsub = onSnapshot(
+      q,
+      (snap) => {
+        const data = snap.docs
+          .map((d) => ({ id: d.id, ...d.data() }))
+          .filter((b) => b.status === BOOKING_STATUS.SERVED)
+          .sort((a, b) =>
+            (b.servedAt || b.bookingDate || '').localeCompare(
+              a.servedAt || a.bookingDate || ''
+            )
+          )
+        setHistory(data)
+        setHistoryLoading(false)
+      },
+      (err) => {
+        console.error('History listener error:', err)
+        setHistoryLoading(false)
+      }
+    )
+    return () => unsub()
+  }, [view, doctorProfile])
 
   const active = bookings.find((b) => b.status === BOOKING_STATUS.ACTIVE)
   const pending = bookings.filter((b) => b.status === BOOKING_STATUS.PENDING)
@@ -270,6 +304,72 @@ export default function DoctorQueue() {
     hour12: true,
   })
 
+  const renderHistory = () => {
+    if (historyLoading) {
+      return (
+        <div className="card text-center text-gray-500">Loading history…</div>
+      )
+    }
+    if (history.length === 0) {
+      return (
+        <div className="card text-center py-10">
+          <Coffee className="mx-auto mb-2 text-gray-300" size={32} />
+          <p className="text-gray-500">No past consultations yet.</p>
+        </div>
+      )
+    }
+    const groups = {}
+    for (const b of history) {
+      const key =
+        b.bookingDate || (b.servedAt ? b.servedAt.slice(0, 10) : 'Earlier')
+      ;(groups[key] ||= []).push(b)
+    }
+    const dates = Object.keys(groups).sort((a, b) => b.localeCompare(a))
+    return (
+      <div className="space-y-6">
+        {dates.map((date) => (
+          <div key={date}>
+            <h3 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">
+              {date} · {groups[date].length} served
+            </h3>
+            <div className="card !p-0 divide-y divide-gray-100">
+              {groups[date].map((b) => (
+                <div key={b.id} className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-primary-50 text-primary-700 rounded-lg flex items-center justify-center font-bold tabular-nums flex-shrink-0">
+                      {b.tokenNumber}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-semibold text-gray-900 truncate flex items-center gap-2">
+                        <User size={14} className="text-gray-400 flex-shrink-0" />
+                        {b.patientName}
+                      </p>
+                      <div className="mt-1">
+                        <span
+                          className={`text-xs px-2 py-0.5 rounded ${bookingTypeColor[b.bookingType] || 'bg-gray-100 text-gray-600'}`}
+                        >
+                          {bookingTypeLabel[b.bookingType] || b.bookingType}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  {b.diagnosis && (
+                    <div className="mt-2 bg-gray-50 rounded-lg p-3 text-sm text-gray-700">
+                      <span className="block text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1">
+                        Notes
+                      </span>
+                      {b.diagnosis}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    )
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -338,6 +438,30 @@ export default function DoctorQueue() {
       </header>
 
       <main className="px-4 md:px-8 py-6 max-w-4xl mx-auto">
+        {/* Today / History toggle */}
+        <div className="flex gap-1 mb-6 bg-white border border-gray-200 rounded-xl p-1 w-full max-w-xs">
+          {[
+            { id: 'today', label: "Today's Queue" },
+            { id: 'history', label: 'History' },
+          ].map((t) => (
+            <button
+              key={t.id}
+              onClick={() => setView(t.id)}
+              className={`flex-1 px-3 py-2 rounded-lg text-sm font-semibold transition ${
+                view === t.id
+                  ? 'bg-primary-600 text-white'
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        {view === 'history' && renderHistory()}
+
+        {view === 'today' && (
+          <>
         {/* Stats */}
         <div className="grid grid-cols-3 gap-3 mb-6">
           <Stat label="Waiting" value={pending.length} />
@@ -471,6 +595,8 @@ export default function DoctorQueue() {
             </div>
           )}
         </div>
+          </>
+        )}
 
         {/* Footer info */}
         <p className="text-center text-gray-400 text-xs mt-6">

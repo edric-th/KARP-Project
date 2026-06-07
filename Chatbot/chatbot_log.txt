@@ -130,3 +130,27 @@
 [2026-06-04 00:35:27] BOT : intent=book_token category=app emergency=False confidence=100.0
 [2026-06-04 00:35:27] RESP: To book a token, open the app and tap 'Book Appointment'. Select your preferred hospital, then choose a doctor or specialization. Pick the type of visit — First-Time, Follow-Up, or Show Report — then 
 ────────────────────────────────────────────────────────────────────────────────
+[2026-06-04 07:34:18] USER: 'hello'
+[2026-06-04 07:34:18] BOT : intent=greeting category=general emergency=False confidence=95.0
+[2026-06-04 07:34:18] RESP: Hello! How can I assist you today with the hospital queue app or any general health questions?
+────────────────────────────────────────────────────────────────────────────────
+[2026-06-04 07:34:35] USER: 'hello my name is rohan and my chest is hurting'
+[2026-06-04 07:34:35] BOT : intent=chest_pain_symptoms category=medical emergency=False confidence=90.0
+[2026-06-04 07:34:35] RESP: Hello Rohan. I'm sorry to hear your chest is hurting. Chest pain can be concerning and has many possible causes, ranging from muscle strain, indigestion (like gas or acidity), anxiety, to more serious
+────────────────────────────────────────────────────────────────────────────────
+[2026-06-04 07:35:26] USER: 'my friend has dibates can you suggest home remedies'
+[2026-06-04 07:35:26] BOT : intent=diabetes_management_general category=medical emergency=False confidence=95.0
+[2026-06-04 07:35:26] RESP: I understand you're looking for ways to help your friend with diabetes. While a healthy lifestyle, including a balanced diet and regular exercise, is crucial for managing diabetes, it's very important
+────────────────────────────────────────────────────────────────────────────────
+[2026-06-04 08:13:27] USER: 'ffffff'
+[2026-06-04 08:13:27] BOT : intent=out_of_scope category=out_of_scope emergency=False confidence=100.0
+[2026-06-04 08:13:27] RESP: I'm focused on helping with hospital app questions and basic health guidance. Is there something I can help with on those topics?
+────────────────────────────────────────────────────────────────────────────────
+[2026-06-04 08:13:43] USER: 'fever'
+[2026-06-04 08:13:43] BOT : intent=fever_symptoms category=medical emergency=False confidence=90.0
+[2026-06-04 08:13:43] RESP: Fever is a common symptom, often indicating that your body is fighting off an infection, like a cold, flu, or other viral or bacterial illnesses. It can also be a sign of inflammation. If you have a f
+────────────────────────────────────────────────────────────────────────────────
+[2026-06-04 08:13:53] USER: "Doctor's profile"
+[2026-06-04 08:13:53] BOT : intent=find_doctor category=app emergency=False confidence=90.0
+[2026-06-04 08:13:53] RESP: To find a doctor by specialization, go to the 'Find Doctor' tab and use the search bar or browse by specialty (e.g., Cardiology, Dermatology, Orthopedics). You can filter results by hospital, availabi
+────────────────────────────────────────────────────────────────────────────────

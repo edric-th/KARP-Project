@@ -16,7 +16,6 @@ import 'package:frontend/screens/queue_screen.dart';
 import 'package:frontend/screens/appointments_screen.dart';
 import 'package:frontend/screens/notifications_screen.dart';
 import 'package:frontend/screens/profile_screen.dart';
-import 'package:frontend/screens/edit_profile_screen.dart';
 import 'package:frontend/screens/queue_ai_chat_screen.dart';
 import 'package:frontend/screens/settings_screen.dart';
 import 'package:frontend/screens/splash_screen.dart';
@@ -44,6 +43,7 @@ class AppRouter {
   static const String notifications = '/notifications';
   static const String profile = '/profile';
   static const String editProfile = '/edit-profile';
+  static const String completeProfile = '/complete-profile';
   static const String queueAiChat = '/queue-ai-chat';
   static const String settings = '/settings';
   static const String medicalHistory = '/medical-history';
@@ -68,7 +68,6 @@ class AppRouter {
         return _buildRoute(
           RegistrationSuccessScreen(
             name: args['name'] as String? ?? 'Patient',
-            bloodGroup: args['bloodGroup'] as String? ?? 'O+',
           ),
           routeSettings,
         );
@@ -156,7 +155,16 @@ class AppRouter {
         return _buildRoute(const ProfileScreen(), routeSettings);
 
       case editProfile:
-        return _buildRoute(const EditProfileScreen(), routeSettings);
+        return _buildRoute(
+          const SignupScreen(profileMode: true),
+          routeSettings,
+        );
+
+      case completeProfile:
+        return _buildRoute(
+          const SignupScreen(profileMode: true, isCompletion: true),
+          routeSettings,
+        );
 
       case queueAiChat:
         return _buildRoute(const QueueAiChatScreen(), routeSettings);

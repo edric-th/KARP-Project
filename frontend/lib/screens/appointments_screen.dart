@@ -41,6 +41,8 @@ class AppointmentsScreen extends StatefulWidget {
 }
 
 class _AppointmentsScreenState extends State<AppointmentsScreen> {
+  int _tab = 0; // 0 = Upcoming, 1 = Past
+
   static const _slots = [
     '9:00 AM', '9:30 AM', '10:00 AM', '10:30 AM',
     '11:00 AM', '11:30 AM', '2:00 PM', '2:30 PM', '3:00 PM',
@@ -101,7 +103,6 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
   @override
   Widget build(BuildContext context) {
     final bookings = context.watch<BookingsProvider>();
-    final b = _fromModel(bookings.activeBooking);
 
     return Scaffold(
       backgroundColor: AppColors.backgroundLight,
@@ -109,15 +110,63 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
         title: AppStrings.appointments,
         showBack: false,
       ),
-      body: bookings.loading && bookings.items.isEmpty
-          ? const LoadingView()
-          : b == null
-              ? _buildEmpty()
-              : RefreshIndicator(
-                  color: AppColors.primary,
-                  onRefresh: () => context.read<BookingsProvider>().load(),
-                  child: _buildBooked(b),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
+            child: _SegTabs(
+              tab: _tab,
+              onChanged: (i) => setState(() => _tab = i),
+              pastCount: bookings.past.length,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Expanded(
+            child: _tab == 0
+                ? _buildUpcomingTab(bookings)
+                : _buildPastTab(bookings),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildUpcomingTab(BookingsProvider bookings) {
+    if (bookings.loading && bookings.items.isEmpty) return const LoadingView();
+    final b = _fromModel(bookings.activeBooking);
+    if (b == null) return _buildEmpty();
+    return RefreshIndicator(
+      color: AppColors.primary,
+      onRefresh: () => context.read<BookingsProvider>().load(),
+      child: _buildBooked(b),
+    );
+  }
+
+  Widget _buildPastTab(BookingsProvider bookings) {
+    if (bookings.loading && bookings.items.isEmpty) return const LoadingView();
+    final past = bookings.past;
+    return RefreshIndicator(
+      color: AppColors.primary,
+      onRefresh: () => context.read<BookingsProvider>().load(),
+      child: past.isEmpty
+          ? ListView(
+              children: const [
+                SizedBox(height: 90),
+                Center(
+                  child: Text('No past visits yet.',
+                      style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 14,
+                          color: AppColors.textSecondary)),
                 ),
+              ],
+            )
+          : ListView.separated(
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 110),
+              itemCount: past.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 10),
+              itemBuilder: (_, i) => _PastRow(booking: past[i]),
+            ),
     );
   }
 
@@ -857,6 +906,189 @@ class _DangerButton extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+// ─── SEGMENTED TABS (Upcoming / Past) ──────────────────────────────────────
+
+class _SegTabs extends StatelessWidget {
+  final int tab;
+  final ValueChanged<int> onChanged;
+  final int pastCount;
+  const _SegTabs({
+    required this.tab,
+    required this.onChanged,
+    required this.pastCount,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
+        children: [
+          _seg('Upcoming', 0),
+          _seg(pastCount > 0 ? 'Past ($pastCount)' : 'Past', 1),
+        ],
+      ),
+    );
+  }
+
+  Widget _seg(String label, int i) {
+    final selected = tab == i;
+    return Expanded(
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => onChanged(i),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: selected ? AppColors.primary : Colors.transparent,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontFamily: 'Inter',
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: selected ? Colors.white : AppColors.textSecondary,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─── PAST VISIT ROW ────────────────────────────────────────────────────────
+
+class _PastRow extends StatelessWidget {
+  final BookingModel booking;
+  const _PastRow({required this.booking});
+
+  @override
+  Widget build(BuildContext context) {
+    final served = booking.status == 'served';
+    final statusLabel = served
+        ? 'Served'
+        : (booking.status == 'cancelled' ? 'Cancelled' : 'No-show');
+    final statusColor = served ? AppColors.success : AppColors.error;
+    final dateStr = DateFormat('d MMM y').format(
+        DateTime.tryParse(booking.bookingDate) ??
+            booking.servedAt ??
+            DateTime.now());
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: AppColors.cardGreenLight,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(booking.tokenLabel,
+                    style: const TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.primary)),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                        booking.doctorName.isEmpty
+                            ? 'Consultation'
+                            : booking.doctorName,
+                        style: const TextStyle(
+                            fontFamily: 'Inter',
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textPrimary)),
+                    const SizedBox(height: 2),
+                    Text(
+                      [booking.hospitalName, dateStr]
+                          .where((s) => s.isNotEmpty)
+                          .join('  ·  '),
+                      style: const TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 12,
+                          color: AppColors.textSecondary),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: statusColor.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(statusLabel,
+                    style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w800,
+                        color: statusColor)),
+              ),
+            ],
+          ),
+          if ((booking.diagnosis ?? '').isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: AppColors.cardGreenLight,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text("DOCTOR'S NOTES",
+                      style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 9.5,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.6,
+                          color: AppColors.primaryDark)),
+                  const SizedBox(height: 4),
+                  Text(booking.diagnosis!,
+                      style: const TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 12.5,
+                          height: 1.4,
+                          color: AppColors.textPrimary)),
+                ],
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }

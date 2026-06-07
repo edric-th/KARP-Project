@@ -76,6 +76,49 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
     }
   }
 
+  // Learned per-type service minutes for a doctor (first_visit/follow_up/report).
+  final Map<String, Map<String, double>> _typeAverages = {};
+  final Set<String> _typeAvgLoading = {};
+
+  Future<void> _ensureTypeAverages(String doctorId) async {
+    if (doctorId.isEmpty ||
+        _typeAverages.containsKey(doctorId) ||
+        _typeAvgLoading.contains(doctorId)) {
+      return;
+    }
+    _typeAvgLoading.add(doctorId);
+    try {
+      final status = await context.read<QueueService>().forDoctor(doctorId);
+      if (!mounted) return;
+      setState(() => _typeAverages[doctorId] = status.typeAverages);
+    } catch (_) {
+      // Leave unknown — type cards fall back to the default duration.
+    } finally {
+      _typeAvgLoading.remove(doctorId);
+    }
+  }
+
+  String _backendType(AppointmentType t) {
+    switch (t) {
+      case AppointmentType.newPatient:
+        return 'first_visit';
+      case AppointmentType.followUp:
+        return 'follow_up';
+      case AppointmentType.reportShowing:
+        return 'report';
+    }
+  }
+
+  /// Dynamic "~N MIN" label from the selected doctor's learned per-type
+  /// averages; null → the card falls back to the static default.
+  String? _durationLabelFor(AppointmentType type) {
+    final doctorId = _selectedDoctor?.id;
+    if (doctorId == null) return null;
+    final avg = _typeAverages[doctorId]?[_backendType(type)];
+    if (avg == null || avg <= 0) return null;
+    return '~${avg.round()} MIN';
+  }
+
   // Step 3
   final _notesController = TextEditingController();
   bool _notifyMe = true;
@@ -196,13 +239,16 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
       }
     }
     if (_currentStep == 1) {
-      if (_selectedHospital == null) {
-        _snack('Please choose a hospital.');
-        return;
-      }
-      if (_selectedDoctor == null) {
-        _snack('Please choose a doctor.');
-        return;
+      // With a preselected doctor the hospital/doctor are already fixed.
+      if (widget.preselectedDoctor == null) {
+        if (_selectedHospital == null) {
+          _snack('Please choose a hospital.');
+          return;
+        }
+        if (_selectedDoctor == null) {
+          _snack('Please choose a doctor.');
+          return;
+        }
       }
       if (_problemCtrl.text.trim().isEmpty) {
         _snack('Please describe your specific problem.');
@@ -309,7 +355,12 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
           children: [
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
-              child: _StepperHeader(currentStep: _currentStep),
+              child: _StepperHeader(
+                currentStep: _currentStep,
+                labels: widget.preselectedDoctor != null
+                    ? const ['APPOINTMENT\nTYPE', 'YOUR\nVISIT', 'CONFIRM']
+                    : const ['APPOINTMENT\nTYPE', 'HOSPITAL\n& DOCTOR', 'CONFIRM'],
+              ),
             ),
             Expanded(
               child: AnimatedSwitcher(
@@ -344,6 +395,11 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
 
   Widget _buildStepOne() {
     final showForm = _appointmentType == AppointmentType.newPatient;
+    final docId = _selectedDoctor?.id;
+    if (docId != null) {
+      WidgetsBinding.instance
+          .addPostFrameCallback((_) => _ensureTypeAverages(docId));
+    }
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
       child: Column(
@@ -366,6 +422,7 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
               child: _AppointmentTypeCard(
                 type: type,
                 selected: _appointmentType == type,
+                durationLabel: _durationLabelFor(type),
                 onTap: () => setState(() => _appointmentType = type),
               ),
             ),
@@ -391,9 +448,110 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
     );
   }
 
+  // ─── STEP 2 (preselected doctor): read-only summary + problem ─────────────
+
+  Widget _buildPreselectedVisit() {
+    final doctor = widget.preselectedDoctor!;
+    final hospitalName = _selectedHospital?.name ?? doctor.hospital;
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _sectionTitle('Your Doctor'),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppColors.border),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: const BoxDecoration(
+                    color: AppColors.cardGreenMedium,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.person_rounded,
+                      color: AppColors.primary, size: 26),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(doctor.name,
+                          style: const TextStyle(
+                              fontFamily: 'Inter',
+                              fontSize: 15,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.textPrimary)),
+                      const SizedBox(height: 2),
+                      Text(
+                        [doctor.specialty, hospitalName]
+                            .where((s) => s.isNotEmpty)
+                            .join('  ·  '),
+                        style: const TextStyle(
+                            fontFamily: 'Inter',
+                            fontSize: 12.5,
+                            color: AppColors.textSecondary),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 22),
+          _sectionTitle('Describe Your Problem'),
+          const SizedBox(height: 4),
+          Text(
+            'Briefly tell the doctor what you are experiencing.',
+            style: TextStyle(
+              fontFamily: 'Inter',
+              fontSize: 12,
+              color: AppColors.textSecondary,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Container(
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: AppColors.border),
+            ),
+            child: TextField(
+              controller: _problemCtrl,
+              maxLines: 4,
+              style: const TextStyle(
+                fontFamily: 'Inter',
+                fontSize: 14,
+                color: AppColors.textPrimary,
+              ),
+              decoration: const InputDecoration(
+                border: InputBorder.none,
+                contentPadding: EdgeInsets.all(14),
+                hintText: 'e.g. Persistent headache for the last 3 days',
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   // ─── STEP 2: HOSPITAL + DOCTOR + PROBLEM ──────────────────────────────────
 
   Widget _buildStepTwo() {
+    // When opened from a specific doctor, skip the hospital/specialty/doctor
+    // pickers entirely — show a read-only summary + the problem field.
+    if (widget.preselectedDoctor != null) {
+      return _buildPreselectedVisit();
+    }
     final doctorsForSpeciality = _doctorsForSelection;
     final specialities = _specialityItems;
 
@@ -969,11 +1127,14 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
 
 class _StepperHeader extends StatelessWidget {
   final int currentStep;
-  const _StepperHeader({required this.currentStep});
+  final List<String> labels;
+  const _StepperHeader({
+    required this.currentStep,
+    this.labels = const ['APPOINTMENT\nTYPE', 'HOSPITAL\n& DOCTOR', 'CONFIRM'],
+  });
 
   @override
   Widget build(BuildContext context) {
-    const labels = ['APPOINTMENT\nTYPE', 'HOSPITAL\n& DOCTOR', 'CONFIRM'];
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: List.generate(3, (i) {
@@ -1057,10 +1218,12 @@ class _AppointmentTypeCard extends StatelessWidget {
   final AppointmentType type;
   final bool selected;
   final VoidCallback onTap;
+  final String? durationLabel;
   const _AppointmentTypeCard({
     required this.type,
     required this.selected,
     required this.onTap,
+    this.durationLabel,
   });
 
   IconData _iconFor(AppointmentType t) {
@@ -1168,7 +1331,7 @@ class _AppointmentTypeCard extends StatelessWidget {
                                       borderRadius: BorderRadius.circular(10),
                                     ),
                                     child: Text(
-                                      type.duration,
+                                      durationLabel ?? type.duration,
                                       style: TextStyle(
                                         fontFamily: 'Inter',
                                         fontSize: 10,

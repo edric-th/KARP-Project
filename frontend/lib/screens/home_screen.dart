@@ -27,6 +27,14 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   String? _trackingDoctorId;
   Timer? _pollTimer;
+  bool _profilePromptDismissed = false;
+
+  bool _needsProfile(AuthProvider auth) {
+    if (_profilePromptDismissed) return false;
+    final p = auth.profile;
+    if (p == null) return false;
+    return p.bloodGroup.isEmpty || p.dateOfBirth.isEmpty;
+  }
 
   @override
   void initState() {
@@ -124,6 +132,15 @@ class _HomeScreenState extends State<HomeScreen> {
           padding: const EdgeInsets.fromLTRB(20, 20, 20, 120),
           children: [
             _GreetingBlock(firstName: firstName, activeQueue: activeQueue),
+            if (_needsProfile(auth)) ...[
+              const SizedBox(height: 16),
+              _CompleteProfileBanner(
+                onTap: () =>
+                    Navigator.pushNamed(context, '/complete-profile'),
+                onDismiss: () =>
+                    setState(() => _profilePromptDismissed = true),
+              ),
+            ],
             if (activeQueue != null) ...[
               const SizedBox(height: 18),
               _NowServingCard(queue: activeQueue),
@@ -1036,6 +1053,73 @@ class _QuickAction extends StatelessWidget {
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
                 color: color,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── COMPLETE PROFILE BANNER ───────────────────────────────────────────────
+
+class _CompleteProfileBanner extends StatelessWidget {
+  final VoidCallback onTap;
+  final VoidCallback onDismiss;
+  const _CompleteProfileBanner({required this.onTap, required this.onDismiss});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(14, 12, 8, 12),
+        decoration: BoxDecoration(
+          color: AppColors.cardGreenLight,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.cardGreenBorder),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                color: AppColors.primary,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(Icons.assignment_ind_outlined,
+                  color: Colors.white, size: 20),
+            ),
+            const SizedBox(width: 12),
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Complete your profile',
+                      style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 14,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.textPrimary)),
+                  SizedBox(height: 2),
+                  Text('Add your medical & emergency details',
+                      style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 12,
+                          color: AppColors.textSecondary)),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right_rounded, color: AppColors.primary),
+            GestureDetector(
+              onTap: onDismiss,
+              behavior: HitTestBehavior.opaque,
+              child: const Padding(
+                padding: EdgeInsets.all(6),
+                child: Icon(Icons.close_rounded,
+                    size: 16, color: AppColors.textMuted),
               ),
             ),
           ],

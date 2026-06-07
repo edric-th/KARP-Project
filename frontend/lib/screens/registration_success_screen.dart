@@ -4,24 +4,11 @@ import 'package:frontend/widgets/common/custom_button.dart';
 
 class RegistrationSuccessScreen extends StatelessWidget {
   final String name;
-  final String bloodGroup;
-
-  const RegistrationSuccessScreen({
-    super.key,
-    required this.name,
-    required this.bloodGroup,
-  });
+  const RegistrationSuccessScreen({super.key, required this.name});
 
   String _firstName() {
     final parts = name.trim().split(RegExp(r'\s+'));
     return parts.isEmpty ? 'there' : parts.first;
-  }
-
-  String get _patientId {
-    final now = DateTime.now();
-    final suffix =
-        (now.millisecondsSinceEpoch % 100000).toString().padLeft(5, '0');
-    return 'MPC-${now.year}-$suffix';
   }
 
   @override
@@ -33,7 +20,7 @@ class RegistrationSuccessScreen extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
           child: Column(
             children: [
-              const SizedBox(height: 18),
+              const SizedBox(height: 32),
               TweenAnimationBuilder<double>(
                 tween: Tween(begin: 0.0, end: 1.0),
                 duration: const Duration(milliseconds: 700),
@@ -53,10 +40,9 @@ class RegistrationSuccessScreen extends StatelessWidget {
                   ),
                   padding: const EdgeInsets.all(4),
                   child: Container(
-                    decoration: BoxDecoration(
+                    decoration: const BoxDecoration(
                       gradient: AppColors.primaryGradient,
                       shape: BoxShape.circle,
-                      boxShadow: AppColors.primaryShadow,
                     ),
                     child: const Icon(
                       Icons.check_rounded,
@@ -67,8 +53,8 @@ class RegistrationSuccessScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 22),
-              Text(
-                'Registration Complete!',
+              const Text(
+                'Account created!',
                 style: TextStyle(
                   fontFamily: 'Inter',
                   fontSize: 24,
@@ -79,38 +65,72 @@ class RegistrationSuccessScreen extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                'Welcome to MeroPalo Care, ${_firstName()}!',
-                style: TextStyle(
+                'Welcome to MeroPalo Care, ${_firstName()}! Your email is verified.',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
                   fontFamily: 'Inter',
                   fontSize: 14,
+                  height: 1.5,
                   color: AppColors.textSecondary,
                 ),
               ),
               const SizedBox(height: 26),
-              _AccountSummaryCard(
-                patientId: _patientId,
-                name: name,
-                bloodGroup: bloodGroup,
-                primaryDoctor: 'Dr. Sarah Jenkins',
-                emergencyContact: '+977 980-000-0000 (Family)',
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: AppColors.cardGreenLight,
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(color: AppColors.cardGreenBorder),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: const [
+                        Icon(Icons.assignment_ind_outlined,
+                            color: AppColors.primary, size: 20),
+                        SizedBox(width: 8),
+                        Text(
+                          'One last step',
+                          style: TextStyle(
+                            fontFamily: 'Inter',
+                            fontSize: 15,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Complete your health profile (personal, medical & emergency details) so doctors have what they need. You can also do this anytime from your Profile.',
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 13,
+                        height: 1.5,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(height: 26),
               PrimaryButton(
-                label: 'Go to Home',
-                onTap: () => Navigator.pushNamedAndRemoveUntil(
-                  context,
-                  '/main',
-                  (route) => false,
-                ),
+                label: 'Complete your profile',
+                onTap: () {
+                  Navigator.pushNamedAndRemoveUntil(
+                      context, '/main', (route) => false);
+                  Navigator.pushNamed(context, '/complete-profile');
+                },
               ),
               const SizedBox(height: 12),
               SecondaryButton(
-                label: 'View My Profile',
+                label: 'Skip for now',
                 onTap: () => Navigator.pushNamedAndRemoveUntil(
                   context,
                   '/main',
                   (route) => false,
-                  arguments: 3,
                 ),
               ),
               const SizedBox(height: 18),
@@ -140,138 +160,6 @@ class RegistrationSuccessScreen extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-}
-
-class _AccountSummaryCard extends StatelessWidget {
-  final String patientId;
-  final String name;
-  final String bloodGroup;
-  final String primaryDoctor;
-  final String emergencyContact;
-  const _AccountSummaryCard({
-    required this.patientId,
-    required this.name,
-    required this.bloodGroup,
-    required this.primaryDoctor,
-    required this.emergencyContact,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(18),
-        border: Border(
-          left: BorderSide(color: AppColors.primary, width: 4),
-          top: BorderSide(color: AppColors.border),
-          right: BorderSide(color: AppColors.border),
-          bottom: BorderSide(color: AppColors.border),
-        ),
-      ),
-      padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Text(
-                'ACCOUNT SUMMARY',
-                style: TextStyle(
-                  fontFamily: 'Inter',
-                  fontSize: 11.5,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.textMuted,
-                  letterSpacing: 0.8,
-                ),
-              ),
-              const Spacer(),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.cardGreenMedium,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  'ACTIVE',
-                  style: TextStyle(
-                    fontFamily: 'Inter',
-                    fontSize: 10.5,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.primaryDark,
-                    letterSpacing: 0.6,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          const Divider(height: 1, color: AppColors.divider),
-          const SizedBox(height: 14),
-          _SummaryRow(label: 'PATIENT ID', value: patientId),
-          const SizedBox(height: 12),
-          _SummaryRow(label: 'FULL NAME', value: name),
-          const SizedBox(height: 12),
-          _SummaryRow(
-            label: 'BLOOD GROUP',
-            value: bloodGroup,
-            valueColor: AppColors.primaryDark,
-            isBold: true,
-          ),
-          const SizedBox(height: 12),
-          _SummaryRow(label: 'PRIMARY DOCTOR', value: primaryDoctor),
-          const SizedBox(height: 12),
-          _SummaryRow(label: 'EMERGENCY CONTACT', value: emergencyContact),
-        ],
-      ),
-    );
-  }
-}
-
-class _SummaryRow extends StatelessWidget {
-  final String label;
-  final String value;
-  final Color? valueColor;
-  final bool isBold;
-  const _SummaryRow({
-    required this.label,
-    required this.value,
-    this.valueColor,
-    this.isBold = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontFamily: 'Inter',
-            fontSize: 10.5,
-            fontWeight: FontWeight.w800,
-            color: AppColors.textMuted,
-            letterSpacing: 0.7,
-          ),
-        ),
-        const SizedBox(height: 3),
-        Text(
-          value,
-          style: TextStyle(
-            fontFamily: 'Inter',
-            fontSize: isBold ? 16 : 15,
-            fontWeight: FontWeight.w800,
-            color: valueColor ?? AppColors.textPrimary,
-          ),
-        ),
-      ],
     );
   }
 }
