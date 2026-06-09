@@ -275,31 +275,38 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             vertical: 3,
                           ),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFFDE0E0),
+                            color: profile.emailVerified
+                                ? const Color(0xFFDFF5E1)
+                                : const Color(0xFFFDE0E0),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
-                            'Unverified',
+                            profile.emailVerified ? 'Verified' : 'Unverified',
                             style: TextStyle(
                               fontFamily: 'Inter',
                               fontSize: 10,
                               fontWeight: FontWeight.w700,
-                              color: const Color(0xFFB42323),
+                              color: profile.emailVerified
+                                  ? const Color(0xFF1B7A3D)
+                                  : const Color(0xFFB42323),
                             ),
                           ),
                         ),
-                        trailing: GestureDetector(
-                          onTap: () => _addStub('Verify email'),
-                          child: Text(
-                            'Verify',
-                            style: TextStyle(
-                              fontFamily: 'Inter',
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.primary,
-                            ),
-                          ),
-                        ),
+                        trailing: profile.emailVerified
+                            ? null
+                            : GestureDetector(
+                                onTap: () =>
+                                    _showVerifyEmailSheet(profile.email),
+                                child: Text(
+                                  'Verify',
+                                  style: TextStyle(
+                                    fontFamily: 'Inter',
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.primary,
+                                  ),
+                                ),
+                              ),
                       ),
                       const _RowDivider(),
                       _InfoRow(
@@ -307,7 +314,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         label: 'PASSWORD',
                         value: '•••••••••••••',
                         trailing: GestureDetector(
-                          onTap: () => _addStub('Change password'),
+                          onTap: () =>
+                              Navigator.pushNamed(context, '/change-password'),
                           child: Text(
                             'Change',
                             style: TextStyle(
@@ -370,10 +378,207 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  void _addStub(String msg) {
+  void _snack(String msg, {bool error = false}) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(msg), backgroundColor: AppColors.primary),
+      SnackBar(
+        content: Text(msg),
+        backgroundColor: error ? AppColors.error : AppColors.primary,
+      ),
     );
+  }
+
+  Future<void> _showVerifyEmailSheet(String email) async {
+    final codeCtrl = TextEditingController();
+    var sending = false;
+    var verifying = false;
+    var sent = false;
+    String? devCode;
+
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheet) {
+          Future<void> send() async {
+            setSheet(() => sending = true);
+            try {
+              final code =
+                  await context.read<AuthProvider>().sendEmailOtp(email);
+              setSheet(() {
+                sent = true;
+                devCode = code;
+                sending = false;
+              });
+            } catch (_) {
+              setSheet(() => sending = false);
+              if (mounted) _snack('Could not send code. Try again.', error: true);
+            }
+          }
+
+          Future<void> verify() async {
+            final code = codeCtrl.text.trim();
+            if (code.length < 4) {
+              _snack('Enter the code we emailed you.', error: true);
+              return;
+            }
+            setSheet(() => verifying = true);
+            try {
+              final ok = await context
+                  .read<AuthProvider>()
+                  .confirmEmailVerification(email, code);
+              if (!ctx.mounted) return;
+              if (ok) {
+                Navigator.pop(ctx);
+                _snack('Email verified successfully');
+              } else {
+                setSheet(() => verifying = false);
+                _snack('Incorrect or expired code.', error: true);
+              }
+            } catch (_) {
+              setSheet(() => verifying = false);
+              _snack('Verification failed. Try again.', error: true);
+            }
+          }
+
+          return Padding(
+            padding: EdgeInsets.fromLTRB(
+                24, 20, 24, MediaQuery.of(ctx).viewInsets.bottom + 28),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    margin: const EdgeInsets.only(bottom: 18),
+                    decoration: BoxDecoration(
+                      color: AppColors.border,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                Text(
+                  'Verify your email',
+                  style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  sent
+                      ? 'Enter the 6-digit code we sent to $email.'
+                      : 'We\'ll send a 6-digit code to $email.',
+                  style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 13,
+                    color: AppColors.textSecondary,
+                    height: 1.4,
+                  ),
+                ),
+                if (devCode != null) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    'Dev code: $devCode',
+                    style: TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 18),
+                if (sent) ...[
+                  Container(
+                    decoration: BoxDecoration(
+                      color: AppColors.backgroundLight,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.border),
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                    child: TextField(
+                      controller: codeCtrl,
+                      keyboardType: TextInputType.number,
+                      maxLength: 6,
+                      style: const TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 6,
+                        color: AppColors.textPrimary,
+                      ),
+                      decoration: const InputDecoration(
+                        counterText: '',
+                        border: InputBorder.none,
+                        hintText: '••••••',
+                        contentPadding: EdgeInsets.symmetric(vertical: 16),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+                GestureDetector(
+                  onTap: sending || verifying ? null : (sent ? verify : send),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    decoration: BoxDecoration(
+                      gradient: AppColors.primaryGradient,
+                      borderRadius: BorderRadius.circular(28),
+                      boxShadow: AppColors.primaryShadow,
+                    ),
+                    child: Center(
+                      child: (sending || verifying)
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                  color: Colors.white, strokeWidth: 2),
+                            )
+                          : Text(
+                              sent ? 'Verify' : 'Send Code',
+                              style: const TextStyle(
+                                fontFamily: 'Inter',
+                                fontSize: 15,
+                                fontWeight: FontWeight.w800,
+                                color: Colors.white,
+                              ),
+                            ),
+                    ),
+                  ),
+                ),
+                if (sent) ...[
+                  const SizedBox(height: 10),
+                  Center(
+                    child: TextButton(
+                      onPressed: sending ? null : send,
+                      child: Text(
+                        'Resend code',
+                        style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          );
+        },
+      ),
+    );
+    codeCtrl.dispose();
   }
 
   void _showDeleteDialog(BuildContext context) {

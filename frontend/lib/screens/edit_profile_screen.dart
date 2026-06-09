@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:frontend/constants/app_colors.dart';
+import 'package:frontend/constants/validators.dart';
 import 'package:frontend/providers/auth_provider.dart';
 
 class EditProfileScreen extends StatefulWidget {
@@ -70,8 +70,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   Future<void> _save() async {
     if (_saving) return;
     final phone = _phoneCtrl.text.trim();
-    if (phone.isNotEmpty && phone.length < 7) {
-      setState(() => _phoneError = 'Please enter a valid phone number');
+    final phoneErr = validateNepaliPhone(phone, required: false);
+    if (phoneErr != null) {
+      setState(() => _phoneError = phoneErr);
       return;
     }
     setState(() {
@@ -469,10 +470,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           child: TextField(
                             controller: _phoneCtrl,
                             keyboardType: TextInputType.phone,
-                            inputFormatters: [
-                              FilteringTextInputFormatter.digitsOnly,
-                              LengthLimitingTextInputFormatter(10),
-                            ],
+                            inputFormatters: [NepaliMobileFormatter()],
                             onChanged: (_) {
                               if (_phoneError != null) {
                                 setState(() => _phoneError = null);

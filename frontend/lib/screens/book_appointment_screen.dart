@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:frontend/constants/app_colors.dart';
+import 'package:frontend/constants/validators.dart';
 import 'package:frontend/constants/wait_format.dart';
 import 'package:frontend/models/models.dart';
 import 'package:frontend/providers/auth_provider.dart';
@@ -140,9 +142,9 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
     if (widget.preselectedDoctor != null) {
       _selectedDoctor = widget.preselectedDoctor;
       _selectedSpeciality = widget.preselectedDoctor!.specialty;
-    } else {
-      _selectedSpeciality = 'General Medicine';
     }
+    // Otherwise leave _selectedSpeciality null so the patient picks one
+    // explicitly — choosing a hospital must NOT auto-select a speciality.
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final catalog = context.read<CatalogProvider>();
       await catalog.load();
@@ -231,10 +233,13 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
 
   void _next() {
     if (_currentStep == 0 && _appointmentType == AppointmentType.newPatient) {
-      if (_patientNameCtrl.text.trim().isEmpty ||
-          _patientDob == null ||
-          _patientPhoneCtrl.text.trim().isEmpty) {
+      if (_patientNameCtrl.text.trim().isEmpty || _patientDob == null) {
         _snack('Please fill all new patient details.');
+        return;
+      }
+      final phoneErr = validateNepaliPhone(_patientPhoneCtrl.text);
+      if (phoneErr != null) {
+        _snack(phoneErr);
         return;
       }
     }
@@ -653,6 +658,10 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
                 ),
               ),
             ),
+          if (_selectedDoctor != null) ...[
+            const SizedBox(height: 4),
+            _buildTurnDisclaimer(_selectedDoctor!),
+          ],
           const SizedBox(height: 18),
           _sectionTitle('Describe Your Problem'),
           const SizedBox(height: 4),
@@ -918,6 +927,110 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
         fontWeight: FontWeight.w800,
         color: AppColors.textPrimary,
         letterSpacing: -0.4,
+      ),
+    );
+  }
+
+  /// Disclaimer under the selected doctor: either "not available at the moment"
+  /// (off-day / after closing) or the patient's expected turn time, computed
+  /// from the live queue ETA on top of the doctor's opening time.
+  Widget _buildTurnDisclaimer(DoctorModel doc) {
+    final now = DateTime.now();
+    final open = doc.startOn(now);
+    final close = doc.endOn(now);
+    final isDay = doc.hasAvailability ? doc.isAvailableDay(now) : true;
+    final afterClose = close != null && !now.isBefore(close);
+
+    // Off-day or past closing time → not available right now.
+    if (doc.hasAvailability && (!isDay || afterClose)) {
+      return _disclaimerBox(
+        icon: Icons.event_busy_rounded,
+        color: AppColors.error,
+        title: 'Dr. ${doc.name} is not available at the moment',
+        body: doc.availabilityLabel.isNotEmpty
+            ? 'Available ${doc.availabilityLabel}. You can still book — your token will be served during the next available session.'
+            : 'Please check back during the doctor\'s consultation hours.',
+      );
+    }
+
+    final summary = _queueSummaries[doc.id];
+    if (summary == null) {
+      return _disclaimerBox(
+        icon: Icons.access_time_rounded,
+        color: AppColors.primary,
+        title: 'Estimating your turn…',
+        body: 'Fetching the live queue for Dr. ${doc.name}.',
+      );
+    }
+
+    // Turn starts from the later of "now" and the doctor's opening time today.
+    var base = now;
+    if (open != null && now.isBefore(open)) base = open;
+    final turn = base.add(Duration(minutes: summary.estimatedWaitMinutes));
+    final arrive = turn.subtract(const Duration(minutes: 15));
+    final f = DateFormat('h:mm a');
+    final tokenPos = summary.waitingCount + 1;
+
+    return _disclaimerBox(
+      icon: Icons.schedule_rounded,
+      color: AppColors.primary,
+      title:
+          'According to your token number, your turn will be around ${f.format(turn)}',
+      body:
+          'You will be token #$tokenPos with ${summary.waitingCount} ${summary.waitingCount == 1 ? 'patient' : 'patients'} ahead. '
+          'Please be at the hospital 15 minutes before your turn (by ${f.format(arrive)}).',
+    );
+  }
+
+  Widget _disclaimerBox({
+    required IconData icon,
+    required Color color,
+    required String title,
+    required String body,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: color.withValues(alpha: 0.35)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: color, size: 20),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                    color: color == AppColors.error
+                        ? AppColors.error
+                        : AppColors.primaryDark,
+                    height: 1.35,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  body,
+                  style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 12,
+                    color: AppColors.textSecondary,
+                    height: 1.45,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -1633,9 +1746,10 @@ class _NewPatientForm extends StatelessWidget {
           const SizedBox(height: 6),
           _FormField(
             controller: phoneCtrl,
-            hint: '+977',
+            hint: '98XXXXXXXX',
             icon: Icons.phone_outlined,
             keyboardType: TextInputType.phone,
+            inputFormatters: [NepaliMobileFormatter()],
           ),
         ],
       ),
@@ -1664,11 +1778,13 @@ class _FormField extends StatelessWidget {
   final String hint;
   final IconData icon;
   final TextInputType keyboardType;
+  final List<TextInputFormatter>? inputFormatters;
   const _FormField({
     required this.controller,
     required this.hint,
     required this.icon,
     this.keyboardType = TextInputType.text,
+    this.inputFormatters,
   });
 
   @override
@@ -1682,6 +1798,7 @@ class _FormField extends StatelessWidget {
       child: TextField(
         controller: controller,
         keyboardType: keyboardType,
+        inputFormatters: inputFormatters,
         style: TextStyle(
           fontFamily: 'Inter',
           fontSize: 14,
@@ -1960,6 +2077,39 @@ class _DoctorPickCard extends StatelessWidget {
                           color: AppColors.textSecondary,
                         ),
                       ),
+                      if (doctor.availabilityLabel.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            Icon(
+                              doctor.availableNow(DateTime.now())
+                                  ? Icons.schedule_rounded
+                                  : Icons.event_busy_rounded,
+                              size: 12,
+                              color: doctor.availableNow(DateTime.now())
+                                  ? AppColors.primary
+                                  : AppColors.error,
+                            ),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                doctor.availableNow(DateTime.now())
+                                    ? doctor.availabilityLabel
+                                    : 'Not available now • ${doctor.availabilityLabel}',
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontFamily: 'Inter',
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  color: doctor.availableNow(DateTime.now())
+                                      ? AppColors.textSecondary
+                                      : AppColors.error,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ],
                   ),
                 ),

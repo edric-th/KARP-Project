@@ -9,7 +9,7 @@ from ..config import OTP_TTL_MINUTES
 from ..firebase import get_db
 from ..schemas import (
     SignupRequest, LoginRequest, RefreshRequest, AuthResponse, UserOut,
-    SendOtpRequest, VerifyOtpRequest,
+    SendOtpRequest, VerifyOtpRequest, ChangePasswordRequest,
 )
 from ..security import get_current_user
 
@@ -86,6 +86,39 @@ async def refresh(body: RefreshRequest):
             role=data.get("role", "patient"),
         ),
     )
+
+
+@router.post("/change-password")
+async def change_password(
+    body: ChangePasswordRequest, user: dict = Depends(get_current_user)
+):
+    if len(body.new_password) < 6:
+        raise HTTPException(400, "New password must be at least 6 characters")
+    if body.new_password == body.current_password:
+        raise HTTPException(400, "New password must be different from the current one")
+    await auth_service.change_password(
+        user["uid"], user.get("email"), body.current_password, body.new_password
+    )
+    return {"ok": True}
+
+
+@router.post("/verify-email")
+def verify_email(user: dict = Depends(get_current_user)):
+    """Flag the signed-in user's email as verified, once they've completed the
+    OTP for their own address (via /send-otp + /verify-otp)."""
+    email = (user.get("email") or "").strip().lower()
+    if not email:
+        raise HTTPException(400, "This account has no email on file")
+    ref = get_db().collection("email_otps").document(_otp_key(email))
+    snap = ref.get()
+    data = snap.to_dict() if snap.exists else None
+    if not data or not data.get("verified"):
+        raise HTTPException(400, "Please verify the code sent to your email first")
+    get_db().collection("users").document(user["uid"]).set(
+        {"emailVerified": True}, merge=True
+    )
+    ref.delete()  # consume the OTP
+    return {"emailVerified": True}
 
 
 @router.get("/me", response_model=UserOut)

@@ -87,9 +87,11 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
       specialty: b.appointmentType.label,
       hospital: b.hospitalName,
       date: dt,
-      time: b.expectedCallTime != null
-          ? DateFormat('h:mm a').format(b.expectedCallTime!)
-          : '—',
+      time: (b.preferredTime != null && b.preferredTime!.isNotEmpty)
+          ? b.preferredTime!
+          : (b.expectedCallTime != null
+              ? DateFormat('h:mm a').format(b.expectedCallTime!)
+              : '—'),
       estWait: _fmtWait(b.estimatedWaitMinutes),
     );
   }
@@ -352,8 +354,10 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
   // ─── RESCHEDULE / POSTPONE ────────────────────────────────────────────────
 
   void _showRescheduleSheet(_Booking b) {
-    DateTime tempDate = b.date;
-    String tempTime = b.time;
+    // The appointment day is fixed — patients may only move to a different
+    // time slot on the same day.
+    final DateTime tempDate = b.date;
+    String tempTime = _slots.contains(b.time) ? b.time : _slots.first;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -363,10 +367,6 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
       ),
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setSheet) {
-          final dates = List.generate(
-            7,
-            (i) => DateTime.now().add(Duration(days: i)),
-          );
           return Padding(
             padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
             child: Column(
@@ -395,7 +395,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Pick a new date and time slot.',
+                  'Pick a new time slot. The appointment day stays the same.',
                   style: TextStyle(
                     fontFamily: 'Inter',
                     fontSize: 13,
@@ -403,67 +403,30 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                Text(
-                  'DATE',
-                  style: TextStyle(
-                    fontFamily: 'Inter',
-                    fontSize: 11,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.textMuted,
-                    letterSpacing: 0.7,
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.cardGreenLight,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.cardGreenBorder),
                   ),
-                ),
-                const SizedBox(height: 10),
-                SizedBox(
-                  height: 76,
-                  child: ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: dates.length,
-                    separatorBuilder: (_, _) => const SizedBox(width: 10),
-                    itemBuilder: (_, i) {
-                      final d = dates[i];
-                      final selected = DateUtils.isSameDay(d, tempDate);
-                      return GestureDetector(
-                        onTap: () => setSheet(() => tempDate = d),
-                        child: Container(
-                          width: 60,
-                          decoration: BoxDecoration(
-                            color: selected
-                                ? AppColors.primary
-                                : const Color(0xFFEEEAF6),
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                DateFormat('EEE').format(d).toUpperCase(),
-                                style: TextStyle(
-                                  fontFamily: 'Inter',
-                                  fontSize: 10.5,
-                                  fontWeight: FontWeight.w700,
-                                  color: selected
-                                      ? Colors.white70
-                                      : AppColors.textMuted,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                DateFormat('d').format(d),
-                                style: TextStyle(
-                                  fontFamily: 'Inter',
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w800,
-                                  color: selected
-                                      ? Colors.white
-                                      : AppColors.textPrimary,
-                                ),
-                              ),
-                            ],
-                          ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.event_rounded,
+                          size: 16, color: AppColors.primary),
+                      const SizedBox(width: 8),
+                      Text(
+                        DateUtils.isSameDay(tempDate, DateTime.now())
+                            ? 'Today, ${DateFormat('d MMM').format(tempDate)}'
+                            : DateFormat('EEE, d MMM').format(tempDate),
+                        style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 13,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.primaryDark,
                         ),
-                      );
-                    },
+                      ),
+                    ],
                   ),
                 ),
                 const SizedBox(height: 18),
@@ -518,11 +481,14 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
                     final updated = await context
                         .read<BookingsProvider>()
                         .reschedule(
-                            b.id, DateFormat('yyyy-MM-dd').format(tempDate));
+                          b.id,
+                          DateFormat('yyyy-MM-dd').format(tempDate),
+                          time: tempTime,
+                        );
                     if (!mounted) return;
                     _snack(
                       updated != null
-                          ? 'Rescheduled — new token #${updated.tokenNumber} for ${DateFormat('d MMM').format(tempDate)}.'
+                          ? 'Rescheduled to $tempTime — new token #${updated.tokenNumber}.'
                           : 'Could not reschedule. Please try again.',
                       error: updated == null,
                     );

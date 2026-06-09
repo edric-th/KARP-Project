@@ -40,9 +40,12 @@ class BookingService {
 
   Future<void> cancel(String id) => _api.post('/bookings/$id/cancel', auth: true);
 
-  Future<BookingModel> reschedule(String id, String bookingDate) async {
-    final data = await _api.post('/bookings/$id/reschedule',
-        auth: true, body: {'bookingDate': bookingDate});
+  Future<BookingModel> reschedule(String id, String bookingDate,
+      {String? time}) async {
+    final data = await _api.post('/bookings/$id/reschedule', auth: true, body: {
+      'bookingDate': bookingDate,
+      if (time != null) 'time': time,
+    });
     return BookingModel.fromJson(Map<String, dynamic>.from(data as Map));
   }
 }

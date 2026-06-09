@@ -21,6 +21,7 @@ class BookingModel {
   final String paymentStatus;
   final String? diagnosis;
   final DateTime? servedAt;
+  final String? preferredTime; // patient-chosen slot label, e.g. "10:30 AM"
 
   const BookingModel({
     required this.id,
@@ -41,6 +42,7 @@ class BookingModel {
     this.paymentStatus = '',
     this.diagnosis,
     this.servedAt,
+    this.preferredTime,
   });
 
   factory BookingModel.fromJson(Map<String, dynamic> json) => BookingModel(
@@ -65,6 +67,9 @@ class BookingModel {
         paymentStatus: asString(json['paymentStatus']),
         diagnosis: json['diagnosis'] == null ? null : asString(json['diagnosis']),
         servedAt: asDate(json['servedAt']),
+        preferredTime: json['preferredTime'] == null
+            ? null
+            : asString(json['preferredTime']),
       );
 
   AppointmentType get appointmentType => appointmentTypeFromApi(bookingType);

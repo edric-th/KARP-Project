@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:frontend/constants/app_colors.dart';
+import 'package:frontend/constants/validators.dart';
 import 'package:frontend/providers/auth_provider.dart';
 import 'package:frontend/services/auth_service.dart';
 import 'package:frontend/services/api_client.dart';
@@ -213,8 +214,9 @@ class _SignupScreenState extends State<SignupScreen> {
         _snack('Please enter a valid email.');
         return;
       }
-      if (_phoneCtrl.text.trim().length < 7) {
-        _snack('Please enter your phone number.');
+      final phoneErr = validateNepaliPhone(_phoneCtrl.text);
+      if (phoneErr != null) {
+        _snack(phoneErr);
         return;
       }
       if (_passwordCtrl.text.length < 6 ||
@@ -3090,13 +3092,11 @@ class _PhonePrefixField extends StatelessWidget {
           child: TextField(
             controller: controller,
             keyboardType: TextInputType.phone,
-            inputFormatters: [
-              FilteringTextInputFormatter.digitsOnly,
-              LengthLimitingTextInputFormatter(10),
-            ],
+            inputFormatters: [NepaliMobileFormatter()],
             decoration: const InputDecoration(
               isCollapsed: true,
               border: InputBorder.none,
+              hintText: '98XXXXXXXX',
             ),
             style: _valueStyle,
           ),

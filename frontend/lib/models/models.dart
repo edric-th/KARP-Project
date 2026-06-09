@@ -159,6 +159,10 @@ class DoctorModel {
   final num? feeAmount; // raw numeric fee from Firestore
   final String photoUrl;
   final bool isAvailable;
+  // Structured availability (set in the admin panel).
+  final List<String> availabilityDays; // e.g. ["Mon", "Tue", ...]
+  final String availabilityStart; // "HH:mm" 24h, e.g. "10:00"
+  final String availabilityEnd; // "HH:mm" 24h, e.g. "14:00"
 
   const DoctorModel({
     required this.id,
@@ -175,6 +179,9 @@ class DoctorModel {
     this.feeAmount,
     this.photoUrl = '',
     this.isAvailable = true,
+    this.availabilityDays = const [],
+    this.availabilityStart = '',
+    this.availabilityEnd = '',
   });
 
   factory DoctorModel.fromJson(Map<String, dynamic> json) {
@@ -196,7 +203,106 @@ class DoctorModel {
       feeAmount: feeNum,
       photoUrl: asString(json['photoUrl']),
       isAvailable: asBool(json['isAvailable'], true),
+      availabilityDays: asStringList(json['availabilityDays']),
+      availabilityStart: asString(json['availabilityStart']),
+      availabilityEnd: asString(json['availabilityEnd']),
     );
+  }
+
+  // ─── AVAILABILITY HELPERS ─────────────────────────────────────────────────
+  static const Map<int, String> _dayAbbr = {
+    1: 'Mon', 2: 'Tue', 3: 'Wed', 4: 'Thu', 5: 'Fri', 6: 'Sat', 7: 'Sun',
+  };
+
+  /// True only when days + a time range have been configured in the admin panel.
+  bool get hasAvailability =>
+      availabilityDays.isNotEmpty &&
+      availabilityStart.isNotEmpty &&
+      availabilityEnd.isNotEmpty;
+
+  bool isAvailableDay(DateTime d) {
+    if (availabilityDays.isEmpty) return true;
+    final abbr = _dayAbbr[d.weekday]!.toLowerCase();
+    return availabilityDays
+        .any((x) => x.trim().toLowerCase().startsWith(abbr));
+  }
+
+  DateTime? _timeOn(DateTime day, String hhmm) {
+    final parts = hhmm.split(':');
+    if (parts.length < 2) return null;
+    final h = int.tryParse(parts[0]);
+    final m = int.tryParse(parts[1]);
+    if (h == null || m == null) return null;
+    return DateTime(day.year, day.month, day.day, h, m);
+  }
+
+  DateTime? startOn(DateTime day) =>
+      availabilityStart.isEmpty ? null : _timeOn(day, availabilityStart);
+  DateTime? endOn(DateTime day) =>
+      availabilityEnd.isEmpty ? null : _timeOn(day, availabilityEnd);
+
+  /// Whether the doctor is consultable at [now] (right day + within hours).
+  /// Falls back to the simple [isAvailable] flag when no schedule is set.
+  bool availableNow(DateTime now) {
+    if (!isAvailable) return false;
+    if (!hasAvailability) return isAvailable;
+    if (!isAvailableDay(now)) return false;
+    final s = startOn(now);
+    final e = endOn(now);
+    if (s == null || e == null) return true;
+    return !now.isBefore(s) && now.isBefore(e);
+  }
+
+  /// e.g. "Mon–Fri" / "Mon, Wed, Fri" — empty when no days configured.
+  String get availabilityDaysLabel {
+    if (availabilityDays.isEmpty) return '';
+    final ints = <int>{};
+    for (final d in availabilityDays) {
+      final t = d.trim().toLowerCase();
+      _dayAbbr.forEach((k, v) {
+        if (t.startsWith(v.toLowerCase())) ints.add(k);
+      });
+    }
+    final sorted = ints.toList()..sort();
+    if (sorted.isEmpty) return availabilityDays.join(', ');
+    // Group consecutive weekdays into ranges (Mon–Fri).
+    final parts = <String>[];
+    var runStart = sorted.first;
+    var prev = sorted.first;
+    for (var i = 1; i <= sorted.length; i++) {
+      final cur = i < sorted.length ? sorted[i] : -99;
+      if (cur == prev + 1) {
+        prev = cur;
+        continue;
+      }
+      parts.add(runStart == prev
+          ? _dayAbbr[runStart]!
+          : '${_dayAbbr[runStart]}–${_dayAbbr[prev]}');
+      runStart = cur;
+      prev = cur;
+    }
+    return parts.join(', ');
+  }
+
+  /// e.g. "10:00 AM – 2:00 PM" — empty when no time range configured.
+  String get availabilityTimeLabel {
+    if (availabilityStart.isEmpty || availabilityEnd.isEmpty) return '';
+    final today = DateTime.now();
+    final s = _timeOn(today, availabilityStart);
+    final e = _timeOn(today, availabilityEnd);
+    if (s == null || e == null) return '';
+    final f = DateFormat('h:mm a');
+    return '${f.format(s)} – ${f.format(e)}';
+  }
+
+  /// Full one-line label, e.g. "Mon–Fri · 10:00 AM – 2:00 PM".
+  String get availabilityLabel {
+    final d = availabilityDaysLabel;
+    final t = availabilityTimeLabel;
+    if (d.isEmpty && t.isEmpty) return '';
+    if (d.isEmpty) return t;
+    if (t.isEmpty) return d;
+    return '$d · $t';
   }
 }
 

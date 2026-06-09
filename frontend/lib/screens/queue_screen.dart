@@ -103,15 +103,24 @@ class _QueueScreenState extends State<QueueScreen> {
     final nowServing = status?.nowServing;
     final waiting = status?.waiting ?? const <BookingModel>[];
 
+    // "People ahead" should read 0 when you're first in line with nobody yet
+    // being served (so we don't show a misleading "000" now-serving token).
+    final noOneServing = nowServing == null;
+    final isNext = !active.isActive && noOneServing && position <= 1;
+    final peopleAhead = active.isActive
+        ? 0
+        : (noOneServing ? (position - 1).clamp(0, 9999) : position);
+
     return [
       _TokenHero(
         myToken: active.tokenLabel,
         doctor: active.doctorName,
         hospital: active.hospitalName,
-        peopleAhead: position,
+        peopleAhead: peopleAhead,
         etaMinutes: eta,
         nowServingToken: nowServing?.tokenNumber,
         isBeingServed: active.isActive,
+        isNext: isNext,
       ),
       const SizedBox(height: 24),
       Row(
@@ -253,6 +262,10 @@ class _TokenHero extends StatelessWidget {
   final int? nowServingToken;
   final bool isBeingServed;
 
+  /// True when the patient is first in line and nobody is being served yet —
+  /// instead of a meaningless "000" we reassure them the doctor is calling soon.
+  final bool isNext;
+
   const _TokenHero({
     required this.myToken,
     required this.doctor,
@@ -261,14 +274,23 @@ class _TokenHero extends StatelessWidget {
     required this.etaMinutes,
     required this.nowServingToken,
     required this.isBeingServed,
+    this.isNext = false,
   });
 
   String get _etaLabel {
     if (isBeingServed) return "It's your turn";
+    if (isNext) return 'Get ready — the doctor will call you within ~5 min';
     if (etaMinutes <= 0) return 'Almost your turn';
     if (etaMinutes < 60) return '~$etaMinutes min away';
     final h = (etaMinutes / 60).round();
     return '~$h hour${h > 1 ? 's' : ''} away';
+  }
+
+  String get _nowServingValue {
+    if (nowServingToken != null) {
+      return nowServingToken.toString().padLeft(3, '0');
+    }
+    return isNext ? 'Soon' : '—';
   }
 
   @override
@@ -360,10 +382,7 @@ class _TokenHero extends StatelessWidget {
             children: [
               Expanded(
                 child: _HeroStat(
-                    label: 'NOW SERVING',
-                    value: nowServingToken != null
-                        ? nowServingToken.toString().padLeft(3, '0')
-                        : '—'),
+                    label: 'NOW SERVING', value: _nowServingValue),
               ),
               Expanded(
                 child: _HeroStat(

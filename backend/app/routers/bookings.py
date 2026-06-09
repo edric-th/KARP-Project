@@ -135,23 +135,34 @@ def reschedule_booking(
         raise HTTPException(403, "Not your booking")
 
     doctor_id = booking["doctorId"]
-    new_date = body.booking_date
+    # The appointment day is fixed — only the time slot may change. Keep the
+    # existing booking date and reject any attempt to move to a different day.
+    current_date = booking.get("bookingDate") or repo.today_str()
+    if body.booking_date and body.booking_date != current_date:
+        raise HTTPException(400, "The appointment day cannot be changed, only the time")
+    new_date = current_date
+
     existing = repo.bookings_for_doctor(doctor_id, new_date)
     wait_min = wait_time.predict_wait_for_new(existing)
     token = repo.next_token_number(doctor_id, new_date)
 
-    repo.get_db().collection("bookings").document(booking_id).update({
+    update = {
         "bookingDate": new_date,
         "tokenNumber": token,
         "status": "pending",
         "estimatedWaitMinutes": wait_min,
         "expectedCallAt": wait_time.expected_call_iso(wait_min),
         "updatedAt": firestore.SERVER_TIMESTAMP,
-    })
+    }
+    if body.time:
+        update["preferredTime"] = body.time
+    repo.get_db().collection("bookings").document(booking_id).update(update)
+
+    when = f" at {body.time}" if body.time else ""
     repo.add_notification(
         booking.get("patientUid"),
         "Booking rescheduled",
-        f"Your booking is now on {new_date} — new token #{token}, ~{wait_min} min wait.",
+        f"Your booking is now{when} on {new_date} — new token #{token}, ~{wait_min} min wait.",
         category="booking",
         related_booking_id=booking_id,
     )

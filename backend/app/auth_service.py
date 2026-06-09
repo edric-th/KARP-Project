@@ -53,11 +53,27 @@ async def sign_up(name: str, email: str, password: str, phone: str | None):
         "name": name,
         "phone": phone or "",
         "role": "patient",
+        # Sign-up requires completing the email OTP (see auth router), so the
+        # email is verified by the time we reach here.
+        "emailVerified": True,
         "createdAt": firestore.SERVER_TIMESTAMP,
     })
 
     tokens = await _rest_sign_in(email, password)
     return user.uid, tokens
+
+
+async def change_password(uid: str, email: str | None, current_password: str,
+                          new_password: str) -> None:
+    """Verify the current password, then set a new one for this account."""
+    if not email:
+        raise HTTPException(400, "This account has no email/password login")
+    # Re-authenticate to confirm the current password (raises 401 if wrong).
+    await _rest_sign_in(email, current_password)
+    try:
+        get_auth().update_user(uid, password=new_password)
+    except Exception as e:
+        raise HTTPException(400, f"Could not update password: {e}")
 
 
 async def login(email: str, password: str) -> dict:

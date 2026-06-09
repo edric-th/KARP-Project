@@ -37,6 +37,11 @@ class VerifyOtpRequest(CamelModel):
     code: str
 
 
+class ChangePasswordRequest(CamelModel):
+    current_password: str
+    new_password: str
+
+
 # ---- Chatbot ----------------------------------------------------------------
 
 class ChatQueryRequest(CamelModel):
@@ -81,7 +86,8 @@ class BookingCreate(CamelModel):
 
 
 class RescheduleRequest(CamelModel):
-    booking_date: str  # YYYY-MM-DD
+    booking_date: Optional[str] = None  # YYYY-MM-DD; day cannot change
+    time: Optional[str] = None  # patient-chosen slot label, e.g. "10:30 AM"
 
 
 # ---- Profile ----------------------------------------------------------------

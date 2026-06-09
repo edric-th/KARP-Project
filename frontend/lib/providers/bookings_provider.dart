@@ -73,9 +73,10 @@ class BookingsProvider extends ChangeNotifier {
     }
   }
 
-  Future<BookingModel?> reschedule(String id, String date) async {
+  Future<BookingModel?> reschedule(String id, String date,
+      {String? time}) async {
     try {
-      final b = await _bookings.reschedule(id, date);
+      final b = await _bookings.reschedule(id, date, time: time);
       await load();
       return b;
     } catch (_) {

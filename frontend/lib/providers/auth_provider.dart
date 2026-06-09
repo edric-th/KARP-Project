@@ -80,6 +80,34 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  /// Change the account password. Returns null on success, else an error msg.
+  Future<String?> changePassword(String current, String newPassword) async {
+    try {
+      await _auth.changePassword(current, newPassword);
+      return null;
+    } on ApiException catch (e) {
+      return e.message;
+    } catch (_) {
+      return 'Could not change password. Please try again.';
+    }
+  }
+
+  /// Send an email-verification OTP to the signed-in user's email.
+  /// Returns the (dev) code when the server has no SMTP configured, else null.
+  Future<String?> sendEmailOtp(String email) async {
+    final resp = await _auth.sendOtp(email);
+    return resp['devCode'] as String?;
+  }
+
+  /// Verify the OTP for [email] then flag the profile as verified.
+  Future<bool> confirmEmailVerification(String email, String code) async {
+    final ok = await _auth.verifyOtp(email, code);
+    if (!ok) return false;
+    await _auth.markEmailVerified();
+    await refreshProfile();
+    return true;
+  }
+
   Future<void> logout() async {
     await _auth.logout();
     profile = null;

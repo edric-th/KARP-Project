@@ -16,6 +16,8 @@ import {
   KeyRound,
   Ban,
   UserPlus,
+  Upload,
+  Loader2,
 } from 'lucide-react'
 import {
   createUserWithEmailAndPassword,
@@ -36,8 +38,11 @@ import {
 } from 'firebase/firestore'
 import toast from 'react-hot-toast'
 import { subscribe, create, update, remove } from '../../api/firestore'
+import { uploadImage } from '../../api/storage'
 import { db, auth } from '../../lib/firebase'
 import { COLLECTIONS } from '../../constants'
+
+const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -327,6 +332,16 @@ export default function Doctors() {
                       {doctor.availableSlots.length > 1 ? 's' : ''}
                     </p>
                   )}
+                {Array.isArray(doctor.availabilityDays) &&
+                  doctor.availabilityDays.length > 0 && (
+                    <p className="flex items-center gap-2">
+                      <Clock size={14} className="text-gray-400 flex-shrink-0" />
+                      {doctor.availabilityDays.join(', ')}
+                      {doctor.availabilityStart && doctor.availabilityEnd
+                        ? ` · ${doctor.availabilityStart}–${doctor.availabilityEnd}`
+                        : ''}
+                    </p>
+                  )}
                 {doctor.userEmail ? (
                   <p className="flex items-center gap-2 text-xs text-emerald-700 bg-emerald-50 px-2 py-1 rounded">
                     <CheckCircle size={12} className="flex-shrink-0" />
@@ -394,11 +409,46 @@ function DoctorModal({ doctor, hospitals, onClose, onCredentialsCreated }) {
       ? doctor.availableSlots.join(', ')
       : doctor?.availableSlots || '',
     isAvailable: doctor?.isAvailable ?? true,
+    availabilityDays: Array.isArray(doctor?.availabilityDays)
+      ? doctor.availabilityDays
+      : [],
+    availabilityStart: doctor?.availabilityStart || '',
+    availabilityEnd: doctor?.availabilityEnd || '',
   })
   const [createLogin, setCreateLogin] = useState(!isEditing)
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [uploading, setUploading] = useState(false)
+
+  const toggleDay = (day) => {
+    setFormData((fd) => ({
+      ...fd,
+      availabilityDays: fd.availabilityDays.includes(day)
+        ? fd.availabilityDays.filter((d) => d !== day)
+        : [...fd.availabilityDays, day],
+    }))
+  }
+
+  const handlePhotoFile = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please choose an image file')
+      return
+    }
+    setUploading(true)
+    try {
+      const url = await uploadImage(file, 'doctors')
+      setFormData((fd) => ({ ...fd, photoUrl: url }))
+      toast.success('Photo uploaded')
+    } catch (err) {
+      console.error(err)
+      toast.error('Photo upload failed')
+    } finally {
+      setUploading(false)
+    }
+  }
 
   const handleChange = (field) => (e) => {
     setFormData({ ...formData, [field]: e.target.value })
@@ -635,14 +685,108 @@ function DoctorModal({ doctor, hospitals, onClose, onCredentialsCreated }) {
             <p className="text-xs text-gray-500 mt-1">Comma-separated times</p>
           </div>
 
+          <div className="border-t pt-4">
+            <label className="block text-sm font-medium mb-2">
+              Availability
+            </label>
+            <div className="flex flex-wrap gap-1.5 mb-3">
+              {WEEKDAYS.map((day) => {
+                const active = formData.availabilityDays.includes(day)
+                return (
+                  <button
+                    key={day}
+                    type="button"
+                    onClick={() => toggleDay(day)}
+                    className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                      active
+                        ? 'bg-primary-600 text-white border-primary-600'
+                        : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'
+                    }`}
+                  >
+                    {day}
+                  </button>
+                )
+              })}
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs text-gray-500 mb-1">
+                  From
+                </label>
+                <input
+                  type="time"
+                  className="input"
+                  value={formData.availabilityStart}
+                  onChange={handleChange('availabilityStart')}
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-500 mb-1">To</label>
+                <input
+                  type="time"
+                  className="input"
+                  value={formData.availabilityEnd}
+                  onChange={handleChange('availabilityEnd')}
+                />
+              </div>
+            </div>
+            <p className="text-xs text-gray-500 mt-1">
+              Days and hours the doctor consults. Patients see "not available"
+              outside these.
+            </p>
+          </div>
+
           <div>
-            <label className="block text-sm font-medium mb-1">Photo URL</label>
+            <label className="block text-sm font-medium mb-1">Doctor Photo</label>
+            <div className="flex items-center gap-3">
+              {formData.photoUrl ? (
+                <img
+                  src={formData.photoUrl}
+                  alt="Doctor"
+                  className="w-16 h-16 rounded-full object-cover border border-gray-200 flex-shrink-0"
+                />
+              ) : (
+                <div className="w-16 h-16 rounded-full bg-gray-100 text-gray-400 flex items-center justify-center flex-shrink-0">
+                  <Stethoscope size={22} />
+                </div>
+              )}
+              <div className="flex-1">
+                <label
+                  className={`inline-flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium cursor-pointer hover:bg-gray-50 ${
+                    uploading ? 'opacity-60 pointer-events-none' : ''
+                  }`}
+                >
+                  {uploading ? (
+                    <Loader2 size={16} className="animate-spin" />
+                  ) : (
+                    <Upload size={16} />
+                  )}
+                  {uploading ? 'Uploading…' : 'Upload photo'}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handlePhotoFile}
+                    disabled={uploading}
+                  />
+                </label>
+                {formData.photoUrl && (
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, photoUrl: '' })}
+                    className="ml-2 text-sm text-red-600 hover:underline"
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
+            </div>
             <input
               type="url"
-              className="input"
+              className="input mt-2"
               value={formData.photoUrl}
               onChange={handleChange('photoUrl')}
-              placeholder="https://…"
+              placeholder="…or paste an image URL"
             />
           </div>
 

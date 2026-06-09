@@ -74,6 +74,19 @@ class AuthService {
     return data is Map && data['verified'] == true;
   }
 
+  /// Change the signed-in user's password (verifies [current] server-side).
+  Future<void> changePassword(String current, String newPassword) async {
+    await _api.post('/auth/change-password', auth: true, body: {
+      'currentPassword': current,
+      'newPassword': newPassword,
+    });
+  }
+
+  /// Flag the signed-in user's email as verified after they complete the OTP.
+  Future<void> markEmailVerified() async {
+    await _api.post('/auth/verify-email', auth: true);
+  }
+
   /// Google sign-in via the Firebase client SDK. Produces a Firebase idToken
   /// that the backend verifies; `/auth/google` ensures a patient profile.
   Future<AuthResult> signInWithGoogle() async {

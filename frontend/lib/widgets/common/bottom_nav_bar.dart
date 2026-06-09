@@ -37,42 +37,57 @@ class AppBottomNavBar extends StatelessWidget {
             ),
           ],
         ),
+        // Each item lives in an equal-width Expanded slot and is centred inside
+        // it, so the active "pill" can grow without pushing its neighbours —
+        // the bar no longer shifts when you switch pages.
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            _NavItem(
-              icon: Icons.home_outlined,
-              activeIcon: Icons.home_rounded,
-              label: 'Home',
-              isActive: currentIndex == 0,
-              onTap: () => onTap(0),
-            ),
-            _NavItem(
-              icon: Icons.queue_outlined,
-              activeIcon: Icons.queue_rounded,
-              label: 'Live Queue',
-              isActive: currentIndex == 1,
-              onTap: () => onTap(1),
-            ),
-            Transform.translate(
-              offset: const Offset(0, -22),
-              child: _CenterButton(
-                onTap: onCenterTap ?? () => onTap(2),
+            Expanded(
+              child: _NavItem(
+                icon: Icons.home_outlined,
+                activeIcon: Icons.home_rounded,
+                label: 'Home',
+                isActive: currentIndex == 0,
+                onTap: () => onTap(0),
               ),
             ),
-            _NavItem(
-              icon: Icons.calendar_today_outlined,
-              activeIcon: Icons.calendar_today_rounded,
-              label: 'Booking',
-              isActive: currentIndex == 2,
-              onTap: () => onTap(2),
+            Expanded(
+              child: _NavItem(
+                icon: Icons.queue_outlined,
+                activeIcon: Icons.queue_rounded,
+                label: 'Live Queue',
+                isActive: currentIndex == 1,
+                onTap: () => onTap(1),
+              ),
             ),
-            _NavItem(
-              icon: Icons.person_outline_rounded,
-              activeIcon: Icons.person_rounded,
-              label: 'Profile',
-              isActive: currentIndex == 3,
-              onTap: () => onTap(3),
+            SizedBox(
+              width: 64,
+              child: Center(
+                child: Transform.translate(
+                  offset: const Offset(0, -22),
+                  child: _CenterButton(
+                    onTap: onCenterTap ?? () => onTap(2),
+                  ),
+                ),
+              ),
+            ),
+            Expanded(
+              child: _NavItem(
+                icon: Icons.calendar_today_outlined,
+                activeIcon: Icons.calendar_today_rounded,
+                label: 'Booking',
+                isActive: currentIndex == 2,
+                onTap: () => onTap(2),
+              ),
+            ),
+            Expanded(
+              child: _NavItem(
+                icon: Icons.person_outline_rounded,
+                activeIcon: Icons.person_rounded,
+                label: 'Profile',
+                isActive: currentIndex == 3,
+                onTap: () => onTap(3),
+              ),
             ),
           ],
         ),
@@ -101,7 +116,8 @@ class _NavItem extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
-      child: AnimatedContainer(
+      child: Center(
+        child: AnimatedContainer(
         duration: const Duration(milliseconds: 250),
         curve: Curves.easeInOut,
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -128,6 +144,7 @@ class _NavItem extends StatelessWidget {
                 ],
               )
             : Icon(icon, color: AppColors.textMuted, size: 24),
+        ),
       ),
     );
   }

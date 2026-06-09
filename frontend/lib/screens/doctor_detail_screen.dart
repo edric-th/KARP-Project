@@ -159,14 +159,19 @@ class _DoctorDetailScreenState extends State<DoctorDetailScreen> {
                                 _InfoRow(
                                     icon: Icons.circle,
                                     label: 'Status',
-                                    value: doctor.isAvailable
+                                    value: doctor.availableNow(DateTime.now())
                                         ? 'Available'
-                                        : 'Unavailable',
-                                    valueColor: doctor.isAvailable
-                                        ? AppColors.success
-                                        : AppColors.error),
+                                        : 'Not available now',
+                                    valueColor:
+                                        doctor.availableNow(DateTime.now())
+                                            ? AppColors.success
+                                            : AppColors.error),
                               ]),
                             ),
+                            if (doctor.availabilityLabel.isNotEmpty) ...[
+                              const SizedBox(height: 16),
+                              _AvailabilityCard(doctor: doctor),
+                            ],
                             if (doctor.availableSlots.isNotEmpty) ...[
                               const SizedBox(height: 24),
                               const _SectionTitle('Available Time Slots'),
@@ -345,6 +350,71 @@ class _ReviewCard extends StatelessWidget {
                     color: AppColors.textSecondary,
                     height: 1.5)),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+class _AvailabilityCard extends StatelessWidget {
+  final DoctorModel doctor;
+  const _AvailabilityCard({required this.doctor});
+
+  @override
+  Widget build(BuildContext context) {
+    final availableNow = doctor.availableNow(DateTime.now());
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: availableNow
+            ? AppColors.cardGreenLight
+            : AppColors.error.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+            color: availableNow
+                ? AppColors.cardGreenBorder
+                : AppColors.error.withValues(alpha: 0.35)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            availableNow ? Icons.schedule_rounded : Icons.event_busy_rounded,
+            color: availableNow ? AppColors.primary : AppColors.error,
+            size: 20,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  availableNow
+                      ? 'Available'
+                      : 'Not available at the moment',
+                  style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 14,
+                    fontWeight: FontWeight.w800,
+                    color: availableNow
+                        ? AppColors.primaryDark
+                        : AppColors.error,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Consults ${doctor.availabilityLabel}',
+                  style: const TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 12.5,
+                    color: AppColors.textSecondary,
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );

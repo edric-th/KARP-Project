@@ -28,6 +28,7 @@ class ProfileModel {
   final String phone;
   final String role;
   final String photoUrl;
+  final bool emailVerified;
   // personal
   final String dateOfBirth;
   final int? age;
@@ -61,6 +62,7 @@ class ProfileModel {
     this.phone = '',
     this.role = 'patient',
     this.photoUrl = '',
+    this.emailVerified = false,
     this.dateOfBirth = '',
     this.age,
     this.gender = '',
@@ -94,6 +96,7 @@ class ProfileModel {
       email: asString(json['email']),
       phone: asString(json['phone']),
       role: asString(json['role'], 'patient'),
+      emailVerified: asBool(json['emailVerified']),
       photoUrl: asString(p['photoUrl']),
       dateOfBirth: asString(p['dateOfBirth']),
       age: numOrNull(p['age'])?.toInt(),

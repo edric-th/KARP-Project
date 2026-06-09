@@ -67,8 +67,12 @@ export default function PhoneInput({ value, onChange, required = false, autoFocu
     updateValue(selectedCode.code, limited)
   }
 
+  const isNepal = selectedCode.code === '+977'
+  // Nepal mobiles must be 10 digits starting with 98 or 97.
+  const nepalPrefixOk = !isNepal || /^9[78]/.test(number)
   const isValid =
-    number.length === 0 || number.length === selectedCode.digits
+    number.length === 0 ||
+    (number.length === selectedCode.digits && nepalPrefixOk)
 
   return (
     <div>
@@ -136,11 +140,15 @@ export default function PhoneInput({ value, onChange, required = false, autoFocu
         <Phone size={11} />
         {number.length > 0 && !isValid ? (
           <span className="text-red-600">
-            Expected {selectedCode.digits} digits, got {number.length}
+            {isNepal && !nepalPrefixOk
+              ? 'Nepal mobiles must start with 98 or 97'
+              : `Expected ${selectedCode.digits} digits, got ${number.length}`}
           </span>
         ) : (
           <span>
-            {selectedCode.country} format: {selectedCode.digits} digits
+            {isNepal
+              ? 'Nepal format: 10 digits starting with 98 / 97'
+              : `${selectedCode.country} format: ${selectedCode.digits} digits`}
             {number.length > 0 && isValid && ' ✓'}
           </span>
         )}
