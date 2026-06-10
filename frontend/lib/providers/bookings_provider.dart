@@ -65,6 +65,21 @@ class BookingsProvider extends ChangeNotifier {
     return booking;
   }
 
+  /// Reserves an online token (hospital reception queue) and refreshes the list.
+  Future<BookingModel> createReceptionToken({
+    required String hospitalId,
+    required String patientName,
+    String? patientPhone,
+  }) async {
+    final booking = await _bookings.createReceptionToken(
+      hospitalId: hospitalId,
+      patientName: patientName,
+      patientPhone: patientPhone,
+    );
+    await load();
+    return booking;
+  }
+
   Future<bool> cancel(String id) async {
     try {
       await _bookings.cancel(id);

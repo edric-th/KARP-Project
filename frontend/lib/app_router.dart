@@ -153,6 +153,7 @@ class AppRouter {
             expectedCallAt: args?['expectedCallAt'] as String?,
             notifyMe: (args?['notifyMe'] as bool?) ?? true,
             patientName: args?['patientName'] as String?,
+            hospitalName: args?['hospitalName'] as String?,
           ),
           routeSettings,
         );

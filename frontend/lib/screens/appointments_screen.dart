@@ -83,8 +83,10 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
     return _Booking(
       id: b.id,
       token: b.tokenLabel,
-      doctor: b.doctorName,
-      specialty: b.appointmentType.label,
+      doctor: b.isReceptionToken
+          ? (b.hospitalName.isNotEmpty ? b.hospitalName : 'Reception Desk')
+          : b.doctorName,
+      specialty: b.isReceptionToken ? 'Online Token' : b.appointmentType.label,
       hospital: b.hospitalName,
       date: dt,
       time: (b.preferredTime != null && b.preferredTime!.isNotEmpty)

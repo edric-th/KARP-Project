@@ -22,6 +22,14 @@ export const BOOKING_STATUS = {
   NO_SHOW: 'no_show',
 }
 
+export const BOOKING_SOURCE = {
+  APPOINTMENT: 'appointment',
+  ONLINE_TOKEN: 'online_token',
+}
+
+// Average minutes the reception desk spends handling one online-token walk-in.
+export const RECEPTION_MINUTES_PER_TOKEN = 4
+
 export const ROLES = {
   ADMIN: 'admin',
   RECEPTIONIST: 'receptionist',

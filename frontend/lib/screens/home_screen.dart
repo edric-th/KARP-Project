@@ -25,7 +25,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  String? _trackingDoctorId;
+  String? _trackingKey;
   Timer? _pollTimer;
   bool _profilePromptDismissed = false;
 
@@ -56,20 +56,31 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
-  /// Keep the polling QueueProvider pointed at the active booking's doctor, so
-  /// the live "ahead of you" count and ETA stay accurate without a refresh.
+  /// Keep the polling QueueProvider pointed at the active booking's queue — the
+  /// doctor's queue for an appointment, or the hospital reception desk for an
+  /// online token — so the live "ahead of you" count, ETA and now-serving token
+  /// stay accurate without a refresh.
   void _syncTracking(BookingModel? active) {
-    if (active != null && active.doctorId != _trackingDoctorId) {
-      _trackingDoctorId = active.doctorId;
+    final key = active == null
+        ? null
+        : (active.isReceptionToken
+            ? 'reception:${active.hospitalId}'
+            : 'doctor:${active.doctorId}');
+    if (key != null && key != _trackingKey) {
+      _trackingKey = key;
+      final isReception = active!.isReceptionToken;
+      final targetId = isReception ? active.hospitalId : active.doctorId;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
-          context
-              .read<QueueProvider>()
-              .start(active.doctorId, date: active.bookingDate);
+          context.read<QueueProvider>().start(
+                targetId,
+                date: active.bookingDate,
+                reception: isReception,
+              );
         }
       });
-    } else if (active == null && _trackingDoctorId != null) {
-      _trackingDoctorId = null;
+    } else if (key == null && _trackingKey != null) {
+      _trackingKey = null;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) context.read<QueueProvider>().stop();
       });
@@ -93,12 +104,15 @@ class _HomeScreenState extends State<HomeScreen> {
     final ahead = entry?.position ?? b.position ?? 0;
     final eta = entry?.estimatedWaitMinutes ?? b.estimatedWaitMinutes ?? 0;
     final token = b.tokenNumber;
-    final current = (token - ahead).clamp(0, token);
+    // Prefer the real now-serving token from the live snapshot; fall back to
+    // deriving it from your token minus the people ahead of you.
+    final serving = queue.status?.nowServing?.tokenNumber;
+    final current = serving ?? (token - ahead).clamp(0, token);
     return QueueModel(
       id: b.id,
       hospitalName: b.hospitalName,
-      doctorName: b.doctorName,
-      specialty: '',
+      doctorName: b.isReceptionToken ? 'Reception Desk' : b.doctorName,
+      specialty: b.isReceptionToken ? 'Online Token' : '',
       queueNumber: token,
       currentNumber: current,
       totalAhead: ahead,
@@ -558,7 +572,9 @@ class _NowServingCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    'General Consultation',
+                    queue.specialty.isNotEmpty
+                        ? queue.specialty
+                        : 'General Consultation',
                     style: TextStyle(
                       fontFamily: 'Inter',
                       fontSize: 11,

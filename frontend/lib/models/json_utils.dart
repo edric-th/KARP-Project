@@ -22,9 +22,13 @@ bool asBool(dynamic v, [bool fallback = false]) =>
 List<String> asStringList(dynamic v) =>
     v is List ? v.map((e) => e.toString()).toList() : const <String>[];
 
-/// Parses an ISO-8601 string (e.g. expectedCallAt / createdAt) into a DateTime.
+/// Parses an ISO-8601 string (e.g. expectedCallAt / createdAt) into a DateTime
+/// in the device's LOCAL time zone. The backend emits UTC ("…+00:00") / Nepal
+/// timestamps; without converting, a midnight booking would render as ~6 PM.
+/// Date-only strings ("YYYY-MM-DD") parse as local midnight already, so the
+/// conversion is a harmless no-op for them.
 DateTime? asDate(dynamic v) {
-  if (v is String) return DateTime.tryParse(v);
+  if (v is String) return DateTime.tryParse(v)?.toLocal();
   return null;
 }
 

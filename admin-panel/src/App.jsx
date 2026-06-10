@@ -4,6 +4,7 @@ import Layout from './components/layout/Layout'
 import Login from './pages/Login/Login'
 import Dashboard from './pages/Dashboard/Dashboard'
 import Queue from './pages/Queue/Queue'
+import Reception from './pages/Reception/Reception'
 import Doctors from './pages/Doctors/Doctors'
 import Hospitals from './pages/Hospitals/Hospitals'
 import Bookings from './pages/Bookings/Bookings'
@@ -77,6 +78,7 @@ export default function App() {
         }
       >
         <Route path="/queue" element={<Queue />} />
+        <Route path="/reception" element={<Reception />} />
         <Route path="/doctors" element={<Doctors />} />
         <Route path="/hospitals" element={<Hospitals />} />
         <Route path="/bookings" element={<Bookings />} />

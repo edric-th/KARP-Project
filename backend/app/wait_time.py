@@ -17,7 +17,7 @@ Model
 """
 from datetime import datetime, timedelta, timezone
 
-from .config import DEFAULT_SERVICE_MINUTES
+from .config import DEFAULT_SERVICE_MINUTES, DEFAULT_RECEPTION_MINUTES
 
 MIN_SAMPLES = 3
 RECENT_WINDOW = 10
@@ -150,3 +150,65 @@ def predict_wait_for_new(bookings) -> int:
 
 def expected_call_iso(minutes) -> str:
     return _iso_from_now(minutes)
+
+
+# ---- Reception (online-token) queue -----------------------------------------
+# A hospital-level walk-in queue handled by the reception desk. There is no
+# per-doctor service learning here — every token takes roughly the same fixed
+# handling time, so the ETA is simply position * DEFAULT_RECEPTION_MINUTES on
+# top of whatever remains of the token currently being served.
+
+def _reception_remaining(active) -> float:
+    per = float(DEFAULT_RECEPTION_MINUTES)
+    if not active:
+        return 0.0
+    called = _parse(active.get("calledAt"))
+    if called:
+        elapsed = (_now() - called).total_seconds() / 60.0
+        return max(0.0, per - elapsed)
+    return per
+
+
+def build_reception_status(hospital_id, tokens) -> dict:
+    """Live snapshot of a hospital's reception queue. Mirrors the shape of
+    build_queue_status so the patient app can reuse the same model."""
+    per = float(DEFAULT_RECEPTION_MINUTES)
+    active = next((t for t in tokens if t.get("status") == "active"), None)
+    pending = sorted(
+        [t for t in tokens if t.get("status") == "pending"],
+        key=lambda t: t.get("tokenNumber") or 0,
+    )
+
+    cumulative = _reception_remaining(active)
+    waiting = []
+    for idx, t in enumerate(pending):
+        wait = round(cumulative)
+        waiting.append({
+            **t,
+            "position": idx + 1,
+            "estimatedWaitMinutes": wait,
+            "expectedCallAt": _iso_from_now(wait),
+        })
+        cumulative += per
+
+    return {
+        # `doctorId` is reused as the queue key on the client model; carry the
+        # hospital id in both so existing parsing keeps working.
+        "doctorId": hospital_id,
+        "hospitalId": hospital_id,
+        "nowServing": active,
+        "waiting": waiting,
+        "waitingCount": len(pending),
+        "servedCount": len([t for t in tokens if t.get("status") == "served"]),
+        "avgServiceMinutes": per,
+        "typeAverages": {},
+    }
+
+
+def predict_reception_wait_for_new(tokens) -> int:
+    """ETA (minutes) for a brand-new walk-in joining the reception queue now."""
+    per = float(DEFAULT_RECEPTION_MINUTES)
+    active = next((t for t in tokens if t.get("status") == "active"), None)
+    total = _reception_remaining(active)
+    total += per * len([t for t in tokens if t.get("status") == "pending"])
+    return round(total)

@@ -91,6 +91,14 @@ class RescheduleRequest(CamelModel):
     time: Optional[str] = None  # patient-chosen slot label, e.g. "10:30 AM"
 
 
+class ReceptionTokenCreate(CamelModel):
+    """An online token is a hospital-level reception queue ticket — no doctor
+    and no payment. The patient completes the visit physically at reception."""
+    hospital_id: str
+    patient_name: str
+    patient_phone: Optional[str] = None
+
+
 # ---- Profile ----------------------------------------------------------------
 
 class EmergencyContact(CamelModel):

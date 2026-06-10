@@ -7,6 +7,7 @@ from .config import CORS_ORIGINS
 from .firebase import init_firebase
 from .routers import (
     auth, hospitals, doctors, bookings, queue, profile, notifications, chatbot,
+    reception,
 )
 
 
@@ -34,7 +35,8 @@ app.add_middleware(
 
 for r in (
     auth.router, hospitals.router, doctors.router, bookings.router,
-    queue.router, profile.router, notifications.router, chatbot.router,
+    queue.router, reception.router, profile.router, notifications.router,
+    chatbot.router,
 ):
     app.include_router(r, prefix="/api")
 

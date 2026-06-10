@@ -8,6 +8,9 @@ const AuthContext = createContext(null)
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [role, setRole] = useState(null)
+  // Hospital a receptionist is assigned to (from users/{uid}.hospitalId), so the
+  // reception panel can lock to their hospital. Null for admins (who pick one).
+  const [hospitalId, setHospitalId] = useState(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -32,12 +35,14 @@ export function AuthProvider({ children }) {
             console.log('[AUTH DEBUG] ✅ Role accepted:', userData.role)
             setUser(firebaseUser)
             setRole(userData.role)
+            setHospitalId(userData.hospitalId || null)
           } else {
             console.log('[AUTH DEBUG] ❌ Role rejected. Signing out.')
             console.log('[AUTH DEBUG] Reason: userData=', userData, 'role=', userData?.role)
             await fbSignOut(auth)
             setUser(null)
             setRole(null)
+            setHospitalId(null)
           }
         } catch (err) {
           console.log('[AUTH DEBUG] ❌ ERROR caught:', err.code, err.message)
@@ -48,6 +53,7 @@ export function AuthProvider({ children }) {
         console.log('[AUTH DEBUG] No user (logged out)')
         setUser(null)
         setRole(null)
+        setHospitalId(null)
       }
       setLoading(false)
       console.log('[AUTH DEBUG] setLoading(false) — auth check done')
@@ -58,7 +64,7 @@ export function AuthProvider({ children }) {
   const signOut = () => fbSignOut(auth)
 
   return (
-    <AuthContext.Provider value={{ user, role, loading, signOut }}>
+    <AuthContext.Provider value={{ user, role, hospitalId, loading, signOut }}>
       {children}
     </AuthContext.Provider>
   )

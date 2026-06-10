@@ -81,11 +81,23 @@ def my_bookings(user: dict = Depends(get_current_user)):
     for b in items:
         if b.get("status") not in ("pending", "active") or not b.get("bookingDate"):
             continue
-        key = (b["doctorId"], b["bookingDate"])
-        if key not in status_cache:
-            status_cache[key] = wait_time.build_queue_status(
-                b["doctorId"], repo.bookings_for_doctor(b["doctorId"], b["bookingDate"])
-            )
+        # Online tokens live in a hospital-level reception queue; appointments
+        # live in their doctor's queue. Resolve the right snapshot for each.
+        if b.get("bookingSource") == "online_token":
+            hospital_id = b.get("hospitalId") or ""
+            key = ("reception", hospital_id, b["bookingDate"])
+            if key not in status_cache:
+                status_cache[key] = wait_time.build_reception_status(
+                    hospital_id,
+                    repo.reception_tokens_for_hospital(hospital_id, b["bookingDate"]),
+                )
+        else:
+            key = ("doctor", b["doctorId"], b["bookingDate"])
+            if key not in status_cache:
+                status_cache[key] = wait_time.build_queue_status(
+                    b["doctorId"],
+                    repo.bookings_for_doctor(b["doctorId"], b["bookingDate"]),
+                )
         snapshot = status_cache[key]
 
         match = next((w for w in snapshot["waiting"] if w["id"] == b["id"]), None)

@@ -30,4 +30,32 @@ class QueueService {
             QueueSummaryModel.fromJson(Map<String, dynamic>.from(e as Map)))
         .toList();
   }
+
+  /// Live reception-desk queue for a hospital (online tokens only). Reuses the
+  /// QueueStatusModel shape — `doctorId` carries the hospital id.
+  Future<QueueStatusModel> forReception(String hospitalId, {String? date}) async {
+    final data = await _api.get(
+      '/reception/$hospitalId',
+      query: date != null ? {'date': date} : null,
+    );
+    return QueueStatusModel.fromJson(Map<String, dynamic>.from(data as Map));
+  }
+
+  /// Live waiting count + ETA for many hospitals' reception queues at once
+  /// (online-token hospital picker).
+  Future<List<QueueSummaryModel>> receptionSummaryFor(
+    List<String> hospitalIds, {
+    String? date,
+  }) async {
+    if (hospitalIds.isEmpty) return const [];
+    final data = await _api.get('/reception/summary', query: {
+      'hospitalIds': hospitalIds.join(','),
+      'date': ?date,
+    });
+    final list = data is List ? data : const [];
+    return list
+        .map((e) =>
+            QueueSummaryModel.fromJson(Map<String, dynamic>.from(e as Map)))
+        .toList();
+  }
 }

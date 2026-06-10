@@ -5,6 +5,7 @@ import {
   Building2,
   Calendar,
   ListOrdered,
+  Ticket,
   LogOut,
   Settings,
 } from 'lucide-react'
@@ -13,6 +14,7 @@ import { useAuth } from '../../context/AuthContext'
 const navItems = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', end: true },
   { to: '/queue', icon: ListOrdered, label: 'Live Queue' },
+  { to: '/reception', icon: Ticket, label: 'Reception' },
   { to: '/bookings', icon: Calendar, label: 'Bookings' },
   { to: '/doctors', icon: Users, label: 'Doctors' },
   { to: '/hospitals', icon: Building2, label: 'Hospitals' },

@@ -466,6 +466,10 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
   Widget _buildPreselectedVisit() {
     final doctor = widget.preselectedDoctor!;
     final hospitalName = _selectedHospital?.name ?? doctor.hospital;
+    // Pull the live queue snapshot so the turn disclaimer (token #, ETA, turn
+    // time) shows here too — same as the regular hospital → doctor flow.
+    WidgetsBinding.instance
+        .addPostFrameCallback((_) => _ensureSummaries([doctor.id]));
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
       child: Column(
@@ -515,6 +519,8 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
               ],
             ),
           ),
+          const SizedBox(height: 14),
+          _buildTurnDisclaimer(doctor),
           const SizedBox(height: 22),
           _sectionTitle('Describe Your Problem'),
           const SizedBox(height: 4),

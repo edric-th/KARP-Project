@@ -1,12 +1,17 @@
 """Thin data-access helpers over Firestore. Uses single-field queries plus
 in-memory filtering/sorting so no composite indexes are required."""
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 
 import google.cloud.firestore_v1 as fsv1
 from firebase_admin import firestore
 from google.cloud.firestore_v1.base_query import FieldFilter
 
 from .firebase import get_db
+
+# Nepal has a fixed +05:45 offset (no DST). Anchoring "today" to Nepal time keeps
+# the booking date stable regardless of where the server is hosted, so it always
+# matches the admin panel (which uses the browser's local Nepal date).
+NEPAL_TZ = timezone(timedelta(hours=5, minutes=45))
 
 
 def _epoch(value) -> float:
@@ -20,7 +25,7 @@ def _epoch(value) -> float:
 
 
 def today_str() -> str:
-    n = datetime.now()
+    n = datetime.now(NEPAL_TZ)
     return f"{n.year}-{n.month:02d}-{n.day:02d}"
 
 
@@ -79,6 +84,52 @@ def next_token_number(doctor_id: str, date: str) -> int:
         last = (snap.to_dict() or {}).get("lastToken", 0) if snap.exists else 0
         new_value = int(last) + 1
         txn.set(ref, {"doctorId": doctor_id, "date": date, "lastToken": new_value}, merge=True)
+        return new_value
+
+    return _increment(transaction)
+
+
+# ---- Reception (online-token) queue -----------------------------------------
+# Online tokens are a hospital-level queue served by the reception desk — they
+# are NOT tied to a doctor. They live in the same `bookings` collection with an
+# empty doctorId and bookingSource == "online_token", so doctor queues (which
+# filter by doctorId) never pick them up.
+
+def reception_tokens_for_hospital(hospital_id: str, date: str) -> list:
+    items = query_eq("bookings", "hospitalId", hospital_id)
+    items = [
+        b for b in items
+        if b.get("bookingSource") == "online_token" and b.get("bookingDate") == date
+    ]
+    items.sort(key=lambda b: b.get("tokenNumber") or 0)
+    return items
+
+
+def next_reception_token(hospital_id: str, date: str) -> int:
+    """Race-safe per-hospital/per-day reception ticket number (counter + txn)."""
+    db = get_db()
+    ref = db.collection("counters").document(f"reception_{hospital_id}_{date}")
+
+    if not ref.get().exists:
+        existing = reception_tokens_for_hospital(hospital_id, date)
+        max_token = max([b.get("tokenNumber") or 0 for b in existing], default=0)
+        ref.set(
+            {"hospitalId": hospital_id, "date": date, "lastToken": max_token},
+            merge=True,
+        )
+
+    transaction = db.transaction()
+
+    @fsv1.transactional
+    def _increment(txn):
+        snap = ref.get(transaction=txn)
+        last = (snap.to_dict() or {}).get("lastToken", 0) if snap.exists else 0
+        new_value = int(last) + 1
+        txn.set(
+            ref,
+            {"hospitalId": hospital_id, "date": date, "lastToken": new_value},
+            merge=True,
+        )
         return new_value
 
     return _increment(transaction)

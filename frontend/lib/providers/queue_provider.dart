@@ -6,7 +6,8 @@ import 'package:frontend/models/queue_status_model.dart';
 import 'package:frontend/services/api_client.dart';
 import 'package:frontend/services/queue_service.dart';
 
-/// Tracks a single doctor's live queue, polling every [_interval].
+/// Tracks a single live queue (a doctor's, or a hospital reception desk's),
+/// polling every [_interval].
 class QueueProvider extends ChangeNotifier {
   QueueProvider(this._queue);
   final QueueService _queue;
@@ -18,15 +19,19 @@ class QueueProvider extends ChangeNotifier {
   String? error;
 
   Timer? _timer;
-  String? _doctorId;
+  String? _targetId; // doctorId, or hospitalId when [_reception] is true
   String? _date;
+  bool _reception = false;
 
-  Future<void> start(String doctorId, {String? date}) async {
-    if (_doctorId != doctorId) {
-      status = null; // switching doctors → reset snapshot
+  /// Track a doctor's queue ([reception] = false) or a hospital reception
+  /// queue ([reception] = true, [id] is the hospital id).
+  Future<void> start(String id, {String? date, bool reception = false}) async {
+    if (_targetId != id || _reception != reception) {
+      status = null; // switching target/mode → reset snapshot
     }
-    _doctorId = doctorId;
+    _targetId = id;
     _date = date;
+    _reception = reception;
     await _fetch();
     _timer?.cancel();
     _timer = Timer.periodic(_interval, (_) => _fetch());
@@ -35,14 +40,16 @@ class QueueProvider extends ChangeNotifier {
   Future<void> refreshNow() => _fetch();
 
   Future<void> _fetch() async {
-    final id = _doctorId;
+    final id = _targetId;
     if (id == null) return;
     if (status == null) {
       loading = true;
       notifyListeners();
     }
     try {
-      status = await _queue.forDoctor(id, date: _date);
+      status = _reception
+          ? await _queue.forReception(id, date: _date)
+          : await _queue.forDoctor(id, date: _date);
       error = null;
     } on ApiException catch (e) {
       error = e.message;

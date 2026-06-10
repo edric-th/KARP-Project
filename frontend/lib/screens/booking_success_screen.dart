@@ -15,6 +15,7 @@ class BookingSuccessScreen extends StatelessWidget {
   final String? expectedCallAt; // ISO-8601 from the backend (fallback)
   final bool notifyMe;
   final String? patientName;
+  final String? hospitalName; // shown for online (reception) tokens — no doctor
 
   const BookingSuccessScreen({
     super.key,
@@ -28,6 +29,7 @@ class BookingSuccessScreen extends StatelessWidget {
     this.expectedCallAt,
     this.notifyMe = true,
     this.patientName,
+    this.hospitalName,
   });
 
   String get _token => (tokenNumber ?? 0).toString().padLeft(3, '0');
@@ -69,7 +71,11 @@ class BookingSuccessScreen extends StatelessWidget {
         ? 'Patient'
         : patientName!;
     final spec = speciality ?? doctor?.specialty ?? 'General Medicine';
-    final docName = doctor?.name ?? 'Dr. Assigned';
+    // Reception (online) tokens have no doctor — show the hospital/desk instead.
+    final docName = doctor?.name ??
+        (hospitalName != null && hospitalName!.trim().isNotEmpty
+            ? hospitalName!
+            : 'Reception Desk');
 
     return Scaffold(
       backgroundColor: AppColors.backgroundLight,

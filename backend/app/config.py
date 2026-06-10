@@ -16,6 +16,9 @@ CORS_ORIGINS = [
     if o.strip()
 ]
 DEFAULT_SERVICE_MINUTES = int(os.getenv("DEFAULT_SERVICE_MINUTES", "10"))
+# Average minutes a receptionist spends registering/handling one online-token
+# walk-in. Used to estimate reception-queue wait times (no doctor involved).
+DEFAULT_RECEPTION_MINUTES = int(os.getenv("DEFAULT_RECEPTION_MINUTES", "4"))
 
 # ---- Email / OTP (Gmail SMTP by default) ------------------------------------
 SMTP_HOST = os.getenv("SMTP_HOST", "")

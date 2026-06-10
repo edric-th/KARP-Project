@@ -82,6 +82,9 @@ class BookingModel {
   bool get isActive => status == 'active';
   bool get isPending => status == 'pending';
   bool get isLive => isActive || isPending; // still in today's queue
+
+  /// An online token is a hospital reception-desk ticket, not a doctor booking.
+  bool get isReceptionToken => bookingSource == 'online_token';
   bool get isServed => status == 'served';
   bool get isCancelled => status == 'cancelled' || status == 'no_show';
 

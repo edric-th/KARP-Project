@@ -28,6 +28,21 @@ class BookingService {
     return BookingModel.fromJson(Map<String, dynamic>.from(data as Map));
   }
 
+  /// Reserve an online token (hospital reception queue only — no doctor, no
+  /// payment). Returns the created token as a BookingModel.
+  Future<BookingModel> createReceptionToken({
+    required String hospitalId,
+    required String patientName,
+    String? patientPhone,
+  }) async {
+    final data = await _api.post('/reception-tokens', auth: true, body: {
+      'hospitalId': hospitalId,
+      'patientName': patientName,
+      if (patientPhone != null) 'patientPhone': patientPhone,
+    });
+    return BookingModel.fromJson(Map<String, dynamic>.from(data as Map));
+  }
+
   Future<List<BookingModel>> mine() async {
     final data = await _api.get('/bookings/me', auth: true);
     return (data as List)

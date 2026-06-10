@@ -5,6 +5,7 @@ import 'package:frontend/constants/app_colors.dart';
 import 'package:frontend/constants/validators.dart';
 import 'package:frontend/constants/wait_format.dart';
 import 'package:frontend/models/models.dart';
+import 'package:frontend/models/queue_status_model.dart';
 import 'package:frontend/providers/auth_provider.dart';
 import 'package:frontend/providers/bookings_provider.dart';
 import 'package:frontend/providers/catalog_provider.dart';
@@ -12,11 +13,11 @@ import 'package:frontend/services/api_client.dart';
 import 'package:frontend/services/queue_service.dart';
 import 'package:frontend/widgets/common/custom_app_bar.dart';
 import 'package:frontend/widgets/common/custom_button.dart';
-import 'package:frontend/widgets/common/doctor_avatar.dart';
 
-/// Reserve an ONLINE TOKEN ONLY — a queue ticket for patients who want to grab
-/// their number online but complete the appointment physically at reception.
-/// No payment is taken here.
+/// Reserve an ONLINE TOKEN ONLY — a hospital reception-desk queue ticket for
+/// patients who want to grab their number online and complete the appointment
+/// physically at reception. This is intentionally NOT linked to any doctor and
+/// takes no payment — booking a doctor appointment is a separate flow.
 class OnlineTokenScreen extends StatefulWidget {
   const OnlineTokenScreen({super.key});
 
@@ -28,11 +29,11 @@ class _OnlineTokenScreenState extends State<OnlineTokenScreen> {
   final _nameCtrl = TextEditingController();
   final _phoneCtrl = TextEditingController();
   HospitalModel? _hospital;
-  DoctorModel? _doctor;
   bool _submitting = false;
 
-  final Map<String, QueueSummaryModel> _summaries = {};
-  final Set<String> _loadingSummaries = {};
+  // Live reception-queue snapshot per hospital (now-serving + waiting count).
+  final Map<String, QueueStatusModel> _receptions = {};
+  final Set<String> _loading = {};
 
   @override
   void initState() {
@@ -45,8 +46,10 @@ class _OnlineTokenScreenState extends State<OnlineTokenScreen> {
       await catalog.load();
       if (!mounted) return;
       setState(() {
-        _hospital = catalog.hospitals.isNotEmpty ? catalog.hospitals.first : null;
+        _hospital =
+            catalog.hospitals.isNotEmpty ? catalog.hospitals.first : null;
       });
+      if (_hospital != null) _ensureReception(_hospital!.id);
     });
   }
 
@@ -57,33 +60,21 @@ class _OnlineTokenScreenState extends State<OnlineTokenScreen> {
     super.dispose();
   }
 
-  List<DoctorModel> get _doctors {
-    final catalog = context.read<CatalogProvider>();
-    if (_hospital == null) return catalog.doctors;
-    return catalog.doctorsForHospital(_hospital!.id);
-  }
-
-  Future<void> _ensureSummaries(List<String> ids) async {
-    final missing = ids
-        .where((id) =>
-            id.isNotEmpty &&
-            !_summaries.containsKey(id) &&
-            !_loadingSummaries.contains(id))
-        .toList();
-    if (missing.isEmpty) return;
-    _loadingSummaries.addAll(missing);
+  Future<void> _ensureReception(String hospitalId) async {
+    if (hospitalId.isEmpty ||
+        _receptions.containsKey(hospitalId) ||
+        _loading.contains(hospitalId)) {
+      return;
+    }
+    _loading.add(hospitalId);
     try {
-      final res = await context.read<QueueService>().summaryFor(missing);
+      final status = await context.read<QueueService>().forReception(hospitalId);
       if (!mounted) return;
-      setState(() {
-        for (final s in res) {
-          _summaries[s.doctorId] = s;
-        }
-      });
+      setState(() => _receptions[hospitalId] = status);
     } catch (_) {
       // Leave unknown — the disclaimer falls back to an "estimating" state.
     } finally {
-      _loadingSummaries.removeAll(missing);
+      _loading.remove(hospitalId);
     }
   }
 
@@ -91,7 +82,7 @@ class _OnlineTokenScreenState extends State<OnlineTokenScreen> {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
 
   Future<void> _reserve() async {
-    final doctor = _doctor;
+    final hospital = _hospital;
     if (_nameCtrl.text.trim().isEmpty) {
       _snack('Please enter the patient name.');
       return;
@@ -101,18 +92,16 @@ class _OnlineTokenScreenState extends State<OnlineTokenScreen> {
       _snack(phoneErr);
       return;
     }
-    if (doctor == null) {
-      _snack('Please choose a doctor.');
+    if (hospital == null) {
+      _snack('Please choose a hospital.');
       return;
     }
     setState(() => _submitting = true);
     try {
-      final booking = await context.read<BookingsProvider>().create(
-            doctorId: doctor.id,
+      final booking = await context.read<BookingsProvider>().createReceptionToken(
+            hospitalId: hospital.id,
             patientName: _nameCtrl.text.trim(),
             patientPhone: _phoneCtrl.text.trim(),
-            bookingType: 'first_visit',
-            bookingSource: 'online_token',
           );
       if (!mounted) return;
       setState(() => _submitting = false);
@@ -120,8 +109,8 @@ class _OnlineTokenScreenState extends State<OnlineTokenScreen> {
         context,
         '/booking-success',
         arguments: {
-          'doctor': doctor,
-          'speciality': doctor.specialty,
+          'speciality': 'Reception Token',
+          'hospitalName': hospital.name,
           'tokenNumber': booking.tokenNumber,
           'estimatedWaitMinutes': booking.estimatedWaitMinutes,
           'expectedCallAt': booking.expectedCallAt,
@@ -143,9 +132,6 @@ class _OnlineTokenScreenState extends State<OnlineTokenScreen> {
   @override
   Widget build(BuildContext context) {
     final catalog = context.watch<CatalogProvider>();
-    final doctors = _doctors;
-    WidgetsBinding.instance.addPostFrameCallback(
-        (_) => _ensureSummaries(doctors.map((d) => d.id).toList()));
 
     return Scaffold(
       backgroundColor: AppColors.backgroundLight,
@@ -166,25 +152,11 @@ class _OnlineTokenScreenState extends State<OnlineTokenScreen> {
                   _sectionTitle('Choose Hospital'),
                   const SizedBox(height: 10),
                   _hospitalField(catalog),
-                  const SizedBox(height: 20),
-                  _sectionTitle('Choose Doctor'),
-                  const SizedBox(height: 10),
-                  if (catalog.loading && doctors.isEmpty)
-                    const Center(
-                        child: Padding(
-                      padding: EdgeInsets.all(20),
-                      child: CircularProgressIndicator(color: AppColors.primary),
-                    ))
-                  else if (doctors.isEmpty)
-                    _emptyDoctors()
-                  else
-                    ...doctors.map((d) => Padding(
-                          padding: const EdgeInsets.only(bottom: 10),
-                          child: _doctorTile(d),
-                        )),
-                  if (_doctor != null) ...[
-                    const SizedBox(height: 6),
-                    _turnDisclaimer(_doctor!),
+                  if (_hospital != null) ...[
+                    const SizedBox(height: 18),
+                    _sectionTitle('Reception Queue'),
+                    const SizedBox(height: 10),
+                    _receptionDisclaimer(_hospital!),
                   ],
                 ],
               ),
@@ -236,8 +208,9 @@ class _OnlineTokenScreenState extends State<OnlineTokenScreen> {
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  'Reserve your queue number now — no payment needed. '
-                  'Complete the appointment at the hospital reception.',
+                  'Reserve your reception queue number now — no doctor or '
+                  'payment needed. Complete the appointment at the hospital '
+                  'reception desk.',
                   style: TextStyle(
                     fontFamily: 'Inter',
                     fontSize: 12,
@@ -382,11 +355,9 @@ class _OnlineTokenScreenState extends State<OnlineTokenScreen> {
             for (final h in catalog.hospitals)
               ListTile(
                 onTap: () {
-                  setState(() {
-                    _hospital = h;
-                    _doctor = null;
-                  });
+                  setState(() => _hospital = h);
                   Navigator.pop(ctx);
+                  _ensureReception(h.id);
                 },
                 leading: const Icon(Icons.local_hospital_rounded,
                     color: AppColors.primary),
@@ -413,152 +384,43 @@ class _OnlineTokenScreenState extends State<OnlineTokenScreen> {
     );
   }
 
-  Widget _emptyDoctors() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Text(
-        'No doctors available at this hospital yet.',
-        textAlign: TextAlign.center,
-        style: TextStyle(
-          fontFamily: 'Inter',
-          fontSize: 13,
-          color: AppColors.textSecondary,
-        ),
-      ),
-    );
+  /// Estimated wait (minutes) for a brand-new walk-in joining this reception
+  /// queue: the last waiting person's ETA plus one more handling slot, or just
+  /// the remaining slot when nobody is waiting.
+  int _newWalkInWait(QueueStatusModel s) {
+    final per = s.avgServiceMinutes.round();
+    if (s.waiting.isNotEmpty) {
+      final last = s.waiting.last.estimatedWaitMinutes ?? 0;
+      return last + per;
+    }
+    return s.nowServing != null ? per : 0;
   }
 
-  Widget _doctorTile(DoctorModel d) {
-    final selected = _doctor?.id == d.id;
-    final s = _summaries[d.id];
-    final waitLabel = s == null ? 'live…' : formatWait(s.estimatedWaitMinutes);
-    return GestureDetector(
-      onTap: () => setState(() => _doctor = d),
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: selected ? AppColors.primary : AppColors.border,
-            width: selected ? 1.5 : 1,
-          ),
-        ),
-        child: Row(
-          children: [
-            DoctorAvatar(
-              photoUrl: d.photoUrl,
-              size: 44,
-              borderRadius: -1,
-              iconSize: 24,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    d.name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 14,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    d.specialty,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 12,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                  if (d.availabilityLabel.isNotEmpty) ...[
-                    const SizedBox(height: 3),
-                    Text(
-                      d.availableNow(DateTime.now())
-                          ? d.availabilityLabel
-                          : 'Closed now • ${d.availabilityLabel}',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontFamily: 'Inter',
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: d.availableNow(DateTime.now())
-                            ? AppColors.textSecondary
-                            : AppColors.error,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-            const SizedBox(width: 8),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  waitLabel,
-                  style: const TextStyle(
-                    fontFamily: 'Inter',
-                    fontSize: 12,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.primary,
-                  ),
-                ),
-                Text(
-                  '${s?.waitingCount ?? 0} ahead',
-                  style: TextStyle(
-                    fontFamily: 'Inter',
-                    fontSize: 10.5,
-                    color: AppColors.textMuted,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _turnDisclaimer(DoctorModel doc) {
-    final s = _summaries[doc.id];
-    final now = DateTime.now();
-    final base = doc.effectiveStartFrom(now);
-    final fmt = DateFormat('h:mm a');
+  Widget _receptionDisclaimer(HospitalModel hospital) {
+    final s = _receptions[hospital.id];
     if (s == null) {
       return _disclaimerBox(
         'Estimating your turn…',
-        'Fetching the live queue for ${doc.name}.',
+        'Fetching the live reception queue for ${hospital.name}.',
+        serving: null,
       );
     }
-    final turn = base.add(Duration(minutes: s.estimatedWaitMinutes));
-    final notOpenYet = doc.hasAvailability && base.isAfter(now);
-    final tokenPos = s.waitingCount + 1;
-    final title = notOpenYet
-        ? '${doc.name} will be available from ${fmt.format(base)}, so as per your token your turn will be around ${fmt.format(turn)}'
-        : 'According to your token number, your turn will be around ${fmt.format(turn)}';
+    final now = DateTime.now();
+    final wait = _newWalkInWait(s);
+    final turn = now.add(Duration(minutes: wait));
+    final fmt = DateFormat('h:mm a');
+    final ahead = s.waitingCount + (s.nowServing != null ? 1 : 0);
     return _disclaimerBox(
-      title,
-      'You will be token #$tokenPos with ${s.waitingCount} ${s.waitingCount == 1 ? 'patient' : 'patients'} ahead.',
+      'As per the reception queue, your turn will be around '
+      '${fmt.format(turn)} (about ${formatWait(wait)} from now).',
+      ahead == 0
+          ? 'The reception desk is free right now — you should be seen shortly.'
+          : 'There ${ahead == 1 ? 'is' : 'are'} $ahead ${ahead == 1 ? 'person' : 'people'} ahead of you in the reception queue.',
+      serving: s.nowServing?.tokenNumber,
     );
   }
 
-  Widget _disclaimerBox(String title, String body) {
+  Widget _disclaimerBox(String title, String body, {int? serving}) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(14),
@@ -567,33 +429,76 @@ class _OnlineTokenScreenState extends State<OnlineTokenScreen> {
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: AppColors.primary.withValues(alpha: 0.35)),
       ),
-      child: Row(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.schedule_rounded, color: AppColors.primary, size: 20),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontFamily: 'Inter',
-                    fontSize: 13,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.primaryDark,
-                    height: 1.35,
-                  ),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(Icons.schedule_rounded,
+                  color: AppColors.primary, size: 20),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.primaryDark,
+                        height: 1.35,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      body,
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                        height: 1.45,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 4),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: AppColors.border),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.campaign_rounded,
+                    color: AppColors.primary, size: 18),
+                const SizedBox(width: 8),
                 Text(
-                  body,
+                  'Now serving',
                   style: TextStyle(
                     fontFamily: 'Inter',
                     fontSize: 12,
+                    fontWeight: FontWeight.w600,
                     color: AppColors.textSecondary,
-                    height: 1.45,
+                  ),
+                ),
+                const Spacer(),
+                Text(
+                  serving == null
+                      ? '—'
+                      : '#${serving.toString().padLeft(3, '0')}',
+                  style: const TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 15,
+                    fontWeight: FontWeight.w900,
+                    color: AppColors.primaryDark,
                   ),
                 ),
               ],
