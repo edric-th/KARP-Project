@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 import 'package:frontend/constants/app_colors.dart';
 import 'package:frontend/providers/auth_provider.dart';
 import 'package:frontend/widgets/common/app_logo.dart';
-import 'package:frontend/widgets/common/brand_logo.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -51,19 +50,6 @@ class _LoginScreenState extends State<LoginScreen> {
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(auth.error ?? 'Login failed. Please try again.')),
-      );
-    }
-  }
-
-  Future<void> _loginWithGoogle() async {
-    final auth = context.read<AuthProvider>();
-    final ok = await auth.signInWithGoogle();
-    if (!mounted) return;
-    if (ok) {
-      Navigator.pushReplacementNamed(context, '/main');
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(auth.error ?? 'Google sign-in failed.')),
       );
     }
   }
@@ -192,10 +178,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 isLoading: _isLoading,
                 onTap: _login,
               ),
-              const SizedBox(height: 14),
-
-              // ── Google button ──────────────────────────────────────────
-              _GoogleButton(onTap: _loginWithGoogle),
 
               const SizedBox(height: 32),
 
@@ -363,45 +345,3 @@ class _PrimaryButton extends StatelessWidget {
   }
 }
 
-// ─── GOOGLE BUTTON ───────────────────────────────────────────────────────────
-
-class _GoogleButton extends StatelessWidget {
-  final VoidCallback onTap;
-  const _GoogleButton({required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      borderRadius: BorderRadius.circular(30),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(30),
-        child: Container(
-          height: 58,
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(30),
-            border: Border.all(color: AppColors.border),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const BrandLogo(Brand.google, size: 22),
-              const SizedBox(width: 12),
-              Text(
-                'Sign in with Google',
-                style: TextStyle(
-                  fontFamily: 'Inter',
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}

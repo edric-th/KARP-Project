@@ -11,6 +11,7 @@ import 'package:frontend/screens/doctors_screen.dart';
 import 'package:frontend/screens/doctor_detail_screen.dart';
 import 'package:frontend/screens/book_appointment_screen.dart';
 import 'package:frontend/screens/booking_success_screen.dart';
+import 'package:frontend/screens/online_token_screen.dart';
 import 'package:frontend/screens/payment_screen.dart';
 import 'package:frontend/screens/queue_screen.dart';
 import 'package:frontend/screens/appointments_screen.dart';
@@ -37,6 +38,7 @@ class AppRouter {
   static const String doctors = '/doctors';
   static const String doctorDetail = '/doctor-detail';
   static const String bookAppointment = '/book-appointment';
+  static const String onlineToken = '/online-token';
   static const String payment = '/payment';
   static const String bookingSuccess = '/booking-success';
   static const String queue = '/queue';
@@ -107,21 +109,31 @@ class AppRouter {
           routeSettings,
         );
 
+      case onlineToken:
+        return _buildRoute(const OnlineTokenScreen(), routeSettings);
+
       case payment:
         final args = routeSettings.arguments as Map<String, dynamic>;
+        final doctor = args['doctor'] as DoctorModel?;
+        if (doctor == null) {
+          // Missing doctor — fall back rather than crashing the navigation.
+          return _buildRoute(const MainNavScreen(), routeSettings);
+        }
         return _buildRoute(
           PaymentScreen(
-            doctor: args['doctor'] as DoctorModel,
+            doctor: doctor,
             hospital: args['hospital'] as HospitalModel?,
-            appointmentType: args['appointmentType'] as AppointmentType,
-            speciality: args['speciality'] as String,
+            appointmentType:
+                args['appointmentType'] as AppointmentType? ??
+                    AppointmentType.newPatient,
+            speciality: (args['speciality'] as String?) ?? doctor.specialty,
             problem: args['problem'] as String? ?? '',
             notes: args['notes'] as String? ?? '',
-            patientName: args['patientName'] as String,
+            patientName: args['patientName'] as String? ?? '',
             patientPhone: args['patientPhone'] as String? ?? '',
-            patientAge: args['patientAge'] as int,
+            patientAge: (args['patientAge'] as int?) ?? 0,
             patientGender: args['patientGender'] as String? ?? 'Male',
-            tokenNumber: args['tokenNumber'] as int,
+            tokenNumber: (args['tokenNumber'] as int?) ?? 0,
             notifyMe: (args['notifyMe'] as bool?) ?? true,
           ),
           routeSettings,
@@ -138,6 +150,7 @@ class AppRouter {
             speciality: args?['speciality'] as String?,
             tokenNumber: args?['tokenNumber'] as int?,
             estimatedWaitMinutes: args?['estimatedWaitMinutes'] as int?,
+            expectedCallAt: args?['expectedCallAt'] as String?,
             notifyMe: (args?['notifyMe'] as bool?) ?? true,
             patientName: args?['patientName'] as String?,
           ),

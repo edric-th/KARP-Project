@@ -11,6 +11,7 @@ import 'package:frontend/providers/catalog_provider.dart';
 import 'package:frontend/services/queue_service.dart';
 import 'package:frontend/widgets/common/custom_app_bar.dart';
 import 'package:frontend/widgets/common/custom_button.dart';
+import 'package:frontend/widgets/common/doctor_avatar.dart';
 
 class BookAppointmentScreen extends StatefulWidget {
   final DoctorModel? preselectedDoctor;
@@ -297,6 +298,11 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
   }
 
   void _proceedToPayment() {
+    final doctor = _selectedDoctor;
+    if (doctor == null) {
+      _snack('Please choose a doctor before continuing.');
+      return;
+    }
     final profile = context.read<AuthProvider>().profile;
     final patientName = _appointmentType == AppointmentType.newPatient
         ? _patientNameCtrl.text.trim()
@@ -312,10 +318,12 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
       context,
       '/payment',
       arguments: {
-        'doctor': _selectedDoctor,
+        'doctor': doctor,
         'hospital': _selectedHospital,
         'appointmentType': _appointmentType,
-        'speciality': _selectedSpeciality,
+        // Speciality may be unset if the user picked a doctor without tapping a
+        // speciality chip — fall back to the doctor's own speciality.
+        'speciality': _selectedSpeciality ?? doctor.specialty,
         'problem': _problemCtrl.text.trim(),
         'notes': _notesController.text.trim(),
         'patientName': patientName,
@@ -474,15 +482,11 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
             ),
             child: Row(
               children: [
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: const BoxDecoration(
-                    color: AppColors.cardGreenMedium,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(Icons.person_rounded,
-                      color: AppColors.primary, size: 26),
+                DoctorAvatar(
+                  photoUrl: doctor.photoUrl,
+                  size: 48,
+                  borderRadius: -1,
+                  iconSize: 26,
                 ),
                 const SizedBox(width: 14),
                 Expanded(
@@ -935,24 +939,6 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
   /// (off-day / after closing) or the patient's expected turn time, computed
   /// from the live queue ETA on top of the doctor's opening time.
   Widget _buildTurnDisclaimer(DoctorModel doc) {
-    final now = DateTime.now();
-    final open = doc.startOn(now);
-    final close = doc.endOn(now);
-    final isDay = doc.hasAvailability ? doc.isAvailableDay(now) : true;
-    final afterClose = close != null && !now.isBefore(close);
-
-    // Off-day or past closing time → not available right now.
-    if (doc.hasAvailability && (!isDay || afterClose)) {
-      return _disclaimerBox(
-        icon: Icons.event_busy_rounded,
-        color: AppColors.error,
-        title: 'Dr. ${doc.name} is not available at the moment',
-        body: doc.availabilityLabel.isNotEmpty
-            ? 'Available ${doc.availabilityLabel}. You can still book — your token will be served during the next available session.'
-            : 'Please check back during the doctor\'s consultation hours.',
-      );
-    }
-
     final summary = _queueSummaries[doc.id];
     if (summary == null) {
       return _disclaimerBox(
@@ -963,22 +949,44 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
       );
     }
 
-    // Turn starts from the later of "now" and the doctor's opening time today.
-    var base = now;
-    if (open != null && now.isBefore(open)) base = open;
+    final now = DateTime.now();
+    // Serving starts no earlier than the doctor's opening time (handles a
+    // patient booking at 7 AM for a doctor whose hours begin at 10 AM, and
+    // off-days → the next available session).
+    final base = doc.effectiveStartFrom(now);
     final turn = base.add(Duration(minutes: summary.estimatedWaitMinutes));
     final arrive = turn.subtract(const Duration(minutes: 15));
-    final f = DateFormat('h:mm a');
+    final timeFmt = DateFormat('h:mm a');
+    final notOpenYet = doc.hasAvailability && base.isAfter(now);
+    // Include the day when the next session is not today.
+    final sameDay = base.year == now.year &&
+        base.month == now.month &&
+        base.day == now.day;
+    final openLabel =
+        sameDay ? timeFmt.format(base) : DateFormat('EEE, h:mm a').format(base);
     final tokenPos = summary.waitingCount + 1;
+
+    if (notOpenYet) {
+      return _disclaimerBox(
+        icon: Icons.schedule_rounded,
+        color: AppColors.primary,
+        title:
+            'Dr. ${doc.name} will be available from $openLabel, so as per your '
+            'token number your turn will be around ${timeFmt.format(turn)}',
+        body:
+            'You will be token #$tokenPos with ${summary.waitingCount} ${summary.waitingCount == 1 ? 'patient' : 'patients'} ahead. '
+            'Please reach the hospital about 15 minutes before your turn (by ${timeFmt.format(arrive)}).',
+      );
+    }
 
     return _disclaimerBox(
       icon: Icons.schedule_rounded,
       color: AppColors.primary,
       title:
-          'According to your token number, your turn will be around ${f.format(turn)}',
+          'According to your token number, your turn will be around ${timeFmt.format(turn)}',
       body:
           'You will be token #$tokenPos with ${summary.waitingCount} ${summary.waitingCount == 1 ? 'patient' : 'patients'} ahead. '
-          'Please be at the hospital 15 minutes before your turn (by ${f.format(arrive)}).',
+          'Please be at the hospital 15 minutes before your turn (by ${timeFmt.format(arrive)}).',
     );
   }
 
@@ -2006,18 +2014,11 @@ class _DoctorPickCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: AppColors.cardGreenLight,
-                    borderRadius: BorderRadius.circular(22),
-                  ),
-                  child: Icon(
-                    Icons.person_rounded,
-                    color: AppColors.textSecondary,
-                    size: 24,
-                  ),
+                DoctorAvatar(
+                  photoUrl: doctor.photoUrl,
+                  size: 44,
+                  borderRadius: -1,
+                  iconSize: 24,
                 ),
                 const SizedBox(width: 12),
                 Expanded(

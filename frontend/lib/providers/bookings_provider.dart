@@ -49,6 +49,7 @@ class BookingsProvider extends ChangeNotifier {
     String? bookingDate,
     String? paymentMethod,
     String? paymentStatus,
+    String? bookingSource,
   }) async {
     final booking = await _bookings.create(
       doctorId: doctorId,
@@ -58,6 +59,7 @@ class BookingsProvider extends ChangeNotifier {
       bookingDate: bookingDate,
       paymentMethod: paymentMethod,
       paymentStatus: paymentStatus,
+      bookingSource: bookingSource,
     );
     await load();
     return booking;

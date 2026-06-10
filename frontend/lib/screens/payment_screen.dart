@@ -235,6 +235,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                     'speciality': widget.speciality,
                     'tokenNumber': _createdBooking?.tokenNumber ?? 0,
                     'estimatedWaitMinutes': _createdBooking?.estimatedWaitMinutes,
+                    'expectedCallAt': _createdBooking?.expectedCallAt,
                     'notifyMe': widget.notifyMe,
                     'patientName': widget.patientName,
                   },

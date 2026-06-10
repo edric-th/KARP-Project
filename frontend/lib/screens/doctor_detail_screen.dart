@@ -7,6 +7,7 @@ import 'package:frontend/models/queue_status_model.dart';
 import 'package:frontend/services/doctor_service.dart';
 import 'package:frontend/services/queue_service.dart';
 import 'package:frontend/widgets/common/custom_button.dart';
+import 'package:frontend/widgets/common/doctor_avatar.dart';
 
 class DoctorDetailScreen extends StatefulWidget {
   final DoctorModel doctor;
@@ -86,8 +87,17 @@ class _DoctorDetailScreenState extends State<DoctorDetailScreen> {
                     shape: BoxShape.circle,
                     border: Border.all(color: Colors.white, width: 3),
                   ),
-                  child: const Icon(Icons.person_rounded,
-                      color: Colors.white, size: 52),
+                  child: doctor.photoUrl.trim().isEmpty
+                      ? const Icon(Icons.person_rounded,
+                          color: Colors.white, size: 52)
+                      : ClipOval(
+                          child: DoctorAvatar(
+                            photoUrl: doctor.photoUrl,
+                            size: 90,
+                            borderRadius: -1,
+                            iconSize: 52,
+                          ),
+                        ),
                 ),
                 const SizedBox(height: 12),
                 Text(doctor.name,
@@ -459,14 +469,20 @@ class _InfoRow extends StatelessWidget {
           Row(children: [
             Icon(icon, size: 14, color: AppColors.textMuted),
             const SizedBox(width: 6),
-            Text(label,
-                style: const TextStyle(
-                    fontFamily: 'Inter',
-                    fontSize: 11,
-                    color: AppColors.textMuted)),
+            Expanded(
+              child: Text(label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 11,
+                      color: AppColors.textMuted)),
+            ),
           ]),
           const SizedBox(height: 4),
           Text(value,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
                   fontFamily: 'Inter',
                   fontSize: 14,

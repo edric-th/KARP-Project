@@ -158,6 +158,10 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const SizedBox(height: 24),
             _buildQuickActions(context),
+            const SizedBox(height: 14),
+            _OnlineTokenBanner(
+              onTap: () => Navigator.pushNamed(context, '/online-token'),
+            ),
             const SizedBox(height: 28),
             _buildSectionHeader(
               context,
@@ -353,6 +357,69 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
+// ─── ONLINE TOKEN BANNER ─────────────────────────────────────────────────────
+
+class _OnlineTokenBanner extends StatelessWidget {
+  final VoidCallback onTap;
+  const _OnlineTokenBanner({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          gradient: AppColors.primaryGradient,
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: AppColors.primaryShadow,
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: Colors.white24,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(Icons.confirmation_number_rounded,
+                  color: Colors.white, size: 24),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Get Online Token',
+                    style: TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 15,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Reserve your number now • pay at reception',
+                    style: TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 12,
+                      color: Colors.white.withValues(alpha: 0.9),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 20),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 // ─── GREETING ────────────────────────────────────────────────────────────────
 
 class _GreetingBlock extends StatelessWidget {
@@ -388,13 +455,17 @@ class _GreetingBlock extends StatelessWidget {
           const SizedBox(height: 6),
           Row(
             children: [
-              Text(
-                activeQueue!.hospitalName,
-                style: TextStyle(
-                  fontFamily: 'Inter',
-                  fontSize: 13,
-                  color: AppColors.textSecondary,
-                  fontWeight: FontWeight.w500,
+              Flexible(
+                child: Text(
+                  activeQueue!.hospitalName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 13,
+                    color: AppColors.textSecondary,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
               const SizedBox(width: 8),
@@ -469,12 +540,15 @@ class _NowServingCard extends StatelessWidget {
                   ],
                 ),
               ),
-              const Spacer(),
-              Column(
+              const SizedBox(width: 10),
+              Flexible(
+                child: Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
                     queue.doctorName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       fontFamily: 'Inter',
                       fontSize: 14,
@@ -492,6 +566,7 @@ class _NowServingCard extends StatelessWidget {
                     ),
                   ),
                 ],
+                ),
               ),
             ],
           ),
@@ -780,7 +855,7 @@ class _ActiveRow extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    _TagChip(label: entry.tag, dark: true),
+                    Flexible(child: _TagChip(label: entry.tag, dark: true)),
                   ],
                 ),
                 const SizedBox(height: 4),
@@ -902,19 +977,23 @@ class _YouRow extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    _TagChip(label: entry.tag),
+                    Flexible(child: _TagChip(label: entry.tag)),
                   ],
                 ),
                 const SizedBox(height: 4),
                 Row(
                   children: [
-                    Text(
-                      'Next in line',
-                      style: TextStyle(
-                        fontFamily: 'Inter',
-                        fontSize: 12,
-                        color: AppColors.textSecondary,
-                        fontWeight: FontWeight.w600,
+                    Flexible(
+                      child: Text(
+                        'Next in line',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 12,
+                          color: AppColors.textSecondary,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                     const SizedBox(width: 8),

@@ -403,9 +403,17 @@ export default function DoctorQueue() {
       {/* Header */}
       <header className="bg-white border-b border-gray-200 px-4 md:px-8 py-4 flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="w-10 h-10 bg-primary-50 text-primary-600 rounded-full flex items-center justify-center flex-shrink-0">
-            <Stethoscope size={20} />
-          </div>
+          {doctorProfile.photoUrl ? (
+            <img
+              src={doctorProfile.photoUrl}
+              alt={doctorProfile.name}
+              className="w-10 h-10 rounded-full object-cover flex-shrink-0 border border-gray-200"
+            />
+          ) : (
+            <div className="w-10 h-10 bg-primary-50 text-primary-600 rounded-full flex items-center justify-center flex-shrink-0">
+              <Stethoscope size={20} />
+            </div>
+          )}
           <div className="min-w-0">
             <h1 className="font-bold text-lg md:text-xl truncate text-gray-900">
               Dr. {doctorProfile.name}

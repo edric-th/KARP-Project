@@ -1,8 +1,5 @@
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 
-import 'package:frontend/config/google_auth_config.dart';
 import 'package:frontend/services/api_client.dart';
 import 'package:frontend/services/token_store.dart';
 
@@ -87,54 +84,12 @@ class AuthService {
     await _api.post('/auth/verify-email', auth: true);
   }
 
-  /// Google sign-in via the Firebase client SDK. Produces a Firebase idToken
-  /// that the backend verifies; `/auth/google` ensures a patient profile.
-  Future<AuthResult> signInWithGoogle() async {
-    final googleSignIn = GoogleSignIn(
-      scopes: const ['email', 'profile'],
-      clientId:
-          kIsWeb && GoogleAuthConfig.configured ? GoogleAuthConfig.webClientId : null,
-      serverClientId: !kIsWeb && GoogleAuthConfig.configured
-          ? GoogleAuthConfig.webClientId
-          : null,
-    );
-
-    final account = await googleSignIn.signIn();
-    if (account == null) {
-      throw ApiException(0, 'Google sign-in was cancelled.');
-    }
-    final gAuth = await account.authentication;
-    final credential = GoogleAuthProvider.credential(
-      idToken: gAuth.idToken,
-      accessToken: gAuth.accessToken,
-    );
-    final userCred =
-        await FirebaseAuth.instance.signInWithCredential(credential);
-    final fbUser = userCred.user;
-    if (fbUser == null) throw ApiException(0, 'Google sign-in failed.');
-
-    final idToken = await fbUser.getIdToken();
-    await _tokens.saveTokens(
-      idToken: idToken,
-      refreshToken: fbUser.refreshToken,
-      uid: fbUser.uid,
-    );
-    // Ensure a users/{uid} patient profile exists server-side.
-    await _api.post('/auth/google', auth: true);
-    return AuthResult(
-      uid: fbUser.uid,
-      name: fbUser.displayName,
-      email: fbUser.email,
-    );
-  }
-
   Future<bool> get hasSession => _tokens.hasSession;
 
   Future<void> logout() async {
     try {
-      await GoogleSignIn().signOut();
       await FirebaseAuth.instance.signOut();
-    } catch (_) {/* Firebase not initialized / no Google session */}
+    } catch (_) {/* Firebase not initialized / no session */}
     await _tokens.clear();
   }
 }

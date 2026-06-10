@@ -20,10 +20,13 @@ dependencies:
   provider: ^6.1.2
   flutter_secure_storage: ^9.2.2
 
-  # Firebase auth for Google sign-in (email/password still goes via the backend)
+  # Firebase core/auth (token refresh + session clearing; email/password auth
+  # itself goes via the backend).
   firebase_core: ^3.6.0
   firebase_auth: ^5.3.1
-  google_sign_in: ^6.2.1
+
+  # Profile photo upload from gallery/camera
+  image_picker: ^1.1.2
 
 dev_dependencies:
   flutter_test:

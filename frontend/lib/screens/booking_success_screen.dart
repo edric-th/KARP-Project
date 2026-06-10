@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:frontend/constants/app_colors.dart';
 import 'package:frontend/models/models.dart';
 import 'package:frontend/widgets/common/custom_button.dart';
@@ -11,6 +12,7 @@ class BookingSuccessScreen extends StatelessWidget {
   final String? speciality;
   final int? tokenNumber;
   final int? estimatedWaitMinutes;
+  final String? expectedCallAt; // ISO-8601 from the backend (fallback)
   final bool notifyMe;
   final String? patientName;
 
@@ -23,6 +25,7 @@ class BookingSuccessScreen extends StatelessWidget {
     this.speciality,
     this.tokenNumber,
     this.estimatedWaitMinutes,
+    this.expectedCallAt,
     this.notifyMe = true,
     this.patientName,
   });
@@ -36,6 +39,28 @@ class BookingSuccessScreen extends StatelessWidget {
     if (mins < 60) return '~$mins mins';
     final hours = (mins / 60).round();
     return '~$hours hour${hours > 1 ? 's' : ''}';
+  }
+
+  /// Real-world clock time the patient is expected to be called. Computed from
+  /// the doctor's opening hour + estimated wait (so a 7 AM booking for a doctor
+  /// who opens at 10 AM reads "10:xx AM"), falling back to the backend's
+  /// expectedCallAt when wait minutes aren't known.
+  String get _turnTime {
+    final now = DateTime.now();
+    DateTime? turn;
+    final mins = estimatedWaitMinutes;
+    if (mins != null) {
+      final base = doctor?.effectiveStartFrom(now) ?? now;
+      turn = base.add(Duration(minutes: mins));
+    } else if (expectedCallAt != null) {
+      turn = DateTime.tryParse(expectedCallAt!)?.toLocal();
+    }
+    if (turn == null) return 'Calculating…';
+    final sameDay =
+        turn.year == now.year && turn.month == now.month && turn.day == now.day;
+    return sameDay
+        ? '${DateFormat('h:mm a').format(turn)}, Today'
+        : DateFormat('EEE d MMM, h:mm a').format(turn);
   }
 
   @override
@@ -113,6 +138,7 @@ class BookingSuccessScreen extends StatelessWidget {
                 doctorName: docName,
                 speciality: spec.toUpperCase(),
                 waitTime: _waitTime,
+                turnTime: _turnTime,
               ),
               const SizedBox(height: 18),
               if (notifyMe) _NotificationBanner(),
@@ -151,6 +177,7 @@ class _TokenCard extends StatelessWidget {
   final String doctorName;
   final String speciality;
   final String waitTime;
+  final String turnTime;
 
   const _TokenCard({
     required this.patientName,
@@ -158,6 +185,7 @@ class _TokenCard extends StatelessWidget {
     required this.doctorName,
     required this.speciality,
     required this.waitTime,
+    required this.turnTime,
   });
 
   @override
@@ -248,14 +276,57 @@ class _TokenCard extends StatelessWidget {
               letterSpacing: 1,
             ),
           ),
-          const SizedBox(height: 12),
-          Text(
-            'Estimated wait: $waitTime',
-            style: TextStyle(
-              fontFamily: 'Inter',
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-              color: AppColors.primary,
+          const SizedBox(height: 14),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            decoration: BoxDecoration(
+              color: AppColors.cardGreenLight,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: AppColors.cardGreenBorder),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.schedule_rounded,
+                    size: 18, color: AppColors.primary),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'YOUR ESTIMATED TURN',
+                        style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.textMuted,
+                          letterSpacing: 0.6,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        turnTime,
+                        style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.primaryDark,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Text(
+                  'in $waitTime',
+                  style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.primary,
+                  ),
+                ),
+              ],
             ),
           ),
         ],

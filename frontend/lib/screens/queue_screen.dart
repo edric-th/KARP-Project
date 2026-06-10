@@ -198,6 +198,13 @@ class _QueueScreenState extends State<QueueScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
             ),
           ),
+          const SizedBox(height: 12),
+          TextButton.icon(
+            onPressed: () => Navigator.pushNamed(context, '/online-token'),
+            icon: const Icon(Icons.confirmation_number_outlined, size: 18),
+            label: const Text('Or just get an online token'),
+            style: TextButton.styleFrom(foregroundColor: AppColors.primary),
+          ),
         ],
       ),
     );

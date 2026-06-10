@@ -83,6 +83,7 @@ class BookingCreate(CamelModel):
     booking_date: Optional[str] = None  # YYYY-MM-DD; defaults to today
     payment_method: Optional[str] = None  # esewa | khalti | imepay | bank | cash
     payment_status: Optional[str] = None  # paid | pending
+    booking_source: Optional[str] = None  # appointment | online_token
 
 
 class RescheduleRequest(CamelModel):

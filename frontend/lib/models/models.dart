@@ -253,6 +253,31 @@ class DoctorModel {
     return !now.isBefore(s) && now.isBefore(e);
   }
 
+  /// The moment the doctor's queue effectively begins serving, relative to
+  /// [from]. Used to compute a realistic turn time:
+  ///  • no schedule set → [from] (serve immediately);
+  ///  • before today's opening → today's opening time;
+  ///  • within hours today → [from] (now);
+  ///  • after close / off-day → the next available day's opening time.
+  /// Returns [from] if no opening can be resolved within a week.
+  DateTime effectiveStartFrom(DateTime from) {
+    if (!hasAvailability) return from;
+    final startOfFrom = DateTime(from.year, from.month, from.day);
+    for (var i = 0; i < 8; i++) {
+      final day = startOfFrom.add(Duration(days: i));
+      if (!isAvailableDay(day)) continue;
+      final open = startOn(day);
+      if (open == null) return from;
+      if (i == 0) {
+        final close = endOn(day);
+        if (close != null && !from.isBefore(close)) continue; // past close → next day
+        return from.isBefore(open) ? open : from;
+      }
+      return open; // a future available day → its opening
+    }
+    return from;
+  }
+
   /// e.g. "Mon–Fri" / "Mon, Wed, Fri" — empty when no days configured.
   String get availabilityDaysLabel {
     if (availabilityDays.isEmpty) return '';

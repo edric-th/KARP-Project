@@ -57,11 +57,6 @@ class AuthProvider extends ChangeNotifier {
         }
       });
 
-  Future<bool> signInWithGoogle() => _run(() async {
-        await _auth.signInWithGoogle();
-        profile = await _profiles.getProfile();
-      });
-
   Future<void> refreshProfile() async {
     try {
       profile = await _profiles.getProfile();

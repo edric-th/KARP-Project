@@ -38,7 +38,7 @@ import {
 } from 'firebase/firestore'
 import toast from 'react-hot-toast'
 import { subscribe, create, update, remove } from '../../api/firestore'
-import { uploadImage } from '../../api/storage'
+import { compressImageToDataUrl } from '../../api/storage'
 import { db, auth } from '../../lib/firebase'
 import { COLLECTIONS } from '../../constants'
 
@@ -439,14 +439,17 @@ function DoctorModal({ doctor, hospitals, onClose, onCredentialsCreated }) {
     }
     setUploading(true)
     try {
-      const url = await uploadImage(file, 'doctors')
-      setFormData((fd) => ({ ...fd, photoUrl: url }))
-      toast.success('Photo uploaded')
+      const dataUrl = await compressImageToDataUrl(file, { maxSize: 512, quality: 0.8 })
+      setFormData((fd) => ({ ...fd, photoUrl: dataUrl }))
+      toast.success('Photo added')
     } catch (err) {
       console.error(err)
-      toast.error('Photo upload failed')
+      toast.error('Could not process that photo')
     } finally {
+      // Always clear the spinner — even on failure — so it never hangs.
       setUploading(false)
+      // Reset the input so picking the same file again re-triggers onChange.
+      e.target.value = ''
     }
   }
 
@@ -713,20 +716,20 @@ function DoctorModal({ doctor, hospitals, onClose, onCredentialsCreated }) {
                 <label className="block text-xs text-gray-500 mb-1">
                   From
                 </label>
-                <input
-                  type="time"
-                  className="input"
+                <TimeAmPm
                   value={formData.availabilityStart}
-                  onChange={handleChange('availabilityStart')}
+                  onChange={(v) =>
+                    setFormData((fd) => ({ ...fd, availabilityStart: v }))
+                  }
                 />
               </div>
               <div>
                 <label className="block text-xs text-gray-500 mb-1">To</label>
-                <input
-                  type="time"
-                  className="input"
+                <TimeAmPm
                   value={formData.availabilityEnd}
-                  onChange={handleChange('availabilityEnd')}
+                  onChange={(v) =>
+                    setFormData((fd) => ({ ...fd, availabilityEnd: v }))
+                  }
                 />
               </div>
             </div>
@@ -905,6 +908,75 @@ function DoctorModal({ doctor, hospitals, onClose, onCredentialsCreated }) {
           </div>
         </form>
       </div>
+    </div>
+  )
+}
+
+// ---------- AM/PM time picker (stores 24h "HH:mm") ----------
+
+function TimeAmPm({ value, onChange }) {
+  const parse = (v) => {
+    if (!v || !v.includes(':')) return { h12: 9, m: 0, period: 'AM' }
+    const [hStr, mStr] = v.split(':')
+    let h = parseInt(hStr, 10)
+    if (Number.isNaN(h)) h = 9
+    const m = parseInt(mStr, 10) || 0
+    const period = h >= 12 ? 'PM' : 'AM'
+    let h12 = h % 12
+    if (h12 === 0) h12 = 12
+    return { h12, m, period }
+  }
+
+  const { h12, m, period } = parse(value)
+
+  const emit = (nh12, nm, nperiod) => {
+    let h = nh12 % 12
+    if (nperiod === 'PM') h += 12
+    onChange(`${String(h).padStart(2, '0')}:${String(nm).padStart(2, '0')}`)
+  }
+
+  const hours = Array.from({ length: 12 }, (_, i) => i + 1)
+  // 5-minute steps, plus the current minute if it isn't on the grid.
+  const minutes = Array.from(
+    new Set([...Array.from({ length: 12 }, (_, i) => i * 5), m])
+  ).sort((a, b) => a - b)
+
+  const sel =
+    'input px-2 py-2 text-sm'
+
+  return (
+    <div className="flex gap-1.5">
+      <select
+        className={sel}
+        value={h12}
+        onChange={(e) => emit(Number(e.target.value), m, period)}
+      >
+        {hours.map((h) => (
+          <option key={h} value={h}>
+            {h}
+          </option>
+        ))}
+      </select>
+      <span className="self-center text-gray-400">:</span>
+      <select
+        className={sel}
+        value={m}
+        onChange={(e) => emit(h12, Number(e.target.value), period)}
+      >
+        {minutes.map((mm) => (
+          <option key={mm} value={mm}>
+            {String(mm).padStart(2, '0')}
+          </option>
+        ))}
+      </select>
+      <select
+        className={sel}
+        value={period}
+        onChange={(e) => emit(h12, m, e.target.value)}
+      >
+        <option value="AM">AM</option>
+        <option value="PM">PM</option>
+      </select>
     </div>
   )
 }

@@ -13,6 +13,7 @@ class BookingService {
     String? bookingDate,
     String? paymentMethod,
     String? paymentStatus,
+    String? bookingSource,
   }) async {
     final data = await _api.post('/bookings', auth: true, body: {
       'doctorId': doctorId,
@@ -22,6 +23,7 @@ class BookingService {
       if (bookingDate != null) 'bookingDate': bookingDate,
       if (paymentMethod != null) 'paymentMethod': paymentMethod,
       if (paymentStatus != null) 'paymentStatus': paymentStatus,
+      if (bookingSource != null) 'bookingSource': bookingSource,
     });
     return BookingModel.fromJson(Map<String, dynamic>.from(data as Map));
   }

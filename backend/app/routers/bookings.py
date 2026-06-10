@@ -32,6 +32,11 @@ def create_booking(body: BookingCreate, user: dict = Depends(get_current_user)):
         if doctor.get("hospitalId") else None
     )
 
+    # An "online_token" reservation is a queue ticket only — the patient books the
+    # physical appointment at reception, so no online payment is collected.
+    source = body.booking_source or "appointment"
+    is_token_only = source == "online_token"
+
     data = {
         "doctorId": body.doctor_id,
         "doctorName": doctor.get("name"),
@@ -41,13 +46,14 @@ def create_booking(body: BookingCreate, user: dict = Depends(get_current_user)):
         "patientPhone": body.patient_phone or "",
         "patientUid": user["uid"],
         "bookingType": body.booking_type,
+        "bookingSource": source,
         "status": "pending",
         "tokenNumber": token,
         "bookingDate": date,
         "estimatedWaitMinutes": wait_min,
         "expectedCallAt": wait_time.expected_call_iso(wait_min),
         "paymentMethod": body.payment_method or "",
-        "paymentStatus": body.payment_status or "pending",
+        "paymentStatus": body.payment_status or ("not_required" if is_token_only else "pending"),
         "createdAt": firestore.SERVER_TIMESTAMP,
         "updatedAt": firestore.SERVER_TIMESTAMP,
     }
@@ -57,8 +63,9 @@ def create_booking(body: BookingCreate, user: dict = Depends(get_current_user)):
 
     repo.add_notification(
         user["uid"],
-        "Booking confirmed",
-        f"Token #{token} with {doctor.get('name')} on {date}. Estimated wait ~{wait_min} min.",
+        "Online token reserved" if is_token_only else "Booking confirmed",
+        f"Token #{token} with {doctor.get('name')} on {date}. Estimated turn ~{wait_min} min."
+        + (" Please complete your appointment at the reception." if is_token_only else ""),
         category="booking",
         related_booking_id=ref.id,
     )

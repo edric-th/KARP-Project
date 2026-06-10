@@ -11,6 +11,7 @@ class BookingModel {
   final String patientName;
   final String patientPhone;
   final String bookingType; // first_visit | follow_up | report
+  final String bookingSource; // appointment | online_token
   final String status; // pending | active | served | no_show | cancelled
   final int tokenNumber;
   final String bookingDate; // YYYY-MM-DD
@@ -32,6 +33,7 @@ class BookingModel {
     this.patientName = '',
     this.patientPhone = '',
     this.bookingType = 'first_visit',
+    this.bookingSource = 'appointment',
     this.status = 'pending',
     this.tokenNumber = 0,
     this.bookingDate = '',
@@ -54,6 +56,7 @@ class BookingModel {
         patientName: asString(json['patientName']),
         patientPhone: asString(json['patientPhone']),
         bookingType: asString(json['bookingType'], 'first_visit'),
+        bookingSource: asString(json['bookingSource'], 'appointment'),
         status: asString(json['status'], 'pending'),
         tokenNumber: asInt(json['tokenNumber']),
         bookingDate: asString(json['bookingDate']),

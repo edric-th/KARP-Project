@@ -90,11 +90,15 @@ class HospitalCard extends StatelessWidget {
                         color: AppColors.textMuted,
                       ),
                       const SizedBox(width: 3),
-                      Text(
-                        '${hospital.address} • ${hospital.distance}',
-                        style: TextStyle(fontFamily: 'Inter', 
-                          fontSize: 12,
-                          color: AppColors.textSecondary,
+                      Expanded(
+                        child: Text(
+                          '${hospital.address} • ${hospital.distance}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(fontFamily: 'Inter',
+                            fontSize: 12,
+                            color: AppColors.textSecondary,
+                          ),
                         ),
                       ),
                     ],

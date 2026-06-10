@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/constants/app_colors.dart';
 import 'package:frontend/models/models.dart';
+import 'package:frontend/widgets/common/doctor_avatar.dart';
 
 class DoctorCard extends StatelessWidget {
   final DoctorModel doctor;
@@ -32,18 +33,11 @@ class DoctorCard extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Container(
-              width: 72,
-              height: 72,
-              decoration: BoxDecoration(
-                color: AppColors.cardGreenLight,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: const Icon(
-                Icons.person_rounded,
-                color: AppColors.primary,
-                size: 38,
-              ),
+            DoctorAvatar(
+              photoUrl: doctor.photoUrl,
+              size: 72,
+              borderRadius: 16,
+              iconSize: 38,
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -52,7 +46,7 @@ class DoctorCard extends StatelessWidget {
                 children: [
                   Text(
                     doctor.name,
-                    style: TextStyle(fontFamily: 'Inter', 
+                    style: TextStyle(fontFamily: 'Inter',
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
                       color: AppColors.textPrimary,
@@ -61,11 +55,15 @@ class DoctorCard extends StatelessWidget {
                   const SizedBox(height: 3),
                   Text(
                     '${doctor.specialty} • ${doctor.hospital}',
-                    style: TextStyle(fontFamily: 'Inter', 
+                    style: TextStyle(fontFamily: 'Inter',
                       fontSize: 12,
                       color: AppColors.textSecondary,
                     ),
                   ),
+                  if (doctor.availabilityLabel.isNotEmpty) ...[
+                    const SizedBox(height: 5),
+                    _AvailabilityLine(doctor: doctor),
+                  ],
                   const SizedBox(height: 6),
                   Row(
                     children: [
@@ -131,25 +129,19 @@ class DoctorCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              height: 90,
+            DoctorAvatar(
+              photoUrl: doctor.photoUrl,
               width: double.infinity,
-              decoration: BoxDecoration(
-                color: AppColors.cardGreenLight,
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: const Icon(
-                Icons.person_rounded,
-                color: AppColors.primary,
-                size: 44,
-              ),
+              height: 90,
+              borderRadius: 14,
+              iconSize: 44,
             ),
             const SizedBox(height: 10),
             Text(
               doctor.name,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(fontFamily: 'Inter', 
+              style: TextStyle(fontFamily: 'Inter',
                 fontSize: 14,
                 fontWeight: FontWeight.w700,
                 color: AppColors.textPrimary,
@@ -160,11 +152,15 @@ class DoctorCard extends StatelessWidget {
               doctor.specialty,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(fontFamily: 'Inter', 
+              style: TextStyle(fontFamily: 'Inter',
                 fontSize: 12,
                 color: AppColors.textSecondary,
               ),
             ),
+            if (doctor.availabilityTimeLabel.isNotEmpty) ...[
+              const SizedBox(height: 5),
+              _AvailabilityLine(doctor: doctor, compact: true),
+            ],
             const Spacer(),
             Row(
               children: [
@@ -196,6 +192,45 @@ class DoctorCard extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Compact "Consults Mon–Fri · 10:00 AM – 2:00 PM" line for doctor cards, with
+/// a not-available-now state. [compact] shows just the time range (narrow card).
+class _AvailabilityLine extends StatelessWidget {
+  final DoctorModel doctor;
+  final bool compact;
+  const _AvailabilityLine({required this.doctor, this.compact = false});
+
+  @override
+  Widget build(BuildContext context) {
+    final availableNow = doctor.availableNow(DateTime.now());
+    final label =
+        compact ? doctor.availabilityTimeLabel : doctor.availabilityLabel;
+    final color = availableNow ? AppColors.primary : AppColors.error;
+    return Row(
+      children: [
+        Icon(
+          availableNow ? Icons.schedule_rounded : Icons.event_busy_rounded,
+          size: 12,
+          color: color,
+        ),
+        const SizedBox(width: 4),
+        Expanded(
+          child: Text(
+            availableNow ? label : 'Closed now • $label',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontFamily: 'Inter',
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: availableNow ? AppColors.textSecondary : AppColors.error,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

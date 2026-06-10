@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:frontend/constants/app_colors.dart';
@@ -65,6 +68,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             const SizedBox(height: 26),
             _AvatarBlock(
               initials: initials,
+              photoUrl: profile.photoUrl,
               onEdit: () => Navigator.pushNamed(context, '/edit-profile'),
             ),
             const SizedBox(height: 16),
@@ -329,45 +333,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 28),
-                  GestureDetector(
-                    onTap: () => _showDeleteDialog(context),
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      decoration: BoxDecoration(
-                        color: AppColors.surface,
-                        borderRadius: BorderRadius.circular(28),
-                        border: Border.all(
-                          color: AppColors.error,
-                          width: 1.5,
-                        ),
-                      ),
-                      child: Center(
-                        child: Text(
-                          'Delete Account',
-                          style: TextStyle(
-                            fontFamily: 'Inter',
-                            fontSize: 15,
-                            fontWeight: FontWeight.w800,
-                            color: AppColors.error,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Center(
-                    child: Text(
-                      'This will permanently remove all your data from MeroPalo servers.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontFamily: 'Inter',
-                        fontSize: 11.5,
-                        color: AppColors.textMuted,
-                      ),
-                    ),
-                  ),
                   const SizedBox(height: 60),
                 ],
               ),
@@ -580,122 +545,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
     codeCtrl.dispose();
   }
-
-  void _showDeleteDialog(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: AppColors.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (ctx) => Padding(
-        padding: const EdgeInsets.fromLTRB(24, 24, 24, 36),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 40,
-              height: 4,
-              margin: const EdgeInsets.only(bottom: 20),
-              decoration: BoxDecoration(
-                color: AppColors.border,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            Container(
-              width: 64,
-              height: 64,
-              decoration: BoxDecoration(
-                color: const Color(0xFFFFEEEE),
-                borderRadius: BorderRadius.circular(18),
-              ),
-              child: const Icon(
-                Icons.warning_amber_rounded,
-                color: AppColors.error,
-                size: 30,
-              ),
-            ),
-            const SizedBox(height: 14),
-            Text(
-              'Delete Account?',
-              style: TextStyle(
-                fontFamily: 'Inter',
-                fontSize: 19,
-                fontWeight: FontWeight.w800,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              'This action is permanent. All your appointments, queues and medical info will be deleted.',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontFamily: 'Inter',
-                fontSize: 13,
-                color: AppColors.textSecondary,
-                height: 1.5,
-              ),
-            ),
-            const SizedBox(height: 22),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => Navigator.pop(ctx),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      side: BorderSide(color: AppColors.border),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: Text(
-                      'Cancel',
-                      style: TextStyle(
-                        fontFamily: 'Inter',
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () async {
-                      Navigator.pop(ctx);
-                      await context.read<AuthProvider>().logout();
-                      if (!context.mounted) return;
-                      Navigator.pushNamedAndRemoveUntil(
-                          context, '/login', (_) => false);
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.error,
-                      elevation: 0,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: Text(
-                      'Delete',
-                      style: TextStyle(
-                        fontFamily: 'Inter',
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }
 
 // ─── GREEN HEADER ──────────────────────────────────────────────────────────
@@ -758,11 +607,37 @@ class _GreenHeader extends StatelessWidget {
 
 class _AvatarBlock extends StatelessWidget {
   final String initials;
+  final String photoUrl;
   final VoidCallback onEdit;
-  const _AvatarBlock({required this.initials, required this.onEdit});
+  const _AvatarBlock({
+    required this.initials,
+    required this.onEdit,
+    this.photoUrl = '',
+  });
+
+  Uint8List? get _bytes {
+    if (!photoUrl.startsWith('data:')) return null;
+    try {
+      return base64Decode(photoUrl.substring(photoUrl.indexOf(',') + 1));
+    } catch (_) {
+      return null;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final bytes = _bytes;
+    final hasRemote = photoUrl.isNotEmpty && bytes == null;
+    Widget initialsAvatar() => Text(
+          initials,
+          style: TextStyle(
+            fontFamily: 'Inter',
+            fontSize: 28,
+            fontWeight: FontWeight.w800,
+            color: AppColors.primaryDark,
+            letterSpacing: 0.5,
+          ),
+        );
     return SizedBox(
       width: 96,
       height: 96,
@@ -771,22 +646,22 @@ class _AvatarBlock extends StatelessWidget {
           Container(
             width: 96,
             height: 96,
+            clipBehavior: Clip.antiAlias,
             decoration: BoxDecoration(
               color: AppColors.cardGreenMedium,
               shape: BoxShape.circle,
               border: Border.all(color: AppColors.cardGreenBorder, width: 2),
             ),
             alignment: Alignment.center,
-            child: Text(
-              initials,
-              style: TextStyle(
-                fontFamily: 'Inter',
-                fontSize: 28,
-                fontWeight: FontWeight.w800,
-                color: AppColors.primaryDark,
-                letterSpacing: 0.5,
-              ),
-            ),
+            child: bytes != null
+                ? Image.memory(bytes, width: 96, height: 96, fit: BoxFit.cover)
+                : hasRemote
+                    ? Image.network(photoUrl,
+                        width: 96,
+                        height: 96,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => initialsAvatar())
+                    : initialsAvatar(),
           ),
           Positioned(
             right: 0,

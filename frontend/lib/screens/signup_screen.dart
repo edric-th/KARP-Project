@@ -1,5 +1,8 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:frontend/constants/app_colors.dart';
@@ -50,6 +53,7 @@ class _SignupScreenState extends State<SignupScreen> {
   bool _emailVerified = false;
 
   // ── Step 2 — Personal ────────────────────────────────────────────────
+  String? _photoData; // data-URL (or remote URL) of the patient/profile photo
   DateTime? _dob;
   String? _gender;
   String? _nationality;
@@ -115,6 +119,8 @@ class _SignupScreenState extends State<SignupScreen> {
     final p = context.read<AuthProvider>().profile;
     if (p == null || !mounted) return;
     setState(() {
+      _nameCtrl.text = p.name;
+      if (p.photoUrl.isNotEmpty) _photoData = p.photoUrl;
       _dob = DateTime.tryParse(p.dateOfBirth) ?? _dob;
       if (p.gender.isNotEmpty) _gender = p.gender;
       if (p.nationality.isNotEmpty) _nationality = p.nationality;
@@ -247,6 +253,8 @@ class _SignupScreenState extends State<SignupScreen> {
   /// Build the flat camelCase profile payload from every collected field.
   Map<String, dynamic> _buildProfileFields() {
     return <String, dynamic>{
+      if (_nameCtrl.text.trim().isNotEmpty) 'name': _nameCtrl.text.trim(),
+      if (_photoData != null && _photoData!.isNotEmpty) 'photoUrl': _photoData,
       if (_dob != null) 'dateOfBirth': DateFormat('yyyy-MM-dd').format(_dob!),
       if (_age != null) 'age': _age,
       if (_gender != null) 'gender': _gender,
@@ -319,6 +327,27 @@ class _SignupScreenState extends State<SignupScreen> {
       );
     } else {
       _snack(auth.error ?? 'Could not create your account. Please try again.');
+    }
+  }
+
+  /// Pick a profile photo from the gallery/local disk. image_picker resizes &
+  /// compresses on pick (maxWidth/Height + imageQuality), then we store it as a
+  /// small base64 data-URL in `photoUrl` — no external storage needed.
+  Future<void> _pickPhoto() async {
+    try {
+      final file = await ImagePicker().pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 512,
+        maxHeight: 512,
+        imageQuality: 80,
+      );
+      if (file == null || !mounted) return;
+      final bytes = await file.readAsBytes();
+      final mime = file.mimeType ??
+          (file.name.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg');
+      setState(() => _photoData = 'data:$mime;base64,${base64Encode(bytes)}');
+    } catch (_) {
+      if (mounted) _snack('Could not pick that photo. Please try another.');
     }
   }
 
@@ -765,8 +794,24 @@ class _SignupScreenState extends State<SignupScreen> {
       children: [
         _CompletedStepPill(label: 'Account Setup — Complete'),
         const SizedBox(height: 18),
-        Center(child: _PhotoUploader(onTap: () => _snack('Photo picker'))),
+        Center(
+          child: _PhotoUploader(photoData: _photoData, onTap: _pickPhoto),
+        ),
         const SizedBox(height: 22),
+        _FieldCard(
+          icon: Icons.person_outline_rounded,
+          label: 'FULL NAME',
+          child: TextField(
+            controller: _nameCtrl,
+            decoration: const InputDecoration(
+              isCollapsed: true,
+              border: InputBorder.none,
+              hintText: 'Your full name',
+            ),
+            style: _valueStyle,
+          ),
+        ),
+        const SizedBox(height: 12),
         IntrinsicHeight(
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1927,9 +1972,24 @@ class _PillChoice extends StatelessWidget {
 
 class _PhotoUploader extends StatelessWidget {
   final VoidCallback onTap;
-  const _PhotoUploader({required this.onTap});
+  final String? photoData;
+  const _PhotoUploader({required this.onTap, this.photoData});
+
+  Uint8List? get _bytes {
+    final d = photoData;
+    if (d == null || !d.startsWith('data:')) return null;
+    try {
+      return base64Decode(d.substring(d.indexOf(',') + 1));
+    } catch (_) {
+      return null;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final bytes = _bytes;
+    final hasRemote =
+        photoData != null && photoData!.isNotEmpty && bytes == null;
     return GestureDetector(
       onTap: onTap,
       child: Column(
@@ -1942,6 +2002,7 @@ class _PhotoUploader extends StatelessWidget {
                 Container(
                   width: 110,
                   height: 110,
+                  clipBehavior: Clip.antiAlias,
                   decoration: BoxDecoration(
                     color: AppColors.cardGreenLight.withValues(alpha: 0.4),
                     shape: BoxShape.circle,
@@ -1952,11 +2013,23 @@ class _PhotoUploader extends StatelessWidget {
                     ),
                   ),
                   alignment: Alignment.center,
-                  child: const Icon(
-                    Icons.photo_camera_outlined,
-                    color: AppColors.primary,
-                    size: 30,
-                  ),
+                  child: bytes != null
+                      ? Image.memory(bytes,
+                          width: 110, height: 110, fit: BoxFit.cover)
+                      : hasRemote
+                          ? Image.network(photoData!,
+                              width: 110,
+                              height: 110,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => const Icon(
+                                  Icons.photo_camera_outlined,
+                                  color: AppColors.primary,
+                                  size: 30))
+                          : const Icon(
+                              Icons.photo_camera_outlined,
+                              color: AppColors.primary,
+                              size: 30,
+                            ),
                 ),
                 Positioned(
                   right: 4,
@@ -1981,7 +2054,9 @@ class _PhotoUploader extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Upload Patient Photo',
+            (photoData != null && photoData!.isNotEmpty)
+                ? 'Change Photo'
+                : 'Upload Photo',
             style: TextStyle(
               fontFamily: 'Inter',
               fontSize: 14,
@@ -1991,7 +2066,7 @@ class _PhotoUploader extends StatelessWidget {
           ),
           const SizedBox(height: 2),
           Text(
-            'PNG or JPG, max 5MB',
+            'Tap to pick from your photos',
             style: TextStyle(
               fontFamily: 'Inter',
               fontSize: 11.5,
