@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:frontend/constants/app_colors.dart';
 import 'package:frontend/models/booking_model.dart';
+import 'package:frontend/models/queue_status_model.dart';
 import 'package:frontend/providers/bookings_provider.dart';
 import 'package:frontend/providers/queue_provider.dart';
 
@@ -15,7 +16,7 @@ class QueueScreen extends StatefulWidget {
 }
 
 class _QueueScreenState extends State<QueueScreen> {
-  String? _trackingDoctorId;
+  Set<String> _trackingKeys = {};
 
   @override
   void initState() {
@@ -25,23 +26,28 @@ class _QueueScreenState extends State<QueueScreen> {
     });
   }
 
-  /// Keep the polling QueueProvider pointed at the active booking's doctor.
-  void _syncTracking(BookingModel? active) {
-    if (active != null && active.doctorId != _trackingDoctorId) {
-      _trackingDoctorId = active.doctorId;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          context
-              .read<QueueProvider>()
-              .start(active.doctorId, date: active.bookingDate);
-        }
-      });
-    } else if (active == null && _trackingDoctorId != null) {
-      _trackingDoctorId = null;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) context.read<QueueProvider>().stop();
-      });
+  /// Track every live booking's queue at once — the doctor's queue for an
+  /// appointment and the hospital reception desk for an online token — so both
+  /// can be shown side by side and each polls the correct endpoint.
+  void _syncTracking(List<BookingModel> actives) {
+    final targets = actives.map(_targetFor).toList();
+    final keys = targets.map((t) => t.key).toSet();
+    if (keys.length == _trackingKeys.length &&
+        _trackingKeys.containsAll(keys)) {
+      return;
     }
+    _trackingKeys = keys;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) context.read<QueueProvider>().sync(targets);
+    });
+  }
+
+  QueueTarget _targetFor(BookingModel b) {
+    final reception = b.isReceptionToken;
+    final id = reception ? b.hospitalId : b.doctorId;
+    final key =
+        reception ? QueueTarget.receptionKey(id) : QueueTarget.doctorKey(id);
+    return QueueTarget(key, id, reception, b.bookingDate);
   }
 
   Future<void> _refresh() async {
@@ -57,8 +63,10 @@ class _QueueScreenState extends State<QueueScreen> {
   Widget build(BuildContext context) {
     final bookings = context.watch<BookingsProvider>();
     final queue = context.watch<QueueProvider>();
-    final active = bookings.activeBooking;
-    _syncTracking(active);
+    final appt = bookings.activeAppointment;
+    final token = bookings.activeReceptionToken;
+    final actives = [?appt, ?token];
+    _syncTracking(actives);
 
     return Scaffold(
       backgroundColor: AppColors.backgroundLight,
@@ -82,10 +90,12 @@ class _QueueScreenState extends State<QueueScreen> {
                           child: CircularProgressIndicator(
                               color: AppColors.primary)),
                     )
-                  else if (active == null)
+                  else if (actives.isEmpty)
                     _buildEmpty()
-                  else
-                    ..._buildActive(active, queue),
+                  else ...[
+                    ..._buildSection(appt, 'Doctor Appointment', queue),
+                    ..._buildSection(token, 'Online Token', queue),
+                  ],
                 ],
               ),
             ),
@@ -95,8 +105,20 @@ class _QueueScreenState extends State<QueueScreen> {
     );
   }
 
-  List<Widget> _buildActive(BookingModel active, QueueProvider queue) {
-    final status = queue.status;
+  /// Resolve the live snapshot for [active] and render its section, or nothing
+  /// when the patient holds no booking of that kind.
+  List<Widget> _buildSection(
+      BookingModel? active, String title, QueueProvider queue) {
+    if (active == null) return const [];
+    final key = active.isReceptionToken
+        ? QueueTarget.receptionKey(active.hospitalId)
+        : QueueTarget.doctorKey(active.doctorId);
+    return _buildActive(
+        active, queue.statusFor(key), title, queue.isLoading(key));
+  }
+
+  List<Widget> _buildActive(BookingModel active, QueueStatusModel? status,
+      String title, bool loading) {
     final myEntry = status?.entryFor(active.id);
     final position = myEntry?.position ?? active.position ?? 0;
     final eta = myEntry?.estimatedWaitMinutes ?? active.estimatedWaitMinutes ?? 0;
@@ -112,9 +134,11 @@ class _QueueScreenState extends State<QueueScreen> {
         : (noOneServing ? (position - 1).clamp(0, 9999) : position);
 
     return [
+      _SectionTitle(title),
+      const SizedBox(height: 12),
       _TokenHero(
         myToken: active.tokenLabel,
-        doctor: active.doctorName,
+        doctor: active.isReceptionToken ? 'Reception Desk' : active.doctorName,
         hospital: active.hospitalName,
         peopleAhead: peopleAhead,
         etaMinutes: eta,
@@ -132,7 +156,7 @@ class _QueueScreenState extends State<QueueScreen> {
                   fontWeight: FontWeight.w800,
                   color: AppColors.textPrimary)),
           const Spacer(),
-          if (queue.loading)
+          if (loading)
             const SizedBox(
               width: 14,
               height: 14,
@@ -155,6 +179,7 @@ class _QueueScreenState extends State<QueueScreen> {
               booking: b,
               isMine: b.id == active.id,
             )),
+      const SizedBox(height: 28),
     ];
   }
 
@@ -255,6 +280,25 @@ class _Header extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+// ─── SECTION TITLE ───────────────────────────────────────────────────────────
+
+/// Heading above each queue block so the patient can tell their doctor
+/// appointment apart from their online token when both are live.
+class _SectionTitle extends StatelessWidget {
+  final String title;
+  const _SectionTitle(this.title);
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(title,
+        style: const TextStyle(
+            fontFamily: 'Inter',
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+            color: AppColors.textPrimary));
   }
 }
 

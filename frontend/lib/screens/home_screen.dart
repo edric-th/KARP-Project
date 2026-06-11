@@ -7,6 +7,7 @@ import 'package:frontend/constants/app_colors.dart';
 import 'package:frontend/constants/app_strings.dart';
 import 'package:frontend/models/models.dart';
 import 'package:frontend/models/booking_model.dart';
+import 'package:frontend/models/queue_status_model.dart';
 import 'package:frontend/providers/auth_provider.dart';
 import 'package:frontend/providers/catalog_provider.dart';
 import 'package:frontend/providers/bookings_provider.dart';
@@ -25,7 +26,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  String? _trackingKey;
+  Set<String> _trackingKeys = {};
   Timer? _pollTimer;
   bool _profilePromptDismissed = false;
 
@@ -56,35 +57,29 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
-  /// Keep the polling QueueProvider pointed at the active booking's queue — the
-  /// doctor's queue for an appointment, or the hospital reception desk for an
-  /// online token — so the live "ahead of you" count, ETA and now-serving token
-  /// stay accurate without a refresh.
-  void _syncTracking(BookingModel? active) {
-    final key = active == null
-        ? null
-        : (active.isReceptionToken
-            ? 'reception:${active.hospitalId}'
-            : 'doctor:${active.doctorId}');
-    if (key != null && key != _trackingKey) {
-      _trackingKey = key;
-      final isReception = active!.isReceptionToken;
-      final targetId = isReception ? active.hospitalId : active.doctorId;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          context.read<QueueProvider>().start(
-                targetId,
-                date: active.bookingDate,
-                reception: isReception,
-              );
-        }
-      });
-    } else if (key == null && _trackingKey != null) {
-      _trackingKey = null;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) context.read<QueueProvider>().stop();
-      });
+  /// Keep the polling QueueProvider pointed at the patient's live bookings — the
+  /// doctor's queue for an appointment AND the hospital reception desk for an
+  /// online token, tracked side by side — so each queue's live "ahead of you"
+  /// count, ETA and now-serving token stay accurate without a refresh.
+  void _syncTracking(List<BookingModel> actives) {
+    final targets = actives.map(_targetFor).toList();
+    final keys = targets.map((t) => t.key).toSet();
+    if (keys.length == _trackingKeys.length &&
+        _trackingKeys.containsAll(keys)) {
+      return;
     }
+    _trackingKeys = keys;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) context.read<QueueProvider>().sync(targets);
+    });
+  }
+
+  QueueTarget _targetFor(BookingModel b) {
+    final reception = b.isReceptionToken;
+    final id = reception ? b.hospitalId : b.doctorId;
+    final key =
+        reception ? QueueTarget.receptionKey(id) : QueueTarget.doctorKey(id);
+    return QueueTarget(key, id, reception, b.bookingDate);
   }
 
   Future<void> _refresh() async {
@@ -98,15 +93,15 @@ class _HomeScreenState extends State<HomeScreen> {
   /// Build the home hero card from the patient's booking + the LIVE queue
   /// snapshot (real people-ahead + ETA), falling back to the booking's own
   /// fields before the queue has loaded.
-  QueueModel? _activeQueueModel(BookingModel? b, QueueProvider queue) {
+  QueueModel? _activeQueueModel(BookingModel? b, QueueStatusModel? status) {
     if (b == null) return null;
-    final entry = queue.status?.entryFor(b.id);
+    final entry = status?.entryFor(b.id);
     final ahead = entry?.position ?? b.position ?? 0;
     final eta = entry?.estimatedWaitMinutes ?? b.estimatedWaitMinutes ?? 0;
     final token = b.tokenNumber;
     // Prefer the real now-serving token from the live snapshot; fall back to
     // deriving it from your token minus the people ahead of you.
-    final serving = queue.status?.nowServing?.tokenNumber;
+    final serving = status?.nowServing?.tokenNumber;
     final current = serving ?? (token - ahead).clamp(0, token);
     return QueueModel(
       id: b.id,
@@ -122,6 +117,20 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  /// A labelled live-queue block (now-serving hero + queue list) for one of the
+  /// patient's bookings, or nothing when that queue isn't active.
+  List<Widget> _buildQueueSection(String title, QueueModel? q) {
+    if (q == null) return const [];
+    return [
+      const SizedBox(height: 18),
+      _QueueSectionHeader(title),
+      const SizedBox(height: 10),
+      _NowServingCard(queue: q),
+      const SizedBox(height: 24),
+      _LiveQueueStatus(queue: q),
+    ];
+  }
+
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
@@ -129,11 +138,20 @@ class _HomeScreenState extends State<HomeScreen> {
     final bookings = context.watch<BookingsProvider>();
     final queue = context.watch<QueueProvider>();
 
-    final activeBooking = bookings.activeBooking;
-    _syncTracking(activeBooking);
+    final appt = bookings.activeAppointment;
+    final token = bookings.activeReceptionToken;
+    _syncTracking([?appt, ?token]);
 
     final firstName = (auth.profile?.displayName ?? 'there').split(' ').first;
-    final activeQueue = _activeQueueModel(activeBooking, queue);
+    final apptQueue = appt == null
+        ? null
+        : _activeQueueModel(
+            appt, queue.statusFor(QueueTarget.doctorKey(appt.doctorId)));
+    final tokenQueue = token == null
+        ? null
+        : _activeQueueModel(
+            token, queue.statusFor(QueueTarget.receptionKey(token.hospitalId)));
+    final activeQueue = apptQueue ?? tokenQueue;
     final hospitals = catalog.hospitals.take(3).toList();
 
     return Scaffold(
@@ -155,12 +173,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     setState(() => _profilePromptDismissed = true),
               ),
             ],
-            if (activeQueue != null) ...[
-              const SizedBox(height: 18),
-              _NowServingCard(queue: activeQueue),
-              const SizedBox(height: 24),
-              _LiveQueueStatus(queue: activeQueue),
-            ],
+            ..._buildQueueSection('Doctor Appointment', apptQueue),
+            ..._buildQueueSection('Online Token', tokenQueue),
             const SizedBox(height: 24),
             SearchField(
               hint: 'Search hospitals, doctors...',
@@ -367,6 +381,29 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
       ],
+    );
+  }
+}
+
+// ─── QUEUE SECTION HEADER ────────────────────────────────────────────────────
+
+/// A small heading shown above each live-queue block so the patient can tell
+/// their doctor-appointment queue apart from their online-token queue.
+class _QueueSectionHeader extends StatelessWidget {
+  final String title;
+  const _QueueSectionHeader(this.title);
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      title,
+      style: const TextStyle(
+        fontFamily: 'Inter',
+        fontSize: 18,
+        fontWeight: FontWeight.w700,
+        color: AppColors.textPrimary,
+        letterSpacing: -0.3,
+      ),
     );
   }
 }

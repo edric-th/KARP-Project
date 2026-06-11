@@ -137,12 +137,22 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
 
   Widget _buildUpcomingTab(BookingsProvider bookings) {
     if (bookings.loading && bookings.items.isEmpty) return const LoadingView();
-    final b = _fromModel(bookings.activeBooking);
-    if (b == null) return _buildEmpty();
+    // Show every live booking — both a doctor appointment and an online token,
+    // when the patient holds both — each as its own card.
+    final actives = bookings.activeBookings;
+    if (actives.isEmpty) return _buildEmpty();
     return RefreshIndicator(
       color: AppColors.primary,
       onRefresh: () => context.read<BookingsProvider>().load(),
-      child: _buildBooked(b),
+      child: ListView(
+        padding: const EdgeInsets.fromLTRB(0, 8, 0, 110),
+        children: [
+          for (var i = 0; i < actives.length; i++) ...[
+            if (i > 0) const SizedBox(height: 28),
+            _buildBooked(_fromModel(actives[i])!),
+          ],
+        ],
+      ),
     );
   }
 
@@ -177,8 +187,8 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
   // ─── BOOKED STATE ─────────────────────────────────────────────────────────
 
   Widget _buildBooked(_Booking b) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 110),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

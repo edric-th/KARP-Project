@@ -35,6 +35,27 @@ class BookingsProvider extends ChangeNotifier {
     return null;
   }
 
+  /// The patient's current live doctor appointment (not an online token), if any.
+  BookingModel? get activeAppointment {
+    for (final b in items) {
+      if (b.isLive && !b.isReceptionToken) return b;
+    }
+    return null;
+  }
+
+  /// The patient's current live online reception token, if any.
+  BookingModel? get activeReceptionToken {
+    for (final b in items) {
+      if (b.isLive && b.isReceptionToken) return b;
+    }
+    return null;
+  }
+
+  /// Up to two live bookings — the appointment and the online token — in the
+  /// order they should be shown. Empty when the patient is in no queue.
+  List<BookingModel> get activeBookings =>
+      [?activeAppointment, ?activeReceptionToken];
+
   List<BookingModel> get upcoming =>
       items.where((b) => b.isLive).toList();
   List<BookingModel> get past => items.where((b) => !b.isLive).toList();
