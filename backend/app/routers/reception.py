@@ -52,6 +52,7 @@ def create_reception_token(
 
     ref = repo.get_db().collection("bookings").document()
     ref.set(data)
+    repo.invalidate_for_booking(data)  # show this token in the reception queue now
 
     repo.add_notification(
         user["uid"],

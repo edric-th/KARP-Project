@@ -60,6 +60,7 @@ def create_booking(body: BookingCreate, user: dict = Depends(get_current_user)):
 
     ref = repo.get_db().collection("bookings").document()
     ref.set(data)
+    repo.invalidate_for_booking(data)  # this booking must show in the queue now
 
     repo.add_notification(
         user["uid"],
@@ -133,6 +134,7 @@ def cancel_booking(booking_id: str, user: dict = Depends(get_current_user)):
     repo.get_db().collection("bookings").document(booking_id).update(
         {"status": "cancelled", "updatedAt": firestore.SERVER_TIMESTAMP}
     )
+    repo.invalidate_for_booking(booking)  # drop it from the cached queue at once
     repo.add_notification(
         booking.get("patientUid"),
         "Booking cancelled",
@@ -176,6 +178,7 @@ def reschedule_booking(
     if body.time:
         update["preferredTime"] = body.time
     repo.get_db().collection("bookings").document(booking_id).update(update)
+    repo.invalidate_for_booking(booking)  # reflect the new token/time at once
 
     when = f" at {body.time}" if body.time else ""
     repo.add_notification(

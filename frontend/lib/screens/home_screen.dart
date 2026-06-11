@@ -46,7 +46,8 @@ class _HomeScreenState extends State<HomeScreen> {
     });
     // Keep the booking list fresh so the queue card reflects served/advanced
     // tokens without a manual pull-to-refresh (the QueueProvider polls too).
-    _pollTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+    // Kept modest to limit Firestore reads — the server caches queue queries.
+    _pollTimer = Timer.periodic(const Duration(seconds: 60), (_) {
       if (mounted) context.read<BookingsProvider>().load();
     });
   }

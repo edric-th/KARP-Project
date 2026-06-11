@@ -1,17 +1,54 @@
 """Thin data-access helpers over Firestore. Uses single-field queries plus
 in-memory filtering/sorting so no composite indexes are required."""
+import time
 from datetime import datetime, timedelta, timezone
 
 import google.cloud.firestore_v1 as fsv1
 from firebase_admin import firestore
 from google.cloud.firestore_v1.base_query import FieldFilter
 
+from .config import QUERY_CACHE_TTL_SECONDS
 from .firebase import get_db
 
 # Nepal has a fixed +05:45 offset (no DST). Anchoring "today" to Nepal time keeps
 # the booking date stable regardless of where the server is hosted, so it always
 # matches the admin panel (which uses the browser's local Nepal date).
 NEPAL_TZ = timezone(timedelta(hours=5, minutes=45))
+
+# ---- Short-TTL read cache for hot queue queries -----------------------------
+# The patient app and admin panel poll the same doctor/hospital queues every few
+# seconds, and each poll reads every matching booking doc. Caching the result
+# for a few seconds collapses those identical reads into one Firestore query per
+# window so the free-tier read quota lasts. Writes invalidate the affected key
+# (see invalidate_for_booking) so a new/cancelled booking shows up immediately.
+_QUERY_CACHE: dict = {}
+
+
+def _cached(key: tuple, loader):
+    """Reuse [loader]'s last result for this [key] while it's younger than the
+    configured TTL, returning a per-call shallow copy so callers that mutate
+    booking dicts in place (e.g. /bookings/me) can't corrupt the cache."""
+    if QUERY_CACHE_TTL_SECONDS <= 0:
+        return loader()
+    now = time.monotonic()
+    hit = _QUERY_CACHE.get(key)
+    if hit is None or (now - hit[0]) >= QUERY_CACHE_TTL_SECONDS:
+        hit = (now, loader())
+        _QUERY_CACHE[key] = hit
+    return [dict(b) for b in hit[1]]
+
+
+def invalidate_for_booking(booking: dict) -> None:
+    """Drop any cached queue list a write to [booking] would make stale."""
+    if not booking:
+        return
+    date = booking.get("bookingDate")
+    if not date:
+        return
+    if booking.get("doctorId"):
+        _QUERY_CACHE.pop(("doctor", booking["doctorId"], date), None)
+    if booking.get("hospitalId"):
+        _QUERY_CACHE.pop(("reception", booking["hospitalId"], date), None)
 
 
 def _epoch(value) -> float:
@@ -50,10 +87,13 @@ def query_eq(collection: str, field: str, value) -> list:
 
 
 def bookings_for_doctor(doctor_id: str, date: str) -> list:
-    items = query_eq("bookings", "doctorId", doctor_id)
-    items = [b for b in items if b.get("bookingDate") == date]
-    items.sort(key=lambda b: b.get("tokenNumber") or 0)
-    return items
+    def _load():
+        items = query_eq("bookings", "doctorId", doctor_id)
+        items = [b for b in items if b.get("bookingDate") == date]
+        items.sort(key=lambda b: b.get("tokenNumber") or 0)
+        return items
+
+    return _cached(("doctor", doctor_id, date), _load)
 
 
 def bookings_for_patient(uid: str) -> list:
@@ -96,13 +136,17 @@ def next_token_number(doctor_id: str, date: str) -> int:
 # filter by doctorId) never pick them up.
 
 def reception_tokens_for_hospital(hospital_id: str, date: str) -> list:
-    items = query_eq("bookings", "hospitalId", hospital_id)
-    items = [
-        b for b in items
-        if b.get("bookingSource") == "online_token" and b.get("bookingDate") == date
-    ]
-    items.sort(key=lambda b: b.get("tokenNumber") or 0)
-    return items
+    def _load():
+        items = query_eq("bookings", "hospitalId", hospital_id)
+        items = [
+            b for b in items
+            if b.get("bookingSource") == "online_token"
+            and b.get("bookingDate") == date
+        ]
+        items.sort(key=lambda b: b.get("tokenNumber") or 0)
+        return items
+
+    return _cached(("reception", hospital_id, date), _load)
 
 
 def next_reception_token(hospital_id: str, date: str) -> int:

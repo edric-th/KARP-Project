@@ -27,7 +27,7 @@ class QueueProvider extends ChangeNotifier {
   QueueProvider(this._queue);
   final QueueService _queue;
 
-  static const _interval = Duration(seconds: 25);
+  static const _interval = Duration(seconds: 40);
 
   final Map<String, QueueStatusModel> _statuses = {}; // key -> snapshot
   final Map<String, QueueTarget> _targets = {}; // key -> tracked target

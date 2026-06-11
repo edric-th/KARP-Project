@@ -20,6 +20,14 @@ DEFAULT_SERVICE_MINUTES = int(os.getenv("DEFAULT_SERVICE_MINUTES", "10"))
 # walk-in. Used to estimate reception-queue wait times (no doctor involved).
 DEFAULT_RECEPTION_MINUTES = int(os.getenv("DEFAULT_RECEPTION_MINUTES", "4"))
 
+# How long (seconds) to reuse a queue's booking list across repeated reads. The
+# patient app and admin panel poll the same doctor/hospital queues every few
+# seconds; caching collapses those identical reads into one Firestore query per
+# window, which keeps free-tier read quota from being exhausted. Writes
+# (book/cancel/reschedule) invalidate the relevant key so changes show at once.
+# Set to 0 to disable caching entirely.
+QUERY_CACHE_TTL_SECONDS = float(os.getenv("QUERY_CACHE_TTL_SECONDS", "12"))
+
 # ---- Email / OTP (Gmail SMTP by default) ------------------------------------
 SMTP_HOST = os.getenv("SMTP_HOST", "")
 SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
