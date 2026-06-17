@@ -145,6 +145,7 @@ class _QueueScreenState extends State<QueueScreen> {
         nowServingToken: nowServing?.tokenNumber,
         isBeingServed: active.isActive,
         isNext: isNext,
+        isReception: active.isReceptionToken,
       ),
       const SizedBox(height: 24),
       Row(
@@ -314,8 +315,12 @@ class _TokenHero extends StatelessWidget {
   final bool isBeingServed;
 
   /// True when the patient is first in line and nobody is being served yet —
-  /// instead of a meaningless "000" we reassure them the doctor is calling soon.
+  /// instead of a meaningless "000" we reassure them they'll be called soon.
   final bool isNext;
+
+  /// True for an online (reception-desk) token — there is no doctor, so the
+  /// "you're next" copy talks about the token being called, not the doctor.
+  final bool isReception;
 
   const _TokenHero({
     required this.myToken,
@@ -326,11 +331,16 @@ class _TokenHero extends StatelessWidget {
     required this.nowServingToken,
     required this.isBeingServed,
     this.isNext = false,
+    this.isReception = false,
   });
 
   String get _etaLabel {
     if (isBeingServed) return "It's your turn";
-    if (isNext) return 'Get ready — the doctor will call you within ~5 min';
+    if (isNext) {
+      return isReception
+          ? 'Get ready — your token will be called within 2-3 min'
+          : 'Get ready — the doctor will call you within ~5 min';
+    }
     if (etaMinutes <= 0) return 'Almost your turn';
     if (etaMinutes < 60) return '~$etaMinutes min away';
     final h = (etaMinutes / 60).round();

@@ -24,6 +24,7 @@ import {
   initializeAuth,
   inMemoryPersistence,
   sendPasswordResetEmail,
+  connectAuthEmulator,
 } from 'firebase/auth'
 import { initializeApp, getApps } from 'firebase/app'
 import {
@@ -39,7 +40,7 @@ import {
 import toast from 'react-hot-toast'
 import { subscribe, create, update, remove } from '../../api/firestore'
 import { compressImageToDataUrl } from '../../api/storage'
-import { db, auth } from '../../lib/firebase'
+import { db, auth, USE_EMULATOR } from '../../lib/firebase'
 import { COLLECTIONS } from '../../constants'
 
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
@@ -59,7 +60,17 @@ const getSecondaryAuth = () => {
   if (!secondaryApp) {
     secondaryApp = initializeApp(firebaseConfig, 'secondary')
   }
-  return initializeAuth(secondaryApp, { persistence: inMemoryPersistence })
+  const secondaryAuth = initializeAuth(secondaryApp, {
+    persistence: inMemoryPersistence,
+  })
+  // Keep doctor-account creation on the emulator too (this is a separate
+  // Firebase app, so it needs its own emulator wiring).
+  if (USE_EMULATOR) {
+    connectAuthEmulator(secondaryAuth, 'http://127.0.0.1:9099', {
+      disableWarnings: true,
+    })
+  }
+  return secondaryAuth
 }
 
 export default function Doctors() {
@@ -318,20 +329,6 @@ export default function Doctors() {
                   <Building2 size={14} className="text-gray-400 flex-shrink-0" />
                   {getHospitalName(doctor.hospitalId)}
                 </p>
-                {doctor.consultationHours && (
-                  <p className="flex items-center gap-2">
-                    <Clock size={14} className="text-gray-400 flex-shrink-0" />
-                    {doctor.consultationHours}
-                  </p>
-                )}
-                {Array.isArray(doctor.availableSlots) &&
-                  doctor.availableSlots.length > 0 && (
-                    <p className="flex items-center gap-2">
-                      <Clock size={14} className="text-gray-400 flex-shrink-0" />
-                      {doctor.availableSlots.length} time slot
-                      {doctor.availableSlots.length > 1 ? 's' : ''}
-                    </p>
-                  )}
                 {Array.isArray(doctor.availabilityDays) &&
                   doctor.availabilityDays.length > 0 && (
                     <p className="flex items-center gap-2">
@@ -400,14 +397,10 @@ function DoctorModal({ doctor, hospitals, onClose, onCredentialsCreated }) {
     specialty: doctor?.specialty || '',
     hospitalId: doctor?.hospitalId || hospitals[0]?.id || '',
     fee: doctor?.fee || '',
-    consultationHours: doctor?.consultationHours || '',
     userEmail: doctor?.userEmail || '',
     bio: doctor?.bio || '',
     experience: doctor?.experience ?? '',
     photoUrl: doctor?.photoUrl || '',
-    availableSlots: Array.isArray(doctor?.availableSlots)
-      ? doctor.availableSlots.join(', ')
-      : doctor?.availableSlots || '',
     isAvailable: doctor?.isAvailable ?? true,
     availabilityDays: Array.isArray(doctor?.availabilityDays)
       ? doctor.availabilityDays
@@ -495,9 +488,6 @@ function DoctorModal({ doctor, hospitals, onClose, onCredentialsCreated }) {
         ...formData,
         fee: formData.fee ? Number(formData.fee) : null,
         experience: formData.experience ? Number(formData.experience) : null,
-        availableSlots: formData.availableSlots
-          ? formData.availableSlots.split(',').map((s) => s.trim()).filter(Boolean)
-          : [],
       }
 
       let createdCredentials = null
@@ -620,19 +610,6 @@ function DoctorModal({ doctor, hospitals, onClose, onCredentialsCreated }) {
 
           <div>
             <label className="block text-sm font-medium mb-1">
-              Consultation Hours
-            </label>
-            <input
-              type="text"
-              className="input"
-              value={formData.consultationHours}
-              onChange={handleChange('consultationHours')}
-              placeholder="e.g. Mon-Fri 10am-2pm"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1">
               Consultation Fee (Rs.)
             </label>
             <input
@@ -672,20 +649,6 @@ function DoctorModal({ doctor, hospitals, onClose, onCredentialsCreated }) {
                 <span className="text-sm font-medium">Accepting patients</span>
               </label>
             </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1">
-              Available Slots
-            </label>
-            <input
-              type="text"
-              className="input"
-              value={formData.availableSlots}
-              onChange={handleChange('availableSlots')}
-              placeholder="e.g. 9:00 AM, 9:30 AM, 10:00 AM"
-            />
-            <p className="text-xs text-gray-500 mt-1">Comma-separated times</p>
           </div>
 
           <div className="border-t pt-4">

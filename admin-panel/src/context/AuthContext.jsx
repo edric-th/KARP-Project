@@ -20,6 +20,11 @@ export function AuthProvider({ children }) {
       console.log('[AUTH DEBUG] firebaseUser:', firebaseUser)
 
       if (firebaseUser) {
+        // A user just signed in (or the session was restored): keep the app in
+        // its loading state until we've resolved their role, so protected routes
+        // wait for the role instead of acting on stale (null) auth and bouncing
+        // the user back to /login.
+        setLoading(true)
         console.log('[AUTH DEBUG] User logged in:', firebaseUser.email, 'UID:', firebaseUser.uid)
         try {
           console.log('[AUTH DEBUG] Fetching users document...')

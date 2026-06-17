@@ -154,3 +154,23 @@
 [2026-06-04 08:13:53] BOT : intent=find_doctor category=app emergency=False confidence=90.0
 [2026-06-04 08:13:53] RESP: To find a doctor by specialization, go to the 'Find Doctor' tab and use the search bar or browse by specialty (e.g., Cardiology, Dermatology, Orthopedics). You can filter results by hospital, availabi
 ────────────────────────────────────────────────────────────────────────────────
+[2026-06-11 12:17:02] USER: 'chomu'
+[2026-06-11 12:17:02] BOT : intent=out_of_scope category=out_of_scope emergency=False confidence=100.0
+[2026-06-11 12:17:02] RESP: I'm focused on helping with hospital app questions and basic health guidance. Is there something I can help with on those topics?
+────────────────────────────────────────────────────────────────────────────────
+[2026-06-11 12:17:16] USER: 'i think i have ball cancer'
+[2026-06-11 12:17:16] BOT : intent=None category=general emergency=False confidence=0.0
+[2026-06-11 12:17:16] RESP: I'm having trouble processing that right now. Please try again or contact reception directly.
+────────────────────────────────────────────────────────────────────────────────
+[2026-06-11 12:17:22] USER: 'i have cancer'
+[2026-06-11 12:17:22] BOT : intent=None category=general emergency=False confidence=0.0
+[2026-06-11 12:17:22] RESP: I'm having trouble processing that right now. Please try again or contact reception directly.
+────────────────────────────────────────────────────────────────────────────────
+[2026-06-11 12:17:30] USER: 'i have cold'
+[2026-06-11 12:17:30] BOT : intent=common_cold_symptoms category=medical emergency=False confidence=95.0
+[2026-06-11 12:17:30] RESP: I understand you're feeling unwell with a cold. Common cold symptoms often include a runny nose, sneezing, sore throat, cough, and sometimes a mild headache or body aches. These symptoms usually impro
+────────────────────────────────────────────────────────────────────────────────
+[2026-06-11 13:46:41] USER: 'Where do I go?'
+[2026-06-11 13:46:41] BOT : intent=None category=general emergency=False confidence=0.0
+[2026-06-11 13:46:41] RESP: I'm having trouble processing that right now. Please try again or contact reception directly.
+────────────────────────────────────────────────────────────────────────────────

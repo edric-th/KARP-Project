@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app'
-import { getAuth } from 'firebase/auth'
-import { getFirestore } from 'firebase/firestore'
+import { getAuth, connectAuthEmulator } from 'firebase/auth'
+import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore'
 import { getStorage } from 'firebase/storage'
 
 const firebaseConfig = {
@@ -16,4 +16,17 @@ const app = initializeApp(firebaseConfig)
 export const auth = getAuth(app)
 export const db = getFirestore(app)
 export const storage = getStorage(app)
+
+// Route Auth + Firestore to the local Firebase emulators when
+// VITE_USE_EMULATOR=true (set in .env.local). Lets us develop against the
+// emulator suite while the production project is over quota; set the flag back
+// to false to use production. Must run before any auth/firestore call, so it
+// lives here at module load. Storage stays on production config (unused at
+// runtime — photos are inlined as base64 data-URLs, see api/storage.js).
+export const USE_EMULATOR = import.meta.env.VITE_USE_EMULATOR === 'true'
+if (USE_EMULATOR) {
+  connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true })
+  connectFirestoreEmulator(db, '127.0.0.1', 8020)
+}
+
 export default app

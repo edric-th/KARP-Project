@@ -10,6 +10,17 @@ FIREBASE_PROJECT_ID = os.getenv("FIREBASE_PROJECT_ID", "")
 GOOGLE_APPLICATION_CREDENTIALS = os.getenv(
     "GOOGLE_APPLICATION_CREDENTIALS", "./serviceAccountKey.json"
 )
+
+# ---- Firebase emulator (local dev) ------------------------------------------
+# When either host is set the backend talks to the local Auth/Firestore
+# emulators (firebase.json: Auth 9099, Firestore 8020) instead of production.
+# The Admin SDK auto-routes Firestore via FIRESTORE_EMULATOR_HOST and trusts
+# unsigned emulator ID tokens via FIREBASE_AUTH_EMULATOR_HOST; init_firebase()
+# skips the service-account key, and auth_service points its sign-in/refresh
+# REST calls at the Auth emulator. Clear both to use production Firebase.
+FIRESTORE_EMULATOR_HOST = os.getenv("FIRESTORE_EMULATOR_HOST", "")
+FIREBASE_AUTH_EMULATOR_HOST = os.getenv("FIREBASE_AUTH_EMULATOR_HOST", "")
+USE_EMULATOR = bool(FIRESTORE_EMULATOR_HOST or FIREBASE_AUTH_EMULATOR_HOST)
 CORS_ORIGINS = [
     o.strip()
     for o in os.getenv("CORS_ORIGINS", "http://localhost:5173,http://localhost:3000").split(",")

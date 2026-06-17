@@ -1,26 +1,38 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   signInWithEmailAndPassword,
   sendPasswordResetEmail,
 } from 'firebase/auth'
 import { auth } from '../../lib/firebase'
+import { useAuth } from '../../context/AuthContext'
 import toast from 'react-hot-toast'
 
 export default function Login() {
   const navigate = useNavigate()
+  const { user, role, loading: authLoading } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [showForgot, setShowForgot] = useState(false)
+
+  // Redirect only once the auth context has fully resolved a logged-in user AND
+  // their role. Navigating here — instead of right after signIn — avoids the race
+  // where we'd redirect before onAuthStateChanged had loaded the role doc, which
+  // sent the user through a protected route with stale (null) auth and bounced
+  // them back to /login, forcing a second email/password entry.
+  useEffect(() => {
+    if (authLoading || !user || !role) return
+    navigate(role === 'doctor' ? '/doctor-queue' : '/', { replace: true })
+  }, [authLoading, user, role, navigate])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setLoading(true)
     try {
       await signInWithEmailAndPassword(auth, email, password)
-      toast.success('Welcome back')
-      navigate('/')
+      // On success, the effect above redirects once the role resolves. Keep the
+      // button busy until then; the auth context's `loading` covers that window.
     } catch (err) {
       toast.error('Invalid credentials')
       console.error(err)
@@ -52,6 +64,10 @@ export default function Login() {
       setLoading(false)
     }
   }
+
+  // While signing in or while the auth context is resolving a just-authenticated
+  // user's role, keep the submit button busy.
+  const busy = loading || (!!user && authLoading)
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4">
@@ -106,8 +122,8 @@ export default function Login() {
             </div>
           )}
 
-          <button type="submit" disabled={loading} className="btn-primary w-full">
-            {loading ? 'Signing in...' : 'Sign in'}
+          <button type="submit" disabled={busy} className="btn-primary w-full">
+            {busy ? 'Signing in...' : 'Sign in'}
           </button>
         </form>
       </div>

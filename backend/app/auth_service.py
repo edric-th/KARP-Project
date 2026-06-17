@@ -7,11 +7,20 @@ import httpx
 from fastapi import HTTPException
 from firebase_admin import auth as admin_auth, firestore
 
-from .config import FIREBASE_API_KEY
+from .config import FIREBASE_API_KEY, FIREBASE_AUTH_EMULATOR_HOST
 from .firebase import get_auth, get_db
 
-_REST = "https://identitytoolkit.googleapis.com/v1/accounts"
-_SECURE_TOKEN = "https://securetoken.googleapis.com/v1/token"
+# Point sign-in/refresh at the Auth emulator when it's configured; otherwise use
+# the production Identity Toolkit endpoints. The emulator exposes the same REST
+# API under http://<host>/identitytoolkit.googleapis.com/... and ignores the API
+# key (any non-empty FIREBASE_API_KEY works).
+if FIREBASE_AUTH_EMULATOR_HOST:
+    _AUTH_BASE = f"http://{FIREBASE_AUTH_EMULATOR_HOST}"
+    _REST = f"{_AUTH_BASE}/identitytoolkit.googleapis.com/v1/accounts"
+    _SECURE_TOKEN = f"{_AUTH_BASE}/securetoken.googleapis.com/v1/token"
+else:
+    _REST = "https://identitytoolkit.googleapis.com/v1/accounts"
+    _SECURE_TOKEN = "https://securetoken.googleapis.com/v1/token"
 
 _FRIENDLY = {
     "EMAIL_NOT_FOUND": "No account found with that email",
