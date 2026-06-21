@@ -23,6 +23,9 @@ class BookingModel {
   final String? diagnosis;
   final DateTime? servedAt;
   final String? preferredTime; // patient-chosen slot label, e.g. "10:30 AM"
+  final String problem; // patient's "describe your problem" text
+  final String notes; // patient's "extra notes for the doctor" text
+  final bool reviewed; // true once the patient has left post-visit feedback
 
   const BookingModel({
     required this.id,
@@ -45,6 +48,9 @@ class BookingModel {
     this.diagnosis,
     this.servedAt,
     this.preferredTime,
+    this.problem = '',
+    this.notes = '',
+    this.reviewed = false,
   });
 
   factory BookingModel.fromJson(Map<String, dynamic> json) => BookingModel(
@@ -73,6 +79,9 @@ class BookingModel {
         preferredTime: json['preferredTime'] == null
             ? null
             : asString(json['preferredTime']),
+        problem: asString(json['problem']),
+        notes: asString(json['notes']),
+        reviewed: asBool(json['reviewed']),
       );
 
   AppointmentType get appointmentType => appointmentTypeFromApi(bookingType);

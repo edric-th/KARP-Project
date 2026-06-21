@@ -71,6 +71,8 @@ class BookingsProvider extends ChangeNotifier {
     String? paymentMethod,
     String? paymentStatus,
     String? bookingSource,
+    String? problem,
+    String? notes,
   }) async {
     final booking = await _bookings.create(
       doctorId: doctorId,
@@ -81,6 +83,8 @@ class BookingsProvider extends ChangeNotifier {
       paymentMethod: paymentMethod,
       paymentStatus: paymentStatus,
       bookingSource: bookingSource,
+      problem: problem,
+      notes: notes,
     );
     await load();
     return booking;
@@ -109,6 +113,24 @@ class BookingsProvider extends ChangeNotifier {
     } catch (_) {
       return false;
     }
+  }
+
+  /// Submit post-consultation feedback for a served booking, then refresh so the
+  /// Past list reflects the now-reviewed state. Rethrows so the caller can show
+  /// the error.
+  Future<void> submitFeedback(
+    String id, {
+    required double doctorRating,
+    required double hospitalRating,
+    String? text,
+  }) async {
+    await _bookings.submitFeedback(
+      id,
+      doctorRating: doctorRating,
+      hospitalRating: hospitalRating,
+      text: text,
+    );
+    await load();
   }
 
   Future<BookingModel?> reschedule(String id, String date,

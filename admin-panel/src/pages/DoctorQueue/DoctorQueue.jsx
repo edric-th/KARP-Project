@@ -508,6 +508,28 @@ export default function DoctorQueue() {
                 </div>
               </div>
 
+              {/* What the patient told us at booking time */}
+              {active.problem && (
+                <div className="mb-3 bg-amber-50 border border-amber-100 rounded-xl p-3">
+                  <span className="block text-[10px] font-bold uppercase tracking-wider text-amber-700 mb-1">
+                    Patient's problem
+                  </span>
+                  <p className="text-sm text-gray-800 whitespace-pre-wrap">
+                    {active.problem}
+                  </p>
+                </div>
+              )}
+              {active.notes && (
+                <div className="mb-4 bg-gray-50 border border-gray-100 rounded-xl p-3">
+                  <span className="block text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1">
+                    Extra notes for doctor
+                  </span>
+                  <p className="text-sm text-gray-800 whitespace-pre-wrap">
+                    {active.notes}
+                  </p>
+                </div>
+              )}
+
               {/* Action buttons */}
               <div className="grid grid-cols-2 gap-3">
                 <button

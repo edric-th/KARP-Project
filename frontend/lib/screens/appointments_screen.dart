@@ -6,8 +6,10 @@ import 'package:frontend/constants/app_strings.dart';
 import 'package:frontend/models/models.dart';
 import 'package:frontend/models/booking_model.dart';
 import 'package:frontend/providers/bookings_provider.dart';
+import 'package:frontend/services/api_client.dart';
 import 'package:frontend/widgets/common/custom_app_bar.dart';
 import 'package:frontend/widgets/common/custom_button.dart';
+import 'package:frontend/widgets/common/star_rating_input.dart';
 import 'package:frontend/widgets/common/state_views.dart';
 
 /// A single live booking the patient currently holds (view model).
@@ -1066,8 +1068,230 @@ class _PastRow extends StatelessWidget {
               ),
             ),
           ],
+          if (booking.isServed) ...[
+            const SizedBox(height: 12),
+            _ReviewAction(booking: booking),
+          ],
         ],
       ),
+    );
+  }
+}
+
+// ─── REVIEW ACTION (past served visit) ──────────────────────────────────────
+
+/// Shows a "Leave a review" button for a served visit, or a muted "Reviewed"
+/// chip once feedback has been submitted.
+class _ReviewAction extends StatelessWidget {
+  final BookingModel booking;
+  const _ReviewAction({required this.booking});
+
+  @override
+  Widget build(BuildContext context) {
+    if (booking.reviewed) {
+      return Row(
+        children: const [
+          Icon(Icons.verified_rounded, size: 16, color: AppColors.success),
+          SizedBox(width: 6),
+          Text(
+            'Reviewed',
+            style: TextStyle(
+              fontFamily: 'Inter',
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: AppColors.success,
+            ),
+          ),
+        ],
+      );
+    }
+    return SizedBox(
+      width: double.infinity,
+      child: OutlinedButton.icon(
+        onPressed: () => _openReviewSheet(context, booking),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: AppColors.primary,
+          side: const BorderSide(color: AppColors.primary),
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+        icon: const Icon(Icons.rate_review_outlined, size: 18),
+        label: const Text(
+          'Leave a review',
+          style: TextStyle(
+            fontFamily: 'Inter',
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+void _openReviewSheet(BuildContext context, BookingModel booking) {
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: AppColors.surface,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+    ),
+    builder: (_) => _ReviewSheet(booking: booking),
+  );
+}
+
+class _ReviewSheet extends StatefulWidget {
+  final BookingModel booking;
+  const _ReviewSheet({required this.booking});
+
+  @override
+  State<_ReviewSheet> createState() => _ReviewSheetState();
+}
+
+class _ReviewSheetState extends State<_ReviewSheet> {
+  int _doctorRating = 0;
+  int _hospitalRating = 0;
+  final _textCtrl = TextEditingController();
+  bool _submitting = false;
+
+  @override
+  void dispose() {
+    _textCtrl.dispose();
+    super.dispose();
+  }
+
+  bool get _canSubmit =>
+      _doctorRating > 0 && _hospitalRating > 0 && !_submitting;
+
+  Future<void> _submit() async {
+    setState(() => _submitting = true);
+    try {
+      await context.read<BookingsProvider>().submitFeedback(
+            widget.booking.id,
+            doctorRating: _doctorRating.toDouble(),
+            hospitalRating: _hospitalRating.toDouble(),
+            text: _textCtrl.text.trim(),
+          );
+      if (!mounted) return;
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Thanks for your feedback!')),
+      );
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      setState(() => _submitting = false);
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(e.message)));
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _submitting = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not submit your review. Please try again.')),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final doctorLabel = widget.booking.doctorName.isEmpty
+        ? 'the doctor'
+        : widget.booking.doctorName;
+    final hospitalLabel = widget.booking.hospitalName.isEmpty
+        ? 'the hospital'
+        : widget.booking.hospitalName;
+
+    return Padding(
+      padding: EdgeInsets.only(
+        left: 24,
+        right: 24,
+        top: 24,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'How was your visit?',
+            style: TextStyle(
+              fontFamily: 'Inter',
+              fontSize: 20,
+              fontWeight: FontWeight.w800,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Your feedback helps other patients.',
+            style: TextStyle(
+              fontFamily: 'Inter',
+              fontSize: 13,
+              color: AppColors.textSecondary,
+            ),
+          ),
+          const SizedBox(height: 20),
+          _ratingBlock('Doctor', doctorLabel, _doctorRating,
+              (v) => setState(() => _doctorRating = v)),
+          const SizedBox(height: 18),
+          _ratingBlock('Hospital', hospitalLabel, _hospitalRating,
+              (v) => setState(() => _hospitalRating = v)),
+          const SizedBox(height: 20),
+          TextField(
+            controller: _textCtrl,
+            maxLines: 3,
+            textCapitalization: TextCapitalization.sentences,
+            decoration: InputDecoration(
+              hintText: 'Share your experience… (optional)',
+              filled: true,
+              fillColor: AppColors.cardGreenLight.withValues(alpha: 0.45),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide.none,
+              ),
+            ),
+          ),
+          const SizedBox(height: 22),
+          PrimaryButton(
+            label: 'Submit review',
+            isLoading: _submitting,
+            onTap: _canSubmit ? _submit : null,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _ratingBlock(
+      String label, String name, int value, ValueChanged<int> onChanged) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontFamily: 'Inter',
+            fontSize: 11,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 0.6,
+            color: AppColors.primaryDark,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          name,
+          style: const TextStyle(
+            fontFamily: 'Inter',
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textSecondary,
+          ),
+        ),
+        const SizedBox(height: 8),
+        StarRatingInput(value: value, onChanged: onChanged),
+      ],
     );
   }
 }

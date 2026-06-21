@@ -14,6 +14,8 @@ class BookingService {
     String? paymentMethod,
     String? paymentStatus,
     String? bookingSource,
+    String? problem,
+    String? notes,
   }) async {
     final data = await _api.post('/bookings', auth: true, body: {
       'doctorId': doctorId,
@@ -24,6 +26,8 @@ class BookingService {
       if (paymentMethod != null) 'paymentMethod': paymentMethod,
       if (paymentStatus != null) 'paymentStatus': paymentStatus,
       if (bookingSource != null) 'bookingSource': bookingSource,
+      if (problem != null) 'problem': problem,
+      if (notes != null) 'notes': notes,
     });
     return BookingModel.fromJson(Map<String, dynamic>.from(data as Map));
   }
@@ -56,6 +60,21 @@ class BookingService {
   }
 
   Future<void> cancel(String id) => _api.post('/bookings/$id/cancel', auth: true);
+
+  /// Submit post-consultation feedback: a star rating each for the doctor and
+  /// the hospital plus an optional comment. Marks the booking as reviewed.
+  Future<void> submitFeedback(
+    String id, {
+    required double doctorRating,
+    required double hospitalRating,
+    String? text,
+  }) async {
+    await _api.post('/bookings/$id/feedback', auth: true, body: {
+      'doctorRating': doctorRating,
+      'hospitalRating': hospitalRating,
+      if (text != null && text.isNotEmpty) 'text': text,
+    });
+  }
 
   Future<BookingModel> reschedule(String id, String bookingDate,
       {String? time}) async {

@@ -224,6 +224,26 @@ def recompute_doctor_rating(doctor_id: str) -> dict:
     return {"rating": avg, "reviewCount": count}
 
 
+def reviews_for_hospital(hospital_id: str) -> list:
+    items = query_eq("reviews", "hospitalId", hospital_id)
+    items.sort(key=lambda r: _epoch(r.get("createdAt")), reverse=True)
+    return items
+
+
+def recompute_hospital_rating(hospital_id: str) -> dict:
+    """Average the hospital's reviews back onto the hospital doc."""
+    reviews = reviews_for_hospital(hospital_id)
+    ratings = [r.get("rating") for r in reviews if isinstance(r.get("rating"), (int, float))]
+    count = len(ratings)
+    avg = round(sum(ratings) / count, 1) if count else 0
+    get_db().collection("hospitals").document(hospital_id).update({
+        "rating": avg,
+        "reviewCount": count,
+        "updatedAt": firestore.SERVER_TIMESTAMP,
+    })
+    return {"rating": avg, "reviewCount": count}
+
+
 # ---- Derived hospital queue size --------------------------------------------
 
 def hospital_queue_count(hospital_id: str, date: str) -> int:

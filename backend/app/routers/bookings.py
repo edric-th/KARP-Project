@@ -3,7 +3,7 @@ from firebase_admin import firestore
 
 from .. import firestore_repo as repo
 from .. import wait_time
-from ..schemas import BookingCreate, RescheduleRequest
+from ..schemas import BookingCreate, FeedbackCreate, RescheduleRequest
 from ..security import get_current_user
 
 router = APIRouter(prefix="/bookings", tags=["bookings"])
@@ -50,6 +50,8 @@ def create_booking(body: BookingCreate, user: dict = Depends(get_current_user)):
         "status": "pending",
         "tokenNumber": token,
         "bookingDate": date,
+        "problem": body.problem or "",
+        "notes": body.notes or "",
         "estimatedWaitMinutes": wait_min,
         "expectedCallAt": wait_time.expected_call_iso(wait_min),
         "paymentMethod": body.payment_method or "",
@@ -188,4 +190,63 @@ def reschedule_booking(
         category="booking",
         related_booking_id=booking_id,
     )
+    return repo.get_one("bookings", booking_id)
+
+
+def _clamp_rating(value) -> float:
+    return max(1.0, min(5.0, float(value)))
+
+
+@router.post("/{booking_id}/feedback")
+def submit_feedback(
+    booking_id: str, body: FeedbackCreate, user: dict = Depends(get_current_user)
+):
+    """Post-consultation feedback: rate the doctor and the hospital (1..5) with an
+    optional shared comment. Writes one review doc per target so each aggregate
+    counts only its own field, then marks the booking reviewed so it can't be
+    submitted twice."""
+    booking = repo.get_one("bookings", booking_id)
+    if not booking:
+        raise HTTPException(404, "Booking not found")
+    if booking.get("patientUid") != user["uid"]:
+        raise HTTPException(403, "Not your booking")
+    if booking.get("status") != "served":
+        raise HTTPException(400, "You can only review a completed consultation")
+    if booking.get("reviewed"):
+        raise HTTPException(400, "This visit has already been reviewed")
+
+    db = repo.get_db()
+    patient_name = booking.get("patientName") or user.get("name") or "Patient"
+    text = (body.text or "").strip()
+
+    doctor_id = booking.get("doctorId")
+    if doctor_id:
+        db.collection("reviews").document().set({
+            "doctorId": doctor_id,
+            "patientUid": user["uid"],
+            "patientName": patient_name,
+            "rating": _clamp_rating(body.doctor_rating),
+            "text": text,
+            "bookingId": booking_id,
+            "createdAt": firestore.SERVER_TIMESTAMP,
+        })
+        repo.recompute_doctor_rating(doctor_id)
+
+    hospital_id = booking.get("hospitalId")
+    if hospital_id:
+        db.collection("reviews").document().set({
+            "hospitalId": hospital_id,
+            "patientUid": user["uid"],
+            "patientName": patient_name,
+            "rating": _clamp_rating(body.hospital_rating),
+            "text": text,
+            "bookingId": booking_id,
+            "createdAt": firestore.SERVER_TIMESTAMP,
+        })
+        repo.recompute_hospital_rating(hospital_id)
+
+    db.collection("bookings").document(booking_id).update({
+        "reviewed": True,
+        "updatedAt": firestore.SERVER_TIMESTAMP,
+    })
     return repo.get_one("bookings", booking_id)

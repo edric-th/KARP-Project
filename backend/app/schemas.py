@@ -84,6 +84,8 @@ class BookingCreate(CamelModel):
     payment_method: Optional[str] = None  # esewa | khalti | imepay | bank | cash
     payment_status: Optional[str] = None  # paid | pending
     booking_source: Optional[str] = None  # appointment | online_token
+    problem: Optional[str] = None  # patient's "describe your problem" text
+    notes: Optional[str] = None  # patient's "extra notes for the doctor" text
 
 
 class RescheduleRequest(CamelModel):
@@ -153,4 +155,12 @@ class ProfileUpdate(CamelModel):
 
 class ReviewCreate(CamelModel):
     rating: float  # 1..5
+    text: Optional[str] = None
+
+
+class FeedbackCreate(CamelModel):
+    """Post-consultation feedback: one rating each for the doctor and the
+    hospital, plus an optional shared comment."""
+    doctor_rating: float  # 1..5
+    hospital_rating: float  # 1..5
     text: Optional[str] = None

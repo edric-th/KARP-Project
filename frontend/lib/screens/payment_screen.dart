@@ -153,6 +153,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
             bookingType: widget.appointmentType.apiValue,
             paymentMethod: _method.name,
             paymentStatus: _method == PaymentMethod.cash ? 'pending' : 'paid',
+            problem: widget.problem,
+            notes: widget.notes,
           );
       if (!mounted) return;
       setState(() {
