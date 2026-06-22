@@ -1,6 +1,9 @@
+from datetime import datetime, timezone
+
 from fastapi import APIRouter, Depends, HTTPException
 from firebase_admin import firestore
 
+from .. import availability
 from .. import firestore_repo as repo
 from .. import wait_time
 from ..schemas import BookingCreate, FeedbackCreate, RescheduleRequest
@@ -9,6 +12,17 @@ from ..security import get_current_user
 router = APIRouter(prefix="/bookings", tags=["bookings"])
 
 VALID_TYPES = ("first_visit", "follow_up", "report")
+
+
+def _human_turn(iso: str) -> str:
+    """Format an ISO instant as a Nepal-local day + 12h clock, e.g. "Mon 10:00 AM".
+    Built without platform-specific strftime directives so it works on Windows."""
+    try:
+        dt = datetime.fromisoformat(iso).astimezone(repo.NEPAL_TZ)
+    except (TypeError, ValueError):
+        return ""
+    hour = dt.hour % 12 or 12
+    return f"{dt.strftime('%a')} {hour}:{dt.strftime('%M %p')}"
 
 
 @router.post("")
@@ -23,8 +37,11 @@ def create_booking(body: BookingCreate, user: dict = Depends(get_current_user)):
     date = body.booking_date or repo.today_str()
     existing = repo.bookings_for_doctor(body.doctor_id, date)
 
-    # Predict the wait BEFORE this patient is added, then lock it in.
-    wait_min = wait_time.predict_wait_for_new(existing)
+    # Predict the wait BEFORE this patient is added, then lock it in. The turn
+    # time is anchored to the doctor's availability, so a booking made while the
+    # doctor is closed gets a real future expectedCallAt (their next opening),
+    # not a misleading "a few minutes from now".
+    wait_min, expected_iso = wait_time.predict_turn_for_new(existing, doctor)
     token = repo.next_token_number(body.doctor_id, date)
 
     hospital = (
@@ -53,7 +70,7 @@ def create_booking(body: BookingCreate, user: dict = Depends(get_current_user)):
         "problem": body.problem or "",
         "notes": body.notes or "",
         "estimatedWaitMinutes": wait_min,
-        "expectedCallAt": wait_time.expected_call_iso(wait_min),
+        "expectedCallAt": expected_iso,
         "paymentMethod": body.payment_method or "",
         "paymentStatus": body.payment_status or ("not_required" if is_token_only else "pending"),
         "createdAt": firestore.SERVER_TIMESTAMP,
@@ -64,11 +81,34 @@ def create_booking(body: BookingCreate, user: dict = Depends(get_current_user)):
     ref.set(data)
     repo.invalidate_for_booking(data)  # this booking must show in the queue now
 
+    # Tailor the confirmation: a normal appointment with an open doctor shows the
+    # minute estimate; an appointment booked while the doctor is closed shows the
+    # real next-available day + clock time so "~5 min" can't mislead.
+    name = doctor.get("name")
+    now_local = datetime.now(timezone.utc).astimezone(repo.NEPAL_TZ)
+    doctor_open = (
+        not availability.has_availability(doctor)
+        or availability.available_now(doctor, now_local)
+    )
+    if is_token_only:
+        body_text = (
+            f"Token #{token} with {name} on {date}. Estimated turn ~{wait_min} min."
+            " Please complete your appointment at the reception."
+        )
+    elif doctor_open:
+        body_text = f"Token #{token} with {name} on {date}. Estimated turn ~{wait_min} min."
+    else:
+        days = availability.days_label(doctor)
+        avail = f" available {days}" if days else " available soon"
+        body_text = (
+            f"Token #{token} with {name} on {date}. {name} is next{avail}"
+            f" — your turn is around {_human_turn(expected_iso)}."
+        )
+
     repo.add_notification(
         user["uid"],
         "Online token reserved" if is_token_only else "Booking confirmed",
-        f"Token #{token} with {doctor.get('name')} on {date}. Estimated turn ~{wait_min} min."
-        + (" Please complete your appointment at the reception." if is_token_only else ""),
+        body_text,
         category="booking",
         related_booking_id=ref.id,
     )
@@ -80,6 +120,12 @@ def my_bookings(user: dict = Depends(get_current_user)):
     """The signed-in patient's bookings, with live position/ETA for active ones."""
     items = repo.bookings_for_patient(user["uid"])
     status_cache: dict = {}
+    doctor_cache: dict = {}
+
+    def _doctor(did):
+        if did not in doctor_cache:
+            doctor_cache[did] = repo.get_one("doctors", did)
+        return doctor_cache[did]
 
     for b in items:
         if b.get("status") not in ("pending", "active") or not b.get("bookingDate"):
@@ -100,6 +146,7 @@ def my_bookings(user: dict = Depends(get_current_user)):
                 status_cache[key] = wait_time.build_queue_status(
                     b["doctorId"],
                     repo.bookings_for_doctor(b["doctorId"], b["bookingDate"]),
+                    _doctor(b["doctorId"]),
                 )
         snapshot = status_cache[key]
 
@@ -165,8 +212,9 @@ def reschedule_booking(
         raise HTTPException(400, "The appointment day cannot be changed, only the time")
     new_date = current_date
 
+    doctor = repo.get_one("doctors", doctor_id)
     existing = repo.bookings_for_doctor(doctor_id, new_date)
-    wait_min = wait_time.predict_wait_for_new(existing)
+    wait_min, expected_iso = wait_time.predict_turn_for_new(existing, doctor)
     token = repo.next_token_number(doctor_id, new_date)
 
     update = {
@@ -174,7 +222,7 @@ def reschedule_booking(
         "tokenNumber": token,
         "status": "pending",
         "estimatedWaitMinutes": wait_min,
-        "expectedCallAt": wait_time.expected_call_iso(wait_min),
+        "expectedCallAt": expected_iso,
         "updatedAt": firestore.SERVER_TIMESTAMP,
     }
     if body.time:

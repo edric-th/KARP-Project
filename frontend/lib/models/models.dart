@@ -422,6 +422,17 @@ class QueueModel {
   final QueueStatus status;
   final String department;
 
+  /// False when the doctor is currently closed (outside availability hours/days).
+  /// Defaults to true; reception/online-token queues are always "open".
+  final bool doctorAvailableNow;
+
+  /// e.g. "Mon–Fri" — the doctor's working days, shown when they're closed.
+  final String availabilityDaysLabel;
+
+  /// Availability-anchored expected turn time, used to show a real day + clock
+  /// when the doctor is closed instead of a huge minute count.
+  final DateTime? expectedCallTime;
+
   const QueueModel({
     required this.id,
     required this.hospitalName,
@@ -433,6 +444,9 @@ class QueueModel {
     required this.estimatedMinutes,
     required this.status,
     required this.department,
+    this.doctorAvailableNow = true,
+    this.availabilityDaysLabel = '',
+    this.expectedCallTime,
   });
 }
 

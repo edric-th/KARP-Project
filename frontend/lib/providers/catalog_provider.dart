@@ -44,6 +44,13 @@ class CatalogProvider extends ChangeNotifier {
     return null;
   }
 
+  DoctorModel? doctorById(String id) {
+    for (final d in doctors) {
+      if (d.id == id) return d;
+    }
+    return null;
+  }
+
   List<DoctorModel> doctorsForHospital(String hospitalId) =>
       doctors.where((d) => d.hospitalId == hospitalId).toList();
 

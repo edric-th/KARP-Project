@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:frontend/constants/app_colors.dart';
 import 'package:frontend/constants/app_strings.dart';
@@ -104,6 +105,12 @@ class _HomeScreenState extends State<HomeScreen> {
     // deriving it from your token minus the people ahead of you.
     final serving = status?.nowServing?.tokenNumber;
     final current = serving ?? (token - ahead).clamp(0, token);
+    // Reception tokens are always "open"; only doctor appointments can be closed.
+    final available =
+        b.isReceptionToken ? true : (status?.doctorAvailableNow ?? true);
+    final daysLabel = b.isReceptionToken
+        ? ''
+        : (context.read<CatalogProvider>().doctorById(b.doctorId)?.availabilityDaysLabel ?? '');
     return QueueModel(
       id: b.id,
       hospitalName: b.hospitalName,
@@ -115,6 +122,9 @@ class _HomeScreenState extends State<HomeScreen> {
       estimatedMinutes: eta,
       status: b.isActive ? QueueStatus.active : QueueStatus.waiting,
       department: b.hospitalName,
+      doctorAvailableNow: available,
+      availabilityDaysLabel: daysLabel,
+      expectedCallTime: b.expectedCallTime,
     );
   }
 
@@ -649,8 +659,10 @@ class _NowServingCard extends StatelessWidget {
               ),
               Expanded(
                 child: _NowStat(
-                  label: 'WAITING TIME',
-                  value: '~${queue.estimatedMinutes} min',
+                  label: queue.doctorAvailableNow ? 'WAITING TIME' : 'YOUR TURN',
+                  value: !queue.doctorAvailableNow && queue.expectedCallTime != null
+                      ? DateFormat('EEE h:mm a').format(queue.expectedCallTime!.toLocal())
+                      : '~${queue.estimatedMinutes} min',
                 ),
               ),
             ],
@@ -776,6 +788,11 @@ class _LiveQueueStatus extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Doctor is closed: a synthetic minute-by-minute breakdown would show
+    // misleading huge numbers. Show the real availability + turn time instead.
+    if (!queue.doctorAvailableNow) {
+      return _ClosedDoctorNotice(queue: queue);
+    }
     final tokens = _tokens;
     final ahead = queue.totalAhead;
     final badgeText = ahead <= 0 ? "It's your turn" : '$ahead ahead of you';
@@ -818,6 +835,91 @@ class _LiveQueueStatus extends StatelessWidget {
           (t) => Padding(
             padding: const EdgeInsets.only(bottom: 10),
             child: _QueueRow(entry: t),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Shown on the home live-queue card when the booked doctor is currently closed
+/// — surfaces the real availability days and the patient's anchored turn time
+/// instead of a meaningless minute-by-minute breakdown.
+class _ClosedDoctorNotice extends StatelessWidget {
+  final QueueModel queue;
+  const _ClosedDoctorNotice({required this.queue});
+
+  @override
+  Widget build(BuildContext context) {
+    final t = queue.expectedCallTime;
+    final turn = t != null ? DateFormat('EEE, MMM d · h:mm a').format(t.toLocal()) : null;
+    final days = queue.availabilityDaysLabel;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Live Queue Status',
+          style: TextStyle(
+            fontFamily: 'Inter',
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+            color: AppColors.textPrimary,
+            letterSpacing: -0.3,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: AppColors.border),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: AppColors.cardGreenLight,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.event_available_rounded,
+                    color: AppColors.primary, size: 24),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      days.isNotEmpty
+                          ? '${queue.doctorName} is available $days'
+                          : '${queue.doctorName} is currently off duty',
+                      style: const TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      turn != null
+                          ? 'You are token #${queue.queueNumber.toString().padLeft(3, '0')} — your turn is around $turn.'
+                          : 'You are token #${queue.queueNumber.toString().padLeft(3, '0')}. You\'ll be called when the doctor is next available.',
+                      style: const TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 13,
+                        height: 1.4,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
       ],

@@ -13,6 +13,15 @@ class QueueStatusModel {
   /// Learned expected minutes per booking type: first_visit / follow_up / report.
   final Map<String, double> typeAverages;
 
+  /// False when the doctor is currently closed (outside their availability
+  /// hours/days). Defaults to true so reception snapshots — which never send the
+  /// field — behave exactly as before.
+  final bool doctorAvailableNow;
+
+  /// When the doctor is closed, the ISO instant their queue starts serving
+  /// (their next opening). Null when available now.
+  final String? availableFrom;
+
   const QueueStatusModel({
     required this.doctorId,
     this.nowServing,
@@ -21,6 +30,8 @@ class QueueStatusModel {
     this.servedCount = 0,
     this.avgServiceMinutes = 0,
     this.typeAverages = const {},
+    this.doctorAvailableNow = true,
+    this.availableFrom,
   });
 
   static Map<String, double> _parseTypeAverages(dynamic v) {
@@ -46,6 +57,10 @@ class QueueStatusModel {
       servedCount: asInt(json['servedCount']),
       avgServiceMinutes: asDouble(json['avgServiceMinutes']),
       typeAverages: _parseTypeAverages(json['typeAverages']),
+      doctorAvailableNow:
+          json['doctorAvailableNow'] is bool ? json['doctorAvailableNow'] as bool : true,
+      availableFrom:
+          json['availableFrom'] == null ? null : asString(json['availableFrom']),
     );
   }
 

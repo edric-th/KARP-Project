@@ -20,12 +20,13 @@ def queue_summary(doctorIds: str = "", date: Optional[str] = None):
     out = []
     for doctor_id in ids:
         bookings = repo.bookings_for_doctor(doctor_id, date)
+        doctor = repo.get_one("doctors", doctor_id)
         pending = [b for b in bookings if b.get("status") == "pending"]
         out.append({
             "doctorId": doctor_id,
             "waitingCount": len(pending),
             "avgServiceMinutes": wait_time.calculate_avg_service_time(bookings),
-            "estimatedWaitMinutes": wait_time.predict_wait_for_new(bookings),
+            "estimatedWaitMinutes": wait_time.predict_wait_for_new(bookings, doctor),
         })
     return out
 
@@ -36,4 +37,5 @@ def queue_status(doctor_id: str, date: Optional[str] = None):
     predicted wait times, and the learned average service time."""
     date = date or repo.today_str()
     bookings = repo.bookings_for_doctor(doctor_id, date)
-    return wait_time.build_queue_status(doctor_id, bookings)
+    doctor = repo.get_one("doctors", doctor_id)
+    return wait_time.build_queue_status(doctor_id, bookings, doctor)

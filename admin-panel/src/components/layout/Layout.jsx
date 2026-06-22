@@ -2,6 +2,7 @@ import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard,
   Users,
+  UserCog,
   Building2,
   Calendar,
   ListOrdered,
@@ -17,6 +18,7 @@ const navItems = [
   { to: '/reception', icon: Ticket, label: 'Reception' },
   { to: '/bookings', icon: Calendar, label: 'Bookings' },
   { to: '/doctors', icon: Users, label: 'Doctors' },
+  { to: '/staff', icon: UserCog, label: 'Staff' },
   { to: '/hospitals', icon: Building2, label: 'Hospitals' },
 ]
 

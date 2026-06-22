@@ -4,11 +4,18 @@ import {
   signInWithEmailAndPassword,
   sendPasswordResetEmail,
 } from 'firebase/auth'
+import { Ticket } from 'lucide-react'
 import { auth } from '../../lib/firebase'
 import { useAuth } from '../../context/AuthContext'
 import toast from 'react-hot-toast'
 
-export default function Login() {
+/**
+ * Dedicated reception-desk login. Functionally the same as the admin login but
+ * branded for reception staff and routing a receptionist straight to their
+ * focused desk (/reception-desk) instead of the admin panel. Other roles that
+ * happen to use this door are still routed to their correct home.
+ */
+export default function ReceptionLogin() {
   const navigate = useNavigate()
   const { user, role, loading: authLoading } = useAuth()
   const [email, setEmail] = useState('')
@@ -16,16 +23,14 @@ export default function Login() {
   const [loading, setLoading] = useState(false)
   const [showForgot, setShowForgot] = useState(false)
 
-  // Redirect only once the auth context has fully resolved a logged-in user AND
-  // their role. Navigating here — instead of right after signIn — avoids the race
-  // where we'd redirect before onAuthStateChanged had loaded the role doc, which
-  // sent the user through a protected route with stale (null) auth and bounced
-  // them back to /login, forcing a second email/password entry.
+  // Redirect once auth fully resolves the role (avoids the stale-auth bounce).
   useEffect(() => {
     if (authLoading || !user || !role) return
-    // Route everyone through "/" and let HomeRedirect send each role to its home
-    // (admin → dashboard, doctor → doctor-queue, receptionist → reception-desk).
-    navigate('/', { replace: true })
+    if (role === 'receptionist') {
+      navigate('/reception-desk', { replace: true })
+    } else {
+      navigate(role === 'doctor' ? '/doctor-queue' : '/', { replace: true })
+    }
   }, [authLoading, user, role, navigate])
 
   const handleSubmit = async (e) => {
@@ -33,8 +38,6 @@ export default function Login() {
     setLoading(true)
     try {
       await signInWithEmailAndPassword(auth, email, password)
-      // On success, the effect above redirects once the role resolves. Keep the
-      // button busy until then; the auth context's `loading` covers that window.
     } catch (err) {
       toast.error('Invalid credentials')
       console.error(err)
@@ -67,15 +70,18 @@ export default function Login() {
     }
   }
 
-  // While signing in or while the auth context is resolving a just-authenticated
-  // user's role, keep the submit button busy.
   const busy = loading || (!!user && authLoading)
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4">
       <div className="card w-full max-w-md">
-        <h1 className="text-2xl font-bold mb-2">Admin Panel</h1>
-        <p className="text-gray-600 mb-6">Hospital Queue Management</p>
+        <div className="flex items-center gap-3 mb-2">
+          <div className="w-10 h-10 bg-primary-50 text-primary-600 rounded-lg flex items-center justify-center">
+            <Ticket size={22} />
+          </div>
+          <h1 className="text-2xl font-bold">Reception Desk</h1>
+        </div>
+        <p className="text-gray-600 mb-6">Sign in to manage the token queue</p>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium mb-1">Email</label>
@@ -85,7 +91,7 @@ export default function Login() {
               className="input"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="admin@hospital.com"
+              placeholder="reception@hospital.com"
             />
           </div>
           <div>

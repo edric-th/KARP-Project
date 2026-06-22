@@ -92,8 +92,9 @@ def _entry_eta(snapshot: dict, booking: dict):
 
 def _appointment_line(b: dict) -> str:
     date = b.get("bookingDate")
+    doctor = repo.get_one("doctors", b.get("doctorId"))
     snapshot = wait_time.build_queue_status(
-        b.get("doctorId"), repo.bookings_for_doctor(b.get("doctorId"), date)
+        b.get("doctorId"), repo.bookings_for_doctor(b.get("doctorId"), date), doctor
     )
     is_now, wait, ahead = _entry_eta(snapshot, b)
     name = (b.get("doctorName") or "your doctor").strip()

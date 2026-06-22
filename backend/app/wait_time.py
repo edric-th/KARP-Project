@@ -17,7 +17,9 @@ Model
 """
 from datetime import datetime, timedelta, timezone
 
+from . import availability
 from .config import DEFAULT_SERVICE_MINUTES, DEFAULT_RECEPTION_MINUTES
+from .firestore_repo import NEPAL_TZ
 
 MIN_SAMPLES = 3
 RECENT_WINDOW = 10
@@ -102,8 +104,28 @@ def _iso_from_now(minutes) -> str:
     return (_now() + timedelta(minutes=minutes)).isoformat()
 
 
-def build_queue_status(doctor_id, bookings) -> dict:
-    """Full live snapshot of a doctor's queue with per-token ETAs."""
+def _anchor_utc(doctor, now_utc: datetime) -> datetime:
+    """UTC instant the cumulative queue timeline should start from.
+
+    For an available doctor (or one with no schedule) this is simply 'now'. For a
+    doctor who is currently closed it's their next effective opening, so token
+    ETAs land on a real future day/clock time instead of a misleading
+    'in a few minutes'."""
+    if not doctor or not availability.has_availability(doctor):
+        return now_utc
+    now_local = now_utc.astimezone(NEPAL_TZ)
+    if availability.available_now(doctor, now_local):
+        return now_utc
+    start_local = availability.effective_start_local(doctor, now_local)
+    return max(now_utc, start_local.astimezone(timezone.utc))
+
+
+def build_queue_status(doctor_id, bookings, doctor=None) -> dict:
+    """Full live snapshot of a doctor's queue with per-token ETAs.
+
+    When the doctor is currently closed (outside their availability hours/days),
+    the timeline is anchored to their next opening so expectedCallAt/ETA reflect
+    the real turn day and clock time rather than minutes-from-now."""
     base = calculate_avg_service_time(bookings)
     type_averages = per_type_averages(bookings, base)
 
@@ -113,18 +135,26 @@ def build_queue_status(doctor_id, bookings) -> dict:
         key=lambda b: b.get("tokenNumber") or 0,
     )
 
+    now = _now()
+    anchor = _anchor_utc(doctor, now)
     cumulative = _remaining_active(active, type_averages, base)
     waiting = []
     for idx, b in enumerate(pending):
-        wait = round(cumulative)
+        expected = anchor + timedelta(minutes=cumulative)
+        wait = max(0, round((expected - now).total_seconds() / 60.0))
         waiting.append({
             **b,
             "position": idx + 1,
             "estimatedWaitMinutes": wait,
-            "expectedCallAt": _iso_from_now(wait),
+            "expectedCallAt": expected.isoformat(),
         })
         cumulative += _duration_for(b, type_averages, base)
 
+    available = (
+        doctor is None
+        or not availability.has_availability(doctor)
+        or availability.available_now(doctor, now.astimezone(NEPAL_TZ))
+    )
     return {
         "doctorId": doctor_id,
         "nowServing": active,
@@ -133,11 +163,17 @@ def build_queue_status(doctor_id, bookings) -> dict:
         "servedCount": len([b for b in bookings if b.get("status") == "served"]),
         "avgServiceMinutes": base,
         "typeAverages": type_averages,
+        # When False the doctor is currently closed; availableFrom is the ISO
+        # instant their queue starts serving (else null).
+        "doctorAvailableNow": available,
+        "availableFrom": anchor.isoformat() if anchor > now else None,
     }
 
 
-def predict_wait_for_new(bookings) -> int:
-    """ETA (minutes) for a brand-new patient joining at the end of the queue."""
+def predict_turn_for_new(bookings, doctor=None):
+    """(wait_min, expectedCallAt ISO) for a brand-new patient joining the end of
+    the queue — availability-anchored so a closed doctor yields a real future
+    turn time rather than 'a few minutes from now'."""
     base = calculate_avg_service_time(bookings)
     type_averages = per_type_averages(bookings, base)
     active = next((b for b in bookings if b.get("status") == "active"), None)
@@ -145,7 +181,15 @@ def predict_wait_for_new(bookings) -> int:
     for b in bookings:
         if b.get("status") == "pending":
             total += _duration_for(b, type_averages, base)
-    return round(total)
+    now = _now()
+    expected = _anchor_utc(doctor, now) + timedelta(minutes=total)
+    wait_min = max(0, round((expected - now).total_seconds() / 60.0))
+    return wait_min, expected.isoformat()
+
+
+def predict_wait_for_new(bookings, doctor=None) -> int:
+    """ETA (minutes) for a brand-new patient joining at the end of the queue."""
+    return predict_turn_for_new(bookings, doctor)[0]
 
 
 def expected_call_iso(minutes) -> str:

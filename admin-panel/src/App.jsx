@@ -2,9 +2,12 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from './context/AuthContext'
 import Layout from './components/layout/Layout'
 import Login from './pages/Login/Login'
+import ReceptionLogin from './pages/ReceptionLogin/ReceptionLogin'
+import ReceptionDesk from './pages/ReceptionDesk/ReceptionDesk'
 import Dashboard from './pages/Dashboard/Dashboard'
 import Queue from './pages/Queue/Queue'
 import Reception from './pages/Reception/Reception'
+import Staff from './pages/Staff/Staff'
 import Doctors from './pages/Doctors/Doctors'
 import Hospitals from './pages/Hospitals/Hospitals'
 import Bookings from './pages/Bookings/Bookings'
@@ -29,6 +32,7 @@ function HomeRedirect() {
   const { role, loading } = useAuth()
   if (loading) return <div className="flex items-center justify-center h-screen">Loading...</div>
   if (role === 'doctor') return <Navigate to="/doctor-queue" replace />
+  if (role === 'receptionist') return <Navigate to="/reception-desk" replace />
   return <Navigate to="/dashboard" replace />
 }
 
@@ -36,6 +40,7 @@ export default function App() {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
+      <Route path="/reception/login" element={<ReceptionLogin />} />
       <Route path="/board/:doctorId" element={<Board />} />
 
       {/* Account settings - accessible to any logged-in user */}
@@ -58,11 +63,22 @@ export default function App() {
         }
       />
 
-      {/* Admin/receptionist routes with sidebar layout */}
+      {/* Receptionist focused desk — full screen, no admin sidebar */}
+      <Route
+        path="/reception-desk"
+        element={
+          <ProtectedRoute allowedRoles={['receptionist', 'admin']}>
+            <ReceptionDesk />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Admin-only routes with sidebar layout. Receptionists are kept out of
+          the admin panel entirely — they're bounced to their focused desk. */}
       <Route
         path="/dashboard"
         element={
-          <ProtectedRoute allowedRoles={['admin', 'receptionist']}>
+          <ProtectedRoute allowedRoles={['admin']}>
             <Layout />
           </ProtectedRoute>
         }
@@ -72,13 +88,14 @@ export default function App() {
 
       <Route
         element={
-          <ProtectedRoute allowedRoles={['admin', 'receptionist']}>
+          <ProtectedRoute allowedRoles={['admin']}>
             <Layout />
           </ProtectedRoute>
         }
       >
         <Route path="/queue" element={<Queue />} />
         <Route path="/reception" element={<Reception />} />
+        <Route path="/staff" element={<Staff />} />
         <Route path="/doctors" element={<Doctors />} />
         <Route path="/hospitals" element={<Hospitals />} />
         <Route path="/bookings" element={<Bookings />} />

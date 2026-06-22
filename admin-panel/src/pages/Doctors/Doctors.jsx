@@ -21,12 +21,8 @@ import {
 } from 'lucide-react'
 import {
   createUserWithEmailAndPassword,
-  initializeAuth,
-  inMemoryPersistence,
   sendPasswordResetEmail,
-  connectAuthEmulator,
 } from 'firebase/auth'
-import { initializeApp, getApps } from 'firebase/app'
 import {
   doc,
   setDoc,
@@ -40,38 +36,11 @@ import {
 import toast from 'react-hot-toast'
 import { subscribe, create, update, remove } from '../../api/firestore'
 import { compressImageToDataUrl } from '../../api/storage'
-import { db, auth, USE_EMULATOR } from '../../lib/firebase'
+import { db, auth } from '../../lib/firebase'
+import { getSecondaryAuth } from '../../lib/secondaryAuth'
 import { COLLECTIONS } from '../../constants'
 
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-
-const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
-}
-
-const getSecondaryAuth = () => {
-  const apps = getApps()
-  let secondaryApp = apps.find((a) => a.name === 'secondary')
-  if (!secondaryApp) {
-    secondaryApp = initializeApp(firebaseConfig, 'secondary')
-  }
-  const secondaryAuth = initializeAuth(secondaryApp, {
-    persistence: inMemoryPersistence,
-  })
-  // Keep doctor-account creation on the emulator too (this is a separate
-  // Firebase app, so it needs its own emulator wiring).
-  if (USE_EMULATOR) {
-    connectAuthEmulator(secondaryAuth, 'http://127.0.0.1:9099', {
-      disableWarnings: true,
-    })
-  }
-  return secondaryAuth
-}
 
 export default function Doctors() {
   const [doctors, setDoctors] = useState([])

@@ -5,6 +5,7 @@ import 'package:frontend/constants/app_colors.dart';
 import 'package:frontend/models/booking_model.dart';
 import 'package:frontend/models/queue_status_model.dart';
 import 'package:frontend/providers/bookings_provider.dart';
+import 'package:frontend/providers/catalog_provider.dart';
 import 'package:frontend/providers/queue_provider.dart';
 
 class QueueScreen extends StatefulWidget {
@@ -23,6 +24,9 @@ class _QueueScreenState extends State<QueueScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<BookingsProvider>().load();
+      // Ensure the doctor catalog is available so we can label a closed doctor's
+      // working days on the live-queue card (load() is a no-op once cached).
+      context.read<CatalogProvider>().load();
     });
   }
 
@@ -125,10 +129,21 @@ class _QueueScreenState extends State<QueueScreen> {
     final nowServing = status?.nowServing;
     final waiting = status?.waiting ?? const <BookingModel>[];
 
+    // Whether the doctor is open right now. Reception tokens are always "open"
+    // (the desk has no schedule); only doctor appointments can be closed.
+    final available =
+        active.isReceptionToken ? true : (status?.doctorAvailableNow ?? true);
+    final daysLabel = active.isReceptionToken
+        ? ''
+        : (context.read<CatalogProvider>().doctorById(active.doctorId)?.availabilityDaysLabel ?? '');
+
     // "People ahead" should read 0 when you're first in line with nobody yet
     // being served (so we don't show a misleading "000" now-serving token).
     final noOneServing = nowServing == null;
-    final isNext = !active.isActive && noOneServing && position <= 1;
+    // Only treat the patient as "next" when the doctor is actually open — when
+    // closed we want the availability message, not "the doctor will call you
+    // within ~5 min".
+    final isNext = available && !active.isActive && noOneServing && position <= 1;
     final peopleAhead = active.isActive
         ? 0
         : (noOneServing ? (position - 1).clamp(0, 9999) : position);
@@ -146,6 +161,9 @@ class _QueueScreenState extends State<QueueScreen> {
         isBeingServed: active.isActive,
         isNext: isNext,
         isReception: active.isReceptionToken,
+        doctorAvailableNow: available,
+        availabilityDaysLabel: daysLabel,
+        expectedCallTime: active.expectedCallTime,
       ),
       const SizedBox(height: 24),
       Row(
@@ -322,6 +340,17 @@ class _TokenHero extends StatelessWidget {
   /// "you're next" copy talks about the token being called, not the doctor.
   final bool isReception;
 
+  /// False when the doctor is currently closed — drives the availability-based
+  /// turn-time copy instead of the near-term "~5 min" message.
+  final bool doctorAvailableNow;
+
+  /// e.g. "Mon–Fri" — the doctor's working days, shown when they're closed.
+  final String availabilityDaysLabel;
+
+  /// The booking's expected call time (availability-anchored by the backend),
+  /// used to show a real day + clock time when the doctor is closed.
+  final DateTime? expectedCallTime;
+
   const _TokenHero({
     required this.myToken,
     required this.doctor,
@@ -332,10 +361,27 @@ class _TokenHero extends StatelessWidget {
     required this.isBeingServed,
     this.isNext = false,
     this.isReception = false,
+    this.doctorAvailableNow = true,
+    this.availabilityDaysLabel = '',
+    this.expectedCallTime,
   });
+
+  /// True only when we should surface the doctor's next-availability turn time
+  /// (closed doctor, real appointment) rather than a live minute estimate.
+  bool get _showsAvailability => !isReception && !doctorAvailableNow;
 
   String get _etaLabel {
     if (isBeingServed) return "It's your turn";
+    if (_showsAvailability) {
+      final t = expectedCallTime;
+      final days = availabilityDaysLabel.isNotEmpty
+          ? 'Available $availabilityDaysLabel'
+          : 'Doctor is currently off';
+      if (t != null) {
+        return '$days · your turn ~${DateFormat('EEE h:mm a').format(t.toLocal())}';
+      }
+      return days;
+    }
     if (isNext) {
       return isReception
           ? 'Get ready — your token will be called within 2-3 min'
@@ -351,7 +397,22 @@ class _TokenHero extends StatelessWidget {
     if (nowServingToken != null) {
       return nowServingToken.toString().padLeft(3, '0');
     }
+    // While the doctor is closed nobody is being served and there's no "soon".
+    if (_showsAvailability) return '—';
     return isNext ? 'Soon' : '—';
+  }
+
+  /// The "EST. WAIT" figure: a clock time when the doctor is closed (a minute
+  /// count would read as a huge, confusing number), else a compact duration.
+  String get _estWaitValue {
+    if (_showsAvailability) {
+      final t = expectedCallTime;
+      return t != null ? DateFormat('h:mm a').format(t.toLocal()) : '—';
+    }
+    if (etaMinutes <= 0) return 'Now';
+    if (etaMinutes < 60) return '${etaMinutes}m';
+    final h = (etaMinutes / 60).round();
+    return '${h}h';
   }
 
   @override
@@ -450,9 +511,7 @@ class _TokenHero extends StatelessWidget {
                     label: 'PEOPLE AHEAD', value: '$peopleAhead'),
               ),
               Expanded(
-                child: _HeroStat(
-                    label: 'EST. WAIT',
-                    value: etaMinutes <= 0 ? 'Now' : '${etaMinutes}m'),
+                child: _HeroStat(label: 'EST. WAIT', value: _estWaitValue),
               ),
             ],
           ),
