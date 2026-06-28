@@ -20,7 +20,7 @@ import {
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { db } from '../../lib/firebase'
-import { subscribe, update, create } from '../../api/firestore'
+import { subscribe, update, create, allocateToken } from '../../api/firestore'
 import { COLLECTIONS, BOOKING_STATUS, BOOKING_TYPES } from '../../constants'
 import PhoneInput from '../../components/PhoneInput'
 import DiagnosisModal from '../../components/DiagnosisModal'
@@ -482,6 +482,14 @@ function NewBookingModal({ doctor, hospital, nextTokenNumber, pendingCount, avgS
     }
     setSaving(true)
     try {
+      // Pull the token from the shared race-safe counter (counters/{doctorId}_{date})
+      // so it can't collide with tokens the patient app creates via the backend.
+      // nextTokenNumber is max(existing)+1, so nextTokenNumber-1 is the current
+      // highest token — used only to seed the counter the first time it's created.
+      const tokenNumber = await allocateToken(doctor.id, todayString(), [
+        nextTokenNumber - 1,
+      ])
+
       // Calculate expected call time AT BOOKING MOMENT and lock it in
       // Position = number of people ahead + 1 (yourself)
       const positionInQueue = pendingCount + 1
@@ -496,12 +504,12 @@ function NewBookingModal({ doctor, hospital, nextTokenNumber, pendingCount, avgS
         patientPhone: formData.patientPhone.trim(),
         bookingType: formData.bookingType,
         status: BOOKING_STATUS.PENDING,
-        tokenNumber: nextTokenNumber,
+        tokenNumber,
         bookingDate: todayString(),
         expectedCallAt: expectedCallAt.toISOString(),
         estimatedWaitMinutes: positionInQueue * avgServiceTime,
       })
-      toast.success(`Token #${nextTokenNumber} created · Expected around ${formatExpectedTime(expectedCallAt)}`)
+      toast.success(`Token #${tokenNumber} created · Expected around ${formatExpectedTime(expectedCallAt)}`)
       onClose()
     } catch (err) {
       toast.error('Failed to create booking')

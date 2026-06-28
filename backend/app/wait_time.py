@@ -192,6 +192,28 @@ def predict_wait_for_new(bookings, doctor=None) -> int:
     return predict_turn_for_new(bookings, doctor)[0]
 
 
+def predict_summary_for_new(bookings, doctor=None) -> dict:
+    """Everything the booking doctor-picker needs for a brand-new patient: the
+    availability-anchored wait + the absolute turn time, plus whether the doctor
+    is open now and (when closed) the instant their queue starts serving. The
+    client displays `expectedCallAt` directly so it never re-derives the turn
+    time (which previously double-counted the wait-until-opening)."""
+    wait_min, expected_iso = predict_turn_for_new(bookings, doctor)
+    now = _now()
+    anchor = _anchor_utc(doctor, now)
+    available = (
+        doctor is None
+        or not availability.has_availability(doctor)
+        or availability.available_now(doctor, now.astimezone(NEPAL_TZ))
+    )
+    return {
+        "estimatedWaitMinutes": wait_min,
+        "expectedCallAt": expected_iso,
+        "doctorAvailableNow": available,
+        "availableFrom": anchor.isoformat() if anchor > now else None,
+    }
+
+
 def expected_call_iso(minutes) -> str:
     return _iso_from_now(minutes)
 

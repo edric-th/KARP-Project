@@ -459,12 +459,23 @@ class QueueSummaryModel {
   final int waitingCount;
   final double avgServiceMinutes;
   final int estimatedWaitMinutes;
+  // Absolute, availability-anchored turn time for a new patient (ISO-8601 UTC).
+  // Display this directly instead of re-deriving the clock time on the client.
+  final String? expectedCallAt;
+  // False when the doctor is currently closed; availableFrom is then the ISO
+  // instant their queue starts serving (their next opening). Both come straight
+  // from the backend so the disclaimer matches the queue/appointment screens.
+  final bool doctorAvailableNow;
+  final String? availableFrom;
 
   const QueueSummaryModel({
     required this.doctorId,
     this.waitingCount = 0,
     this.avgServiceMinutes = 0,
     this.estimatedWaitMinutes = 0,
+    this.expectedCallAt,
+    this.doctorAvailableNow = true,
+    this.availableFrom,
   });
 
   factory QueueSummaryModel.fromJson(Map<String, dynamic> json) =>
@@ -473,6 +484,9 @@ class QueueSummaryModel {
         waitingCount: asInt(json['waitingCount']),
         avgServiceMinutes: asDouble(json['avgServiceMinutes']),
         estimatedWaitMinutes: asInt(json['estimatedWaitMinutes']),
+        expectedCallAt: json['expectedCallAt'] as String?,
+        doctorAvailableNow: asBool(json['doctorAvailableNow'], true),
+        availableFrom: json['availableFrom'] as String?,
       );
 }
 

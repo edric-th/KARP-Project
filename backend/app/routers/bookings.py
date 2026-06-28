@@ -34,6 +34,21 @@ def create_booking(body: BookingCreate, user: dict = Depends(get_current_user)):
     if not doctor:
         raise HTTPException(404, "Doctor not found")
 
+    # A patient may hold only one unserved appointment per doctor at a time:
+    # they must wait until their current booking is served (or cancel it) before
+    # booking the same doctor again. Online tokens are a separate queue — skip.
+    if (body.booking_source or "appointment") != "online_token":
+        if any(
+            b.get("doctorId") == body.doctor_id
+            and b.get("status") in ("pending", "active")
+            for b in repo.bookings_for_patient(user["uid"])
+        ):
+            raise HTTPException(
+                409,
+                "You already have an active booking with this doctor. "
+                "Please wait until it is served before booking again.",
+            )
+
     date = body.booking_date or repo.today_str()
     existing = repo.bookings_for_doctor(body.doctor_id, date)
 

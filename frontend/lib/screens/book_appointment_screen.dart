@@ -956,23 +956,31 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
     }
 
     final now = DateTime.now();
-    // Serving starts no earlier than the doctor's opening time (handles a
-    // patient booking at 7 AM for a doctor whose hours begin at 10 AM, and
-    // off-days → the next available session).
-    final base = doc.effectiveStartFrom(now);
-    final turn = base.add(Duration(minutes: summary.estimatedWaitMinutes));
-    final arrive = turn.subtract(const Duration(minutes: 15));
     final timeFmt = DateFormat('h:mm a');
-    final notOpenYet = doc.hasAvailability && base.isAfter(now);
-    // Include the day when the next session is not today.
-    final sameDay = base.year == now.year &&
-        base.month == now.month &&
-        base.day == now.day;
-    final openLabel =
-        sameDay ? timeFmt.format(base) : DateFormat('EEE, h:mm a').format(base);
+    // The backend already anchors the turn time to the doctor's opening hours,
+    // so show its absolute expectedCallAt directly. Never add the wait on top of
+    // the opening time again — that double-counted and could read "≈ now" (e.g.
+    // 2:55 AM) for a doctor who only opens later.
+    final turn = (summary.expectedCallAt != null
+            ? DateTime.tryParse(summary.expectedCallAt!)?.toLocal()
+            : null) ??
+        now.add(Duration(minutes: summary.estimatedWaitMinutes));
+    final arrive = turn.subtract(const Duration(minutes: 15));
     final tokenPos = summary.waitingCount + 1;
 
+    // Doctor is currently closed and opens later → announce their next opening.
+    final openFrom = summary.availableFrom != null
+        ? DateTime.tryParse(summary.availableFrom!)?.toLocal()
+        : null;
+    final notOpenYet = !summary.doctorAvailableNow && openFrom != null;
+
     if (notOpenYet) {
+      final sameDay = openFrom.year == now.year &&
+          openFrom.month == now.month &&
+          openFrom.day == now.day;
+      final openLabel = sameDay
+          ? timeFmt.format(openFrom)
+          : DateFormat('EEE, h:mm a').format(openFrom);
       return _disclaimerBox(
         icon: Icons.schedule_rounded,
         color: AppColors.primary,

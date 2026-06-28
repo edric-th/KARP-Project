@@ -43,19 +43,17 @@ class BookingSuccessScreen extends StatelessWidget {
     return '~$hours hour${hours > 1 ? 's' : ''}';
   }
 
-  /// Real-world clock time the patient is expected to be called. Computed from
-  /// the doctor's opening hour + estimated wait (so a 7 AM booking for a doctor
-  /// who opens at 10 AM reads "10:xx AM"), falling back to the backend's
-  /// expectedCallAt when wait minutes aren't known.
+  /// Real-world clock time the patient is expected to be called. Uses the
+  /// backend's availability-anchored expectedCallAt (so a 7 AM booking for a
+  /// doctor who opens at 10 AM reads "10:xx AM"), falling back to now + wait
+  /// only when expectedCallAt isn't available.
   String get _turnTime {
     final now = DateTime.now();
-    DateTime? turn;
-    final mins = estimatedWaitMinutes;
-    if (mins != null) {
-      final base = doctor?.effectiveStartFrom(now) ?? now;
-      turn = base.add(Duration(minutes: mins));
-    } else if (expectedCallAt != null) {
-      turn = DateTime.tryParse(expectedCallAt!)?.toLocal();
+    DateTime? turn = expectedCallAt != null
+        ? DateTime.tryParse(expectedCallAt!)?.toLocal()
+        : null;
+    if (turn == null && estimatedWaitMinutes != null) {
+      turn = now.add(Duration(minutes: estimatedWaitMinutes!));
     }
     if (turn == null) return 'Calculating…';
     final sameDay =

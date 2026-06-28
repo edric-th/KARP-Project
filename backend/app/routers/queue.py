@@ -26,7 +26,8 @@ def queue_summary(doctorIds: str = "", date: Optional[str] = None):
             "doctorId": doctor_id,
             "waitingCount": len(pending),
             "avgServiceMinutes": wait_time.calculate_avg_service_time(bookings),
-            "estimatedWaitMinutes": wait_time.predict_wait_for_new(bookings, doctor),
+            # estimatedWaitMinutes + expectedCallAt + doctorAvailableNow + availableFrom
+            **wait_time.predict_summary_for_new(bookings, doctor),
         })
     return out
 
