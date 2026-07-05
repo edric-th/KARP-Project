@@ -4,6 +4,8 @@ import { X, Stethoscope } from 'lucide-react'
 /**
  * Themed replacement for the old window.prompt() diagnosis capture.
  * Lets the doctor add optional visit notes before calling the next patient.
+ * Also reused as a generic single-textarea capture (e.g. a hold reason) by
+ * overriding `title` / `label` / `placeholder`.
  */
 export default function DiagnosisModal({
   open,
@@ -13,6 +15,10 @@ export default function DiagnosisModal({
   busy = false,
   submitLabel = 'Save notes',
   skipLabel = 'Skip',
+  title = 'Visit notes',
+  label = 'Diagnosis / visit notes',
+  placeholder = 'e.g. Mild hypertension. Advised low-salt diet and follow-up in 2 weeks.',
+  savingLabel = 'Saving…',
   onSubmit,
   onSkip,
   onClose,
@@ -40,7 +46,7 @@ export default function DiagnosisModal({
               <Stethoscope size={18} />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-gray-900">Visit notes</h2>
+              <h2 className="text-lg font-bold text-gray-900">{title}</h2>
               <p className="text-xs text-gray-500">
                 Token #{tokenNumber}
                 {patientName ? ` · ${patientName}` : ''}
@@ -54,7 +60,7 @@ export default function DiagnosisModal({
 
         <div className="p-6 space-y-2">
           <label className="text-sm font-medium text-gray-700">
-            Diagnosis / visit notes{' '}
+            {label}{' '}
             <span className="text-gray-400 font-normal">(optional)</span>
           </label>
           <textarea
@@ -63,7 +69,7 @@ export default function DiagnosisModal({
             className="input resize-none"
             value={value}
             onChange={(e) => setValue(e.target.value)}
-            placeholder="e.g. Mild hypertension. Advised low-salt diet and follow-up in 2 weeks."
+            placeholder={placeholder}
           />
         </div>
 
@@ -82,7 +88,7 @@ export default function DiagnosisModal({
             disabled={busy}
             className="btn-primary flex-1"
           >
-            {busy ? 'Saving…' : submitLabel}
+            {busy ? savingLabel : submitLabel}
           </button>
         </div>
       </div>

@@ -125,6 +125,14 @@ class ProfileModel {
     );
   }
 
+  /// The essentials a doctor needs before an appointment can be booked. Online
+  /// (reception) tokens intentionally do not require this.
+  bool get isComplete =>
+      name.trim().isNotEmpty &&
+      phone.trim().isNotEmpty &&
+      dateOfBirth.trim().isNotEmpty &&
+      gender.trim().isNotEmpty;
+
   String get displayName => name.isNotEmpty
       ? name
       : (email.isNotEmpty ? email.split('@').first : 'Patient');

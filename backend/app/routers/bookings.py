@@ -40,7 +40,7 @@ def create_booking(body: BookingCreate, user: dict = Depends(get_current_user)):
     if (body.booking_source or "appointment") != "online_token":
         if any(
             b.get("doctorId") == body.doctor_id
-            and b.get("status") in ("pending", "active")
+            and b.get("status") in ("pending", "active", "on_hold")
             for b in repo.bookings_for_patient(user["uid"])
         ):
             raise HTTPException(
@@ -185,6 +185,31 @@ def get_booking(booking_id: str, user: dict = Depends(get_current_user)):
     if user["role"] == "patient" and booking.get("patientUid") != user["uid"]:
         raise HTTPException(403, "Not your booking")
     return booking
+
+
+@router.post("/{booking_id}/return")
+def mark_returned(booking_id: str, user: dict = Depends(get_current_user)):
+    """The patient signals they're back from an X-ray / another department so the
+    doctor can call them off hold. Only the booking's owner may flag it, and only
+    while it is actually on hold. The doctor/reception panels watch this flag live
+    and surface a "back with report" badge — no push is needed here."""
+    booking = repo.get_one("bookings", booking_id)
+    if not booking:
+        raise HTTPException(404, "Booking not found")
+    if user["role"] == "patient" and booking.get("patientUid") != user["uid"]:
+        raise HTTPException(403, "Not your booking")
+    if booking.get("status") != "on_hold":
+        raise HTTPException(409, "This booking is not on hold.")
+
+    repo.get_db().collection("bookings").document(booking_id).update(
+        {
+            "returned": True,
+            "returnedAt": datetime.now(timezone.utc).isoformat(),
+            "updatedAt": firestore.SERVER_TIMESTAMP,
+        }
+    )
+    repo.invalidate_for_booking(booking)
+    return {"id": booking_id, "returned": True}
 
 
 @router.post("/{booking_id}/cancel")

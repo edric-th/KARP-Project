@@ -7,6 +7,7 @@ import 'package:frontend/models/queue_status_model.dart';
 import 'package:frontend/providers/bookings_provider.dart';
 import 'package:frontend/providers/catalog_provider.dart';
 import 'package:frontend/providers/queue_provider.dart';
+import 'package:frontend/utils/profile_gate.dart';
 
 class QueueScreen extends StatefulWidget {
   final VoidCallback? onMenuTap;
@@ -123,6 +124,26 @@ class _QueueScreenState extends State<QueueScreen> {
 
   List<Widget> _buildActive(BookingModel active, QueueStatusModel? status,
       String title, bool loading) {
+    // Parked by the doctor (e.g. sent for an X-ray): the patient is out of the
+    // live queue until they signal they're back, so show a dedicated card
+    // instead of the token/ETA hero.
+    if (active.isOnHold) {
+      return [
+        _SectionTitle(title),
+        const SizedBox(height: 12),
+        _OnHoldCard(
+          doctor:
+              active.isReceptionToken ? 'Reception Desk' : active.doctorName,
+          myToken: active.tokenLabel,
+          holdReason: active.holdReason,
+          returned: active.returned,
+          onImBack: () =>
+              context.read<BookingsProvider>().notifyReturn(active.id),
+        ),
+        const SizedBox(height: 28),
+      ];
+    }
+
     final myEntry = status?.entryFor(active.id);
     final position = myEntry?.position ?? active.position ?? 0;
     final eta = myEntry?.estimatedWaitMinutes ?? active.estimatedWaitMinutes ?? 0;
@@ -234,7 +255,11 @@ class _QueueScreenState extends State<QueueScreen> {
                   color: AppColors.textSecondary)),
           const SizedBox(height: 24),
           FilledButton.icon(
-            onPressed: () => Navigator.pushNamed(context, '/book-appointment'),
+            onPressed: () async {
+              if (await ensureProfileComplete(context) && mounted) {
+                Navigator.pushNamed(context, '/book-appointment');
+              }
+            },
             icon: const Icon(Icons.calendar_today_rounded, size: 18),
             label: const Text('Book an Appointment'),
             style: FilledButton.styleFrom(
@@ -544,6 +569,182 @@ class _HeroStat extends StatelessWidget {
                   color: Colors.white.withValues(alpha: 0.75))),
         ],
       );
+}
+
+// ─── ON-HOLD CARD ────────────────────────────────────────────────────────────
+
+/// Shown when the doctor has parked the patient mid-visit (e.g. sent for an
+/// X-ray). Lets them tap "I'm back with my report" so the doctor can call them
+/// in again; once tapped it waits for the call-back.
+class _OnHoldCard extends StatefulWidget {
+  final String doctor;
+  final String myToken;
+  final String holdReason;
+  final bool returned;
+  final Future<bool> Function() onImBack;
+
+  const _OnHoldCard({
+    required this.doctor,
+    required this.myToken,
+    required this.holdReason,
+    required this.returned,
+    required this.onImBack,
+  });
+
+  @override
+  State<_OnHoldCard> createState() => _OnHoldCardState();
+}
+
+class _OnHoldCardState extends State<_OnHoldCard> {
+  bool _busy = false;
+
+  Future<void> _tap() async {
+    setState(() => _busy = true);
+    final ok = await widget.onImBack();
+    if (!mounted) return;
+    setState(() => _busy = false);
+    if (!ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('Could not notify the doctor. Please try again.')),
+      );
+    }
+  }
+
+  static const _amber = Color(0xFFF59E0B);
+  static const _amberDark = Color(0xFFD97706);
+
+  @override
+  Widget build(BuildContext context) {
+    final returned = widget.returned;
+    return Container(
+      padding: const EdgeInsets.all(22),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [_amber, _amberDark],
+        ),
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: AppColors.primaryShadow,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.18),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: const Text('ON HOLD',
+                    style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                        letterSpacing: 0.8)),
+              ),
+              const Spacer(),
+              Flexible(
+                child: Text(widget.doctor,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.end,
+                    style: const TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text('YOUR TOKEN',
+              style: TextStyle(
+                  fontFamily: 'Inter',
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 1,
+                  color: Colors.white.withValues(alpha: 0.75))),
+          Text(widget.myToken,
+              style: const TextStyle(
+                  fontFamily: 'Inter',
+                  fontSize: 64,
+                  fontWeight: FontWeight.w900,
+                  color: Colors.white,
+                  height: 1.05,
+                  letterSpacing: -1)),
+          const SizedBox(height: 6),
+          Text(
+            returned
+                ? "The doctor has been notified you're back"
+                : 'The doctor paused your turn for now',
+            style: const TextStyle(
+                fontFamily: 'Inter',
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: Colors.white),
+          ),
+          if (widget.holdReason.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Text('Reason: ${widget.holdReason}',
+                  style: const TextStyle(
+                      fontFamily: 'Inter', fontSize: 13, color: Colors.white)),
+            ),
+          ],
+          const SizedBox(height: 18),
+          SizedBox(
+            width: double.infinity,
+            child: returned
+                ? Container(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.18),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: const Text('Waiting to be called back…',
+                        style: TextStyle(
+                            fontFamily: 'Inter',
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white)),
+                  )
+                : FilledButton.icon(
+                    onPressed: _busy ? null : _tap,
+                    icon: _busy
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                                strokeWidth: 2, color: _amberDark))
+                        : const Icon(Icons.assignment_turned_in_rounded),
+                    label: Text(_busy ? 'Notifying…' : "I'm back with my report"),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: _amberDark,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      textStyle: const TextStyle(
+                          fontFamily: 'Inter',
+                          fontWeight: FontWeight.w800,
+                          fontSize: 15),
+                    ),
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 // ─── WAITING ROW ─────────────────────────────────────────────────────────────

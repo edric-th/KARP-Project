@@ -17,6 +17,8 @@ import {
   CalendarDays,
   Plus,
   Monitor,
+  PauseCircle,
+  PlayCircle,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { db } from '../../lib/firebase'
@@ -62,6 +64,7 @@ export default function Queue() {
   const [showBookingModal, setShowBookingModal] = useState(false)
   const [diagBooking, setDiagBooking] = useState(null)
   const [noShowBooking, setNoShowBooking] = useState(null)
+  const [holdBooking, setHoldBooking] = useState(null)
   const [acting, setActing] = useState(false)
 
   useEffect(() => {
@@ -117,6 +120,7 @@ export default function Queue() {
   const pending = bookings.filter((b) => b.status === BOOKING_STATUS.PENDING)
   const served = bookings.filter((b) => b.status === BOOKING_STATUS.SERVED)
   const noShow = bookings.filter((b) => b.status === BOOKING_STATUS.NO_SHOW)
+  const onHold = bookings.filter((b) => b.status === BOOKING_STATUS.ON_HOLD)
 
   // Calculate average service time for this doctor's queue
   const avgServiceTime = calculateAvgServiceTime(bookings)
@@ -240,6 +244,79 @@ export default function Queue() {
     toast.success(`Token #${booking.tokenNumber} re-called`)
   }
 
+  // Open the reason modal; the write happens in confirmHold.
+  const handleHold = () => {
+    if (active) setHoldBooking(active)
+  }
+
+  // Park the current patient (with a reason) and advance to the next token.
+  const confirmHold = async (reason) => {
+    if (!holdBooking) return
+    setActing(true)
+    try {
+      await update(COLLECTIONS.BOOKINGS, holdBooking.id, {
+        status: BOOKING_STATUS.ON_HOLD,
+        heldAt: new Date().toISOString(),
+        holdReason: (reason || '').trim(),
+        returned: false,
+      })
+      notifyPatient(
+        holdBooking,
+        'Placed on hold',
+        (reason || '').trim()
+          ? `You were placed on hold: ${reason.trim()}. Tap "I'm back" in the app once you return with your report.`
+          : `You were placed on hold. Tap "I'm back" in the app once you return with your report.`
+      )
+      if (pending.length > 0) {
+        const next = pending[0]
+        await update(COLLECTIONS.BOOKINGS, next.id, {
+          status: BOOKING_STATUS.ACTIVE,
+          calledAt: new Date().toISOString(),
+        })
+        notifyPatient(
+          next,
+          "It's your turn!",
+          `You're being called now — token #${next.tokenNumber} with Dr. ${selectedDoctor?.name || ''}. Please proceed.`
+        )
+        toast.success(`On hold · token #${next.tokenNumber} called`)
+      } else {
+        toast.success(`Token #${holdBooking.tokenNumber} placed on hold`)
+      }
+    } catch (err) {
+      toast.error('Failed to put on hold')
+      console.error(err)
+    } finally {
+      setActing(false)
+      setHoldBooking(null)
+    }
+  }
+
+  // Call a held patient back in: bump whoever's in consultation back to pending
+  // (they keep their token → front of the line) and seat the returning patient.
+  const callBackHeld = async (booking) => {
+    try {
+      if (active) {
+        await update(COLLECTIONS.BOOKINGS, active.id, {
+          status: BOOKING_STATUS.PENDING,
+        })
+      }
+      await update(COLLECTIONS.BOOKINGS, booking.id, {
+        status: BOOKING_STATUS.ACTIVE,
+        calledAt: new Date().toISOString(),
+        returned: false,
+      })
+      notifyPatient(
+        booking,
+        "It's your turn!",
+        `You're being called back now — token #${booking.tokenNumber}. Please proceed.`
+      )
+      toast.success(`Called back token #${booking.tokenNumber}`)
+    } catch (err) {
+      toast.error('Failed to call back')
+      console.error(err)
+    }
+  }
+
   if (doctors.length === 0) {
     return (
       <div>
@@ -345,6 +422,12 @@ export default function Queue() {
                     >
                       <XIcon size={18} /> No-show
                     </button>
+                    <button
+                      onClick={handleHold}
+                      className="px-4 py-2 bg-amber-100 hover:bg-amber-200 text-amber-800 rounded-lg font-medium flex items-center gap-2"
+                    >
+                      <PauseCircle size={18} /> Hold
+                    </button>
                   </>
                 )}
                 <button
@@ -382,6 +465,52 @@ export default function Queue() {
               </div>
             )}
           </div>
+
+          {onHold.length > 0 && (
+            <div className="card mb-6">
+              <h2 className="font-bold mb-4 flex items-center gap-2 text-amber-700">
+                <PauseCircle size={18} /> On hold ({onHold.length})
+              </h2>
+              <div className="space-y-2">
+                {onHold.map((b) => (
+                  <div
+                    key={b.id}
+                    className={`rounded-xl p-3 flex items-center gap-3 border ${
+                      b.returned
+                        ? 'bg-green-50 border-green-200'
+                        : 'bg-amber-50 border-amber-100'
+                    }`}
+                  >
+                    <div className="w-10 h-10 bg-white text-amber-700 rounded-lg flex items-center justify-center font-bold flex-shrink-0 border border-amber-200">
+                      #{b.tokenNumber}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium truncate flex items-center gap-2">
+                        <User size={14} className="text-gray-400 flex-shrink-0" />
+                        {b.patientName}
+                      </p>
+                      {b.holdReason && (
+                        <p className="text-xs text-gray-600 mt-0.5 truncate">
+                          Reason: {b.holdReason}
+                        </p>
+                      )}
+                      {b.returned && (
+                        <span className="inline-flex items-center gap-1 mt-1 text-xs font-bold text-green-700 bg-green-100 px-2 py-0.5 rounded">
+                          🔵 Back with report
+                        </span>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => callBackHeld(b)}
+                      className="btn-primary flex items-center gap-1.5 flex-shrink-0 !px-3 !py-2 text-sm"
+                    >
+                      <PlayCircle size={16} /> Call back
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {served.length > 0 && (
             <div className="card mb-6">
@@ -441,6 +570,22 @@ export default function Queue() {
         onSubmit={(notes) => confirmServed(notes)}
         onSkip={() => confirmServed(null)}
         onClose={() => !acting && setDiagBooking(null)}
+      />
+      <DiagnosisModal
+        open={!!holdBooking}
+        tokenNumber={holdBooking?.tokenNumber}
+        patientName={holdBooking?.patientName}
+        initialValue=""
+        busy={acting}
+        title="Put patient on hold"
+        label="Reason for hold"
+        placeholder="e.g. Sent for X-ray; will return with the report."
+        submitLabel="Put on hold"
+        skipLabel="Cancel"
+        savingLabel="Holding…"
+        onSubmit={confirmHold}
+        onSkip={() => !acting && setHoldBooking(null)}
+        onClose={() => !acting && setHoldBooking(null)}
       />
       <ConfirmModal
         open={!!noShowBooking}

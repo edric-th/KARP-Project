@@ -8,6 +8,7 @@ import 'package:frontend/services/doctor_service.dart';
 import 'package:frontend/services/queue_service.dart';
 import 'package:frontend/widgets/common/custom_button.dart';
 import 'package:frontend/widgets/common/doctor_avatar.dart';
+import 'package:frontend/utils/profile_gate.dart';
 
 class DoctorDetailScreen extends StatefulWidget {
   final DoctorModel doctor;
@@ -220,9 +221,14 @@ class _DoctorDetailScreenState extends State<DoctorDetailScreen> {
                               label: 'Book Appointment',
                               icon: const Icon(Icons.calendar_today_rounded,
                                   color: Colors.white, size: 20),
-                              onTap: () => Navigator.pushNamed(
-                                  context, '/book-appointment',
-                                  arguments: doctor),
+                              onTap: () async {
+                                if (await ensureProfileComplete(context) &&
+                                    context.mounted) {
+                                  Navigator.pushNamed(
+                                      context, '/book-appointment',
+                                      arguments: doctor);
+                                }
+                              },
                             ),
                           ]),
                     ),

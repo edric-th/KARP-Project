@@ -20,6 +20,9 @@ export const BOOKING_STATUS = {
   SERVED: 'served',
   CANCELLED: 'cancelled',
   NO_SHOW: 'no_show',
+  // Parked mid-consult (e.g. sent for an X-ray) — out of the queue until the
+  // doctor calls them back. Not counted as waiting or serving.
+  ON_HOLD: 'on_hold',
 }
 
 export const BOOKING_SOURCE = {

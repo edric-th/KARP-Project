@@ -115,6 +115,18 @@ class BookingsProvider extends ChangeNotifier {
     }
   }
 
+  /// Signal the doctor that the patient is back from an X-ray / another
+  /// department. Refreshes so the on-hold card flips to the "notified" state.
+  Future<bool> notifyReturn(String id) async {
+    try {
+      await _bookings.notifyReturn(id);
+      await load();
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
   /// Submit post-consultation feedback for a served booking, then refresh so the
   /// Past list reflects the now-reviewed state. Rethrows so the caller can show
   /// the error.

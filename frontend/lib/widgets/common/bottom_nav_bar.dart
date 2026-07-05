@@ -127,21 +127,30 @@ class _NavItem extends StatelessWidget {
                 borderRadius: BorderRadius.circular(20),
               )
             : null,
+        // The active pill (icon + label) can be wider than its equal-width slot
+        // on narrow phones; FittedBox scales it down to fit instead of
+        // overflowing, and the label never wraps.
         child: isActive
-            ? Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(activeIcon, color: Colors.white, size: 20),
-                  const SizedBox(width: 6),
-                  Text(
-                    label,
-                    style: TextStyle(fontFamily: 'Inter',
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white,
+            ? FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(activeIcon, color: Colors.white, size: 20),
+                    const SizedBox(width: 6),
+                    Text(
+                      label,
+                      maxLines: 1,
+                      softWrap: false,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(fontFamily: 'Inter',
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               )
             : Icon(icon, color: AppColors.textMuted, size: 24),
         ),

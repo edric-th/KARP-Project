@@ -61,6 +61,11 @@ class BookingService {
 
   Future<void> cancel(String id) => _api.post('/bookings/$id/cancel', auth: true);
 
+  /// Tell the doctor the patient is back (after being put on hold for an X-ray /
+  /// another department) so they can be called in again.
+  Future<void> notifyReturn(String id) =>
+      _api.post('/bookings/$id/return', auth: true);
+
   /// Submit post-consultation feedback: a star rating each for the doctor and
   /// the hospital plus an optional comment. Marks the booking as reviewed.
   Future<void> submitFeedback(

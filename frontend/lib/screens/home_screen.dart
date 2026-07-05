@@ -17,6 +17,7 @@ import 'package:frontend/widgets/common/custom_input_field.dart';
 import 'package:frontend/widgets/common/state_views.dart';
 import 'package:frontend/widgets/home/doctor_card.dart';
 import 'package:frontend/widgets/home/hospital_card.dart';
+import 'package:frontend/utils/profile_gate.dart';
 
 class HomeScreen extends StatefulWidget {
   final VoidCallback? onMenuTap;
@@ -345,7 +346,11 @@ class _HomeScreenState extends State<HomeScreen> {
             icon: Icons.calendar_today_rounded,
             label: 'Book Appt.',
             color: AppColors.primary,
-            onTap: () => Navigator.pushNamed(context, '/book-appointment'),
+            onTap: () async {
+              if (await ensureProfileComplete(context) && context.mounted) {
+                Navigator.pushNamed(context, '/book-appointment');
+              }
+            },
           ),
         ),
         const SizedBox(width: 14),

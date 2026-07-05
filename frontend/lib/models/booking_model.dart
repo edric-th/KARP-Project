@@ -26,6 +26,8 @@ class BookingModel {
   final String problem; // patient's "describe your problem" text
   final String notes; // patient's "extra notes for the doctor" text
   final bool reviewed; // true once the patient has left post-visit feedback
+  final String holdReason; // why the doctor parked this patient (on_hold)
+  final bool returned; // patient tapped "I'm back" after being put on hold
 
   const BookingModel({
     required this.id,
@@ -51,6 +53,8 @@ class BookingModel {
     this.problem = '',
     this.notes = '',
     this.reviewed = false,
+    this.holdReason = '',
+    this.returned = false,
   });
 
   factory BookingModel.fromJson(Map<String, dynamic> json) => BookingModel(
@@ -82,6 +86,8 @@ class BookingModel {
         problem: asString(json['problem']),
         notes: asString(json['notes']),
         reviewed: asBool(json['reviewed']),
+        holdReason: asString(json['holdReason']),
+        returned: asBool(json['returned']),
       );
 
   AppointmentType get appointmentType => appointmentTypeFromApi(bookingType);
@@ -90,7 +96,12 @@ class BookingModel {
 
   bool get isActive => status == 'active';
   bool get isPending => status == 'pending';
-  bool get isLive => isActive || isPending; // still in today's queue
+
+  /// Parked by the doctor mid-consult (e.g. sent for an X-ray). Still the
+  /// patient's current visit — they can tap "I'm back" to be called in again.
+  bool get isOnHold => status == 'on_hold';
+
+  bool get isLive => isActive || isPending || isOnHold; // still in today's queue
 
   /// An online token is a hospital reception-desk ticket, not a doctor booking.
   bool get isReceptionToken => bookingSource == 'online_token';
