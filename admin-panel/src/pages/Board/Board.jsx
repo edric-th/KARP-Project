@@ -10,6 +10,7 @@ import {
 import { db } from '../../lib/firebase'
 import { COLLECTIONS, BOOKING_STATUS, BOOKING_TYPES } from '../../constants'
 import { subscribe } from '../../api/firestore'
+import LiveDot from '../../components/ui/LiveDot'
 import {
   calculateAvgServiceTime,
   estimateWaitMinutes,
@@ -232,8 +233,8 @@ export default function Board() {
             {' · '}
             Waiting: <strong className="text-white">{pending.length}</strong>
           </p>
-          <p className="text-sm md:text-base">
-            🔴 Live · Updates automatically
+          <p className="text-sm md:text-base flex items-center justify-center gap-1.5">
+            <LiveDot label="Live" /> · Updates automatically
           </p>
         </div>
       </footer>

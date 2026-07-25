@@ -256,7 +256,7 @@ class _HomeScreenState extends State<HomeScreen> {
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: doctors.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 12),
+        separatorBuilder: (_, _) => const SizedBox(width: 12),
         itemBuilder: (ctx, i) => DoctorCard(
           doctor: doctors[i],
           onTap: () => Navigator.pushNamed(context, '/doctor-detail',
@@ -507,16 +507,25 @@ class _GreetingBlock extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          '$_greeting, $firstName 👋',
-          style: TextStyle(
-            fontFamily: 'Inter',
-            fontSize: 26,
-            fontWeight: FontWeight.w800,
-            color: AppColors.textPrimary,
-            letterSpacing: -0.5,
-            height: 1.2,
-          ),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Flexible(
+              child: Text(
+                '$_greeting, $firstName',
+                style: TextStyle(
+                  fontFamily: 'Inter',
+                  fontSize: 26,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.textPrimary,
+                  letterSpacing: -0.5,
+                  height: 1.2,
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            const Icon(Icons.waving_hand_rounded, color: Colors.amber, size: 24),
+          ],
         ),
         if (activeQueue != null) ...[
           const SizedBox(height: 6),

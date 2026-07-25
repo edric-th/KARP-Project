@@ -4,6 +4,9 @@ import Layout from './components/layout/Layout'
 import Login from './pages/Login/Login'
 import ReceptionLogin from './pages/ReceptionLogin/ReceptionLogin'
 import ReceptionDesk from './pages/ReceptionDesk/ReceptionDesk'
+import BookingLogin from './pages/BookingLogin/BookingLogin'
+import BookingDesk from './pages/BookingDesk/BookingDesk'
+import BookingStaff from './pages/BookingStaff/BookingStaff'
 import Dashboard from './pages/Dashboard/Dashboard'
 import Queue from './pages/Queue/Queue'
 import Reception from './pages/Reception/Reception'
@@ -33,6 +36,7 @@ function HomeRedirect() {
   if (loading) return <div className="flex items-center justify-center h-screen">Loading...</div>
   if (role === 'doctor') return <Navigate to="/doctor-queue" replace />
   if (role === 'receptionist') return <Navigate to="/reception-desk" replace />
+  if (role === 'booking_staff') return <Navigate to="/booking-desk" replace />
   return <Navigate to="/dashboard" replace />
 }
 
@@ -41,6 +45,7 @@ export default function App() {
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/reception/login" element={<ReceptionLogin />} />
+      <Route path="/booking/login" element={<BookingLogin />} />
       <Route path="/board/:doctorId" element={<Board />} />
 
       {/* Account settings - accessible to any logged-in user */}
@@ -73,6 +78,16 @@ export default function App() {
         }
       />
 
+      {/* Offline-booking desk — full screen, hospital-scoped doctor booking */}
+      <Route
+        path="/booking-desk"
+        element={
+          <ProtectedRoute allowedRoles={['booking_staff', 'admin']}>
+            <BookingDesk />
+          </ProtectedRoute>
+        }
+      />
+
       {/* Admin-only routes with sidebar layout. Receptionists are kept out of
           the admin panel entirely — they're bounced to their focused desk. */}
       <Route
@@ -96,6 +111,7 @@ export default function App() {
         <Route path="/queue" element={<Queue />} />
         <Route path="/reception" element={<Reception />} />
         <Route path="/staff" element={<Staff />} />
+        <Route path="/booking-staff" element={<BookingStaff />} />
         <Route path="/doctors" element={<Doctors />} />
         <Route path="/hospitals" element={<Hospitals />} />
         <Route path="/bookings" element={<Bookings />} />

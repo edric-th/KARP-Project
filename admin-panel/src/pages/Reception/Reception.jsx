@@ -17,11 +17,13 @@ import {
   Coffee,
   Building2,
   Ticket,
+  Info,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { db } from '../../lib/firebase'
 import { subscribe, update, create } from '../../api/firestore'
 import { useAuth } from '../../context/AuthContext'
+import LiveDot from '../../components/ui/LiveDot'
 import {
   COLLECTIONS,
   BOOKING_STATUS,
@@ -163,7 +165,7 @@ export default function Reception() {
       const next = await callNextPending()
       if (next) toast.success(`Token #${next.tokenNumber} now called`)
       else if (active) toast.success('Token handled. No one else in queue.')
-      else toast('No tokens in queue', { icon: 'ℹ️' })
+      else toast('No tokens in queue', { icon: <Info size={18} /> })
     } catch (err) {
       toast.error('Action failed')
       console.error(err)
@@ -197,7 +199,7 @@ export default function Reception() {
 
   const handleRecall = async () => {
     if (!lastServed) {
-      toast('No served token to recall', { icon: 'ℹ️' })
+      toast('No served token to recall', { icon: <Info size={18} /> })
       return
     }
     try {
@@ -354,7 +356,7 @@ export default function Reception() {
             {pending.length === 0 ? (
               <div className="text-center py-8">
                 <Coffee className="mx-auto mb-2 text-gray-300" size={32} />
-                <p className="text-gray-500">No one waiting at reception ☕</p>
+                <p className="text-gray-500">No one waiting at reception.</p>
               </div>
             ) : (
               <div className="space-y-2">
@@ -399,8 +401,8 @@ export default function Reception() {
             )}
           </div>
 
-          <p className="text-center text-gray-400 text-xs mt-6">
-            🔴 Live · Online tokens are reception-only and not linked to any doctor
+          <p className="flex items-center justify-center gap-1.5 text-gray-400 text-xs mt-6">
+            <LiveDot label="Live" /> · Online tokens are reception-only and not linked to any doctor
           </p>
         </>
       )}

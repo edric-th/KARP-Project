@@ -37,4 +37,7 @@ export const ROLES = {
   ADMIN: 'admin',
   RECEPTIONIST: 'receptionist',
   PATIENT: 'patient',
+  // Hospital-scoped desk that books offline (doctor-appointment) tokens and runs
+  // that hospital's live queue. Provisioned from the admin "Booking Desks" page.
+  BOOKING_STAFF: 'booking_staff',
 }

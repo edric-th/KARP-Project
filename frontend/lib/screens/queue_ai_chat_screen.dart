@@ -75,7 +75,7 @@ class _QueueAiChatScreenState extends State<QueueAiChatScreen> {
       _Message(
         sender: _Sender.ai,
         text:
-            "Hello there 👋\nI'm your MeroPalo Queue Assistant. I can track your token, guide you to your doctor's room, or summarise your visit. What can I help with?",
+            "Hello there!\nI'm your MeroPalo Queue Assistant. I can track your token, guide you to your doctor's room, or summarise your visit. What can I help with?",
         chips: const [
           _Chip('Wait Time', Icons.access_time_rounded),
           _Chip('Token Status', Icons.confirmation_number_outlined),
@@ -222,7 +222,7 @@ class _QueueAiChatScreenState extends State<QueueAiChatScreen> {
               subtitle: 'Share a prescription, lab report or symptom photo',
               onTap: () {
                 Navigator.pop(ctx);
-                _sendUserMessage('📎 Photo attached');
+                _sendUserMessage('Photo attached');
               },
             ),
             const SizedBox(height: 8),
@@ -232,7 +232,7 @@ class _QueueAiChatScreenState extends State<QueueAiChatScreen> {
               subtitle: 'PDF reports or insurance card',
               onTap: () {
                 Navigator.pop(ctx);
-                _sendUserMessage('📄 Document attached');
+                _sendUserMessage('Document attached');
               },
             ),
             const SizedBox(height: 8),
@@ -242,7 +242,7 @@ class _QueueAiChatScreenState extends State<QueueAiChatScreen> {
               subtitle: 'Describe your symptom verbally',
               onTap: () {
                 Navigator.pop(ctx);
-                _sendUserMessage('🎤 Voice note attached');
+                _sendUserMessage('Voice note attached');
               },
             ),
             const SizedBox(height: 8),
@@ -252,7 +252,7 @@ class _QueueAiChatScreenState extends State<QueueAiChatScreen> {
               subtitle: 'Let the assistant find the nearest entrance',
               onTap: () {
                 Navigator.pop(ctx);
-                _sendUserMessage('📍 Location shared');
+                _sendUserMessage('Location shared');
               },
             ),
           ],

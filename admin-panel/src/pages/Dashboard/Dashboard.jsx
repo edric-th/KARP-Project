@@ -23,6 +23,7 @@ import {
 import { subscribe } from '../../api/firestore'
 import { COLLECTIONS, BOOKING_STATUS, BOOKING_TYPES } from '../../constants'
 import { calculateAvgServiceTime } from '../../lib/waitTime'
+import StatCard from '../../components/ui/StatCard'
 
 const todayString = () => {
   const d = new Date()
@@ -220,25 +221,23 @@ export default function Dashboard() {
           icon={Calendar}
           label="Today's bookings"
           value={todaysBookings.length}
-          color="blue"
+          tone="info"
+          index={0}
         />
         <StatCard
           icon={Activity}
           label="Now serving"
           value={nowServing}
-          color="green"
+          tone="success"
+          index={1}
         />
-        <StatCard
-          icon={Clock}
-          label="Waiting"
-          value={waiting}
-          color="amber"
-        />
+        <StatCard icon={Clock} label="Waiting" value={waiting} tone="warning" index={2} />
         <StatCard
           icon={CheckCircle}
           label="Served"
           value={served}
-          color="purple"
+          tone="purple"
+          index={3}
         />
       </div>
 
@@ -434,26 +433,6 @@ export default function Dashboard() {
 }
 
 // ---------- Small components ----------
-
-function StatCard({ icon: Icon, label, value, color }) {
-  const colors = {
-    blue: 'bg-blue-50 text-blue-700',
-    green: 'bg-green-50 text-green-700',
-    amber: 'bg-amber-50 text-amber-700',
-    purple: 'bg-purple-50 text-purple-700',
-  }
-  return (
-    <div className="card">
-      <div className="flex items-center gap-3 mb-2">
-        <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${colors[color]}`}>
-          <Icon size={18} />
-        </div>
-        <p className="text-sm text-gray-500">{label}</p>
-      </div>
-      <p className="text-3xl font-bold">{value}</p>
-    </div>
-  )
-}
 
 function SummaryRow({ label, value, danger }) {
   return (

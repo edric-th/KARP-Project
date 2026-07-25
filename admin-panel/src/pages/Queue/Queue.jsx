@@ -19,11 +19,13 @@ import {
   Monitor,
   PauseCircle,
   PlayCircle,
+  Info,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { db } from '../../lib/firebase'
 import { subscribe, update, create, allocateToken } from '../../api/firestore'
-import { COLLECTIONS, BOOKING_STATUS, BOOKING_TYPES } from '../../constants'
+import { COLLECTIONS, BOOKING_STATUS, BOOKING_TYPES, BOOKING_SOURCE } from '../../constants'
+import { useAuth } from '../../context/AuthContext'
 import PhoneInput from '../../components/PhoneInput'
 import DiagnosisModal from '../../components/DiagnosisModal'
 import ConfirmModal from '../../components/ConfirmModal'
@@ -56,6 +58,9 @@ const bookingTypeColor = {
 }
 
 export default function Queue() {
+  // Booking-desk staff carry a hospitalId that locks them to their own hospital's
+  // doctors; admins have none and see every doctor. (Same lock as Reception.jsx.)
+  const { hospitalId: ownHospitalId } = useAuth()
   const [doctors, setDoctors] = useState([])
   const [hospitals, setHospitals] = useState([])
   const [selectedDoctorId, setSelectedDoctorId] = useState('')
@@ -68,18 +73,26 @@ export default function Queue() {
   const [acting, setActing] = useState(false)
 
   useEffect(() => {
-    const unsubDoctors = subscribe(COLLECTIONS.DOCTORS, (data) => {
-      setDoctors(data)
-      if (data.length > 0) {
-        setSelectedDoctorId((prev) => prev || data[0].id)
-      }
-    })
+    const unsubDoctors = subscribe(COLLECTIONS.DOCTORS, setDoctors)
     const unsubHospitals = subscribe(COLLECTIONS.HOSPITALS, setHospitals)
     return () => {
       unsubDoctors()
       unsubHospitals()
     }
   }, [])
+
+  // Doctors the current user may book for (all for admins; own-hospital only for
+  // a booking-desk account).
+  const visibleDoctors = ownHospitalId
+    ? doctors.filter((d) => d.hospitalId === ownHospitalId)
+    : doctors
+
+  // Auto-select the first available doctor once the (possibly filtered) list resolves.
+  useEffect(() => {
+    if (!selectedDoctorId && visibleDoctors.length > 0) {
+      setSelectedDoctorId(visibleDoctors[0].id)
+    }
+  }, [visibleDoctors, selectedDoctorId])
 
   useEffect(() => {
     if (!selectedDoctorId) {
@@ -175,7 +188,7 @@ export default function Queue() {
     } else if (active) {
       toast.success('All tokens served')
     } else {
-      toast('No pending tokens', { icon: 'ℹ️' })
+      toast('No pending tokens', { icon: <Info size={18} /> })
     }
   }
 
@@ -367,7 +380,7 @@ export default function Queue() {
           onChange={(e) => setSelectedDoctorId(e.target.value)}
           className="input"
         >
-          {doctors.map((d) => (
+          {visibleDoctors.map((d) => (
             <option key={d.id} value={d.id}>
               Dr. {d.name} {d.specialty ? `— ${d.specialty}` : ''}
             </option>
@@ -496,7 +509,7 @@ export default function Queue() {
                       )}
                       {b.returned && (
                         <span className="inline-flex items-center gap-1 mt-1 text-xs font-bold text-green-700 bg-green-100 px-2 py-0.5 rounded">
-                          🔵 Back with report
+                          <RotateCcw size={12} /> Back with report
                         </span>
                       )}
                     </div>
@@ -648,6 +661,9 @@ function NewBookingModal({ doctor, hospital, nextTokenNumber, pendingCount, avgS
         patientName: formData.patientName.trim(),
         patientPhone: formData.patientPhone.trim(),
         bookingType: formData.bookingType,
+        // Tag offline desk bookings explicitly so they read as appointments and
+        // stay out of the online-token reception filter.
+        bookingSource: BOOKING_SOURCE.APPOINTMENT,
         status: BOOKING_STATUS.PENDING,
         tokenNumber,
         bookingDate: todayString(),
@@ -799,8 +815,8 @@ function BookingRow({ booking, position, completed, avgServiceTime, showWaitTime
               </span>
             )}
             {waitMinutes !== null && (
-              <span className="text-xs text-purple-700 bg-purple-50 px-2 py-0.5 rounded font-medium">
-                ⏱ {formatWaitTime(waitMinutes)}
+              <span className="inline-flex items-center gap-1 text-xs text-purple-700 bg-purple-50 px-2 py-0.5 rounded font-medium">
+                <Clock size={11} /> {formatWaitTime(waitMinutes)}
               </span>
             )}
           </div>

@@ -36,7 +36,7 @@ export function AuthProvider({ children }) {
           console.log('[AUTH DEBUG] role field:', userData?.role)
           console.log('[AUTH DEBUG] role type:', typeof userData?.role)
 
-          if (userData && ['admin', 'receptionist', 'doctor'].includes(userData.role)) {
+          if (userData && ['admin', 'receptionist', 'doctor', 'booking_staff'].includes(userData.role)) {
             console.log('[AUTH DEBUG] ✅ Role accepted:', userData.role)
             setUser(firebaseUser)
             setRole(userData.role)

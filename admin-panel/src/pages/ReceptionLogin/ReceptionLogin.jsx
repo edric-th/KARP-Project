@@ -7,6 +7,7 @@ import {
 import { Ticket } from 'lucide-react'
 import { auth } from '../../lib/firebase'
 import { useAuth } from '../../context/AuthContext'
+import AuthShell from '../../components/ui/AuthShell'
 import toast from 'react-hot-toast'
 
 /**
@@ -73,16 +74,12 @@ export default function ReceptionLogin() {
   const busy = loading || (!!user && authLoading)
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4">
-      <div className="card w-full max-w-md">
-        <div className="flex items-center gap-3 mb-2">
-          <div className="w-10 h-10 bg-primary-50 text-primary-600 rounded-lg flex items-center justify-center">
-            <Ticket size={22} />
-          </div>
-          <h1 className="text-2xl font-bold">Reception Desk</h1>
-        </div>
-        <p className="text-gray-600 mb-6">Sign in to manage the token queue</p>
-        <form onSubmit={handleSubmit} className="space-y-4">
+    <AuthShell
+      title="Reception Desk"
+      subtitle="Sign in to manage the token queue"
+      icon={Ticket}
+    >
+      <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium mb-1">Email</label>
             <input
@@ -134,7 +131,6 @@ export default function ReceptionLogin() {
             {busy ? 'Signing in...' : 'Sign in'}
           </button>
         </form>
-      </div>
-    </div>
+    </AuthShell>
   )
 }

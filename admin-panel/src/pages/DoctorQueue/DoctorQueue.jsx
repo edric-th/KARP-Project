@@ -22,11 +22,13 @@ import {
   Settings,
   PauseCircle,
   PlayCircle,
+  Info,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { db } from '../../lib/firebase'
 import { subscribe, update, create } from '../../api/firestore'
 import { useAuth } from '../../context/AuthContext'
+import LiveDot from '../../components/ui/LiveDot'
 import {
   calculateAvgServiceTime,
   estimateWaitMinutes,
@@ -226,7 +228,7 @@ export default function DoctorQueue() {
       const next = await callNextPending()
       if (next) toast.success(`Token #${next.tokenNumber} now called`)
       else if (active) toast.success('Patient marked as served. No one else in queue.')
-      else toast('No patients in queue', { icon: 'ℹ️' })
+      else toast('No patients in queue', { icon: <Info size={18} /> })
     } catch (err) {
       toast.error('Action failed')
       console.error(err)
@@ -271,7 +273,7 @@ export default function DoctorQueue() {
 
   const handleRecall = async () => {
     if (!lastServed) {
-      toast('No served patient to recall', { icon: 'ℹ️' })
+      toast('No served patient to recall', { icon: <Info size={18} /> })
       return
     }
     try {
@@ -680,7 +682,7 @@ export default function DoctorQueue() {
                     )}
                     {b.returned && (
                       <span className="inline-flex items-center gap-1 mt-1 text-xs font-bold text-green-700 bg-green-100 px-2 py-0.5 rounded">
-                        🔵 Back with report
+                        <RotateCcw size={12} /> Back with report
                       </span>
                     )}
                   </div>
@@ -706,7 +708,7 @@ export default function DoctorQueue() {
           {pending.length === 0 ? (
             <div className="text-center py-8">
               <Coffee className="mx-auto mb-2 text-gray-300" size={32} />
-              <p className="text-gray-500">No one waiting. Take a break ☕</p>
+              <p className="text-gray-500">No one waiting. Take a break.</p>
             </div>
           ) : (
             <div className="space-y-2">
@@ -749,8 +751,8 @@ export default function DoctorQueue() {
         )}
 
         {/* Footer info */}
-        <p className="text-center text-gray-400 text-xs mt-6">
-          🔴 Live · Changes appear instantly across all screens
+        <p className="flex items-center justify-center gap-1.5 text-gray-400 text-xs mt-6">
+          <LiveDot label="Live" /> · Changes appear instantly across all screens
         </p>
       </main>
 

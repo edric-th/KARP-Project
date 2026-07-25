@@ -18,6 +18,7 @@ import {
   UserPlus,
   Upload,
   Loader2,
+  Star,
 } from 'lucide-react'
 import {
   createUserWithEmailAndPassword,
@@ -283,8 +284,8 @@ export default function Doctors() {
                   {doctor.isAvailable === false ? 'Unavailable' : 'Available'}
                 </span>
                 {doctor.rating > 0 && (
-                  <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-amber-50 text-amber-700">
-                    ★ {doctor.rating} ({doctor.reviewCount || 0})
+                  <span className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full bg-amber-50 text-amber-700">
+                    <Star size={11} className="fill-current" /> {doctor.rating} ({doctor.reviewCount || 0})
                   </span>
                 )}
                 {doctor.experience ? (

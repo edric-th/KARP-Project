@@ -4,8 +4,10 @@ import {
   signInWithEmailAndPassword,
   sendPasswordResetEmail,
 } from 'firebase/auth'
+import { ShieldCheck } from 'lucide-react'
 import { auth } from '../../lib/firebase'
 import { useAuth } from '../../context/AuthContext'
+import AuthShell from '../../components/ui/AuthShell'
 import toast from 'react-hot-toast'
 
 export default function Login() {
@@ -72,11 +74,12 @@ export default function Login() {
   const busy = loading || (!!user && authLoading)
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4">
-      <div className="card w-full max-w-md">
-        <h1 className="text-2xl font-bold mb-2">Admin Panel</h1>
-        <p className="text-gray-600 mb-6">Hospital Queue Management</p>
-        <form onSubmit={handleSubmit} className="space-y-4">
+    <AuthShell
+      title="Admin Panel"
+      subtitle="Hospital Queue Management"
+      icon={ShieldCheck}
+    >
+      <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium mb-1">Email</label>
             <input
@@ -128,7 +131,6 @@ export default function Login() {
             {busy ? 'Signing in...' : 'Sign in'}
           </button>
         </form>
-      </div>
-    </div>
+    </AuthShell>
   )
 }
